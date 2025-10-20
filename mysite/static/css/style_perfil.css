@@ -1,0 +1,530 @@
+/* ================================================== */
+/* CSS de Perfil - Mobile First con Desktop Fallback  */
+/* ================================================== */
+
+/* ===================== */
+/* 1. Variables Globales */
+/* ===================== */
+:root {
+    --btn-pending-bg: #FFECD1; --btn-pending-text: #F77F00;
+    --btn-inprogress-bg: #E6F2FF; --btn-inprogress-text: #1E88E5;
+    --btn-submitted-bg: #F1E8FF; --btn-submitted-text: #8E5CF6;
+    --btn-success-bg: #E8F9E9; --btn-success-text: #2BB673;
+    --btn-failed-bg: #FFE6E6; --btn-failed-text: #E53935;
+    --btn-expired-bg: #F5F5F5; --btn-expired-text: #9E9E9E;
+
+    --btn-radius: 12px;
+    --btn-padding-y: 10px; --btn-padding-x: 16px;
+    --btn-font-size: 14px; --btn-font-weight: 600;
+    --btn-gap: 10px;
+    --btn-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    --btn-hover-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+
+    --main-bg: #FFF9ED;
+    --panel-bg: #FFFFFF;
+    --border-soft: #E0E0E0;
+    --text-color: #333333;
+    --text-muted: #6c757d;
+    --panel-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+
+    --header-height-mobile: 60px;
+    --bottom-nav-height-mobile: 65px;
+}
+
+/* ===================== */
+/* 2. Reset Básico       */
+/* ===================== */
+* {
+    margin: 0; padding: 0; box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ======================================= */
+/* 3. Estilos Base (Mobile First)          */
+/* ======================================= */
+body {
+    background-color: var(--main-bg);
+    color: var(--text-color);
+    padding-top: var(--header-height-mobile);
+    padding-bottom: var(--bottom-nav-height-mobile);
+    min-height: 100vh;
+}
+body.no-scroll { overflow: hidden; }
+
+/* --- Overlay del menú móvil --- */
+.menu-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.38);
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s ease;
+    z-index: 150;
+}
+.menu-overlay.is-open { opacity: 1; pointer-events: auto; }
+
+/* --- Header Superior (Móvil) --- */
+.app-header {
+    display: flex;
+    position: fixed; top: 0; left: 0; right: 0;
+    height: var(--header-height-mobile);
+    background-color: var(--panel-bg);
+    border-bottom: 1px solid var(--border-soft);
+    align-items: center; justify-content: space-between;
+    padding: 0 15px;
+    z-index: 200;
+}
+.header-logo-link { display: flex; align-items: center; }
+.header-logo { height: 35px; width: auto; object-fit: contain; cursor: pointer; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.btn-menu-mobile {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--border-soft);
+    background: var(--panel-bg); cursor: pointer;
+}
+.header-profile-btn {
+    border: none; background: none; padding: 0;
+    cursor: pointer; width: 38px; height: 38px; position: relative; border-radius: 50%;
+}
+.header-profile-btn .avatar {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover; position: relative; z-index: 1;
+}
+.header-profile-btn .marco-activo {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 100%; height: 100%; border-radius: 50%; object-fit: contain; pointer-events: none; z-index: 2;
+}
+
+/* --- Sidebar off-canvas (Móvil) --- */
+.contenedor-izquierda {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 82vw; max-width: 340px;
+    transform: translateX(-105%);
+    transition: transform .22s ease-in-out;
+    z-index: 200; /* sobre el header pero bajo modales */
+    display: flex; flex-direction: column;
+    padding-top: var(--header-height-mobile);
+    box-shadow: 2px 0 20px rgba(0,0,0,0.08);
+    background: var(--panel-bg);
+    gap: 10px; /* separación interna para móvil */
+}
+.contenedor-izquierda.is-open { transform: translateX(0); }
+
+.aside {
+    display: flex;
+    width: 100%;
+    flex-grow: 1;
+    border-radius: 0;
+    border: 0;
+    padding: 20px 10px 90px; /* espacio para botones y bottom-nav */
+    flex-direction: column;
+    background-color: var(--panel-bg);
+    gap: 20px;
+}
+.aside-superior {
+    display: none; /* en móvil no necesitamos la barra superior del aside (ya está el header) */
+}
+.btn-cerrar-menu {
+    position: absolute; top: calc(var(--header-height-mobile) + 8px); right: 10px;
+    background: #fff; border: 1px solid var(--border-soft);
+    width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items:center; justify-content:center;
+    cursor: pointer;
+}
+
+/* --- Botones del aside (estilos comunes para MOBILE y DESKTOP) --- */
+.botones-aside { display: flex; flex-direction: column; gap: var(--btn-gap); width: 100%; }
+.botones-aside button {
+    display: flex; align-items: center; justify-content: flex-start;
+    gap: 10px; padding: var(--btn-padding-y) var(--btn-padding-x);
+    border-radius: var(--btn-radius); font-size: var(--btn-font-size);
+    font-weight: bold; border: 2px solid transparent;
+    cursor: pointer; transition: all 0.25s ease-in-out;
+    background-color: #FFF; box-shadow: var(--btn-shadow);
+    width: 100%;
+}
+.botones-aside button svg { flex-shrink: 0; }
+button.in-progress { background-color: var(--btn-inprogress-bg); color: var(--btn-inprogress-text); }
+button.success { background-color: var(--btn-success-bg); color: var(--btn-success-text); }
+button.submitted { background-color: var(--btn-submitted-bg); color: var(--btn-submitted-text); }
+button.failed { background-color: var(--btn-failed-bg); color: var(--btn-failed-text); }
+.botones-aside button:hover { transform: translateY(-2px); box-shadow: var(--btn-hover-shadow); }
+button.in-progress:hover { border-color: var(--btn-inprogress-text); }
+button.success:hover { border-color: var(--btn-success-text); }
+button.submitted:hover { border-color: var(--btn-submitted-text); }
+button.failed:hover { border-color: var(--btn-failed-text); }
+
+/* --- Área de Contenido (Móvil) --- */
+.contenedor-derecha { width: 100%; }
+.dashboard {
+    padding: 20px 15px;
+    width: 100%;
+    flex-grow: 1;
+    background-color: var(--main-bg);
+    border: none; box-shadow: none; border-radius: 0;
+    overflow-y: auto;
+}
+.dashboard h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; }
+.dashboard .subtitulo {
+    font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-soft); padding-bottom: 15px;
+}
+
+/* --- Ocultar barra de navegación de desktop por defecto --- */
+.nav { display: none; }
+
+/* --- Barra de Navegación Inferior (Móvil) --- */
+.bottom-nav-mobile {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: var(--bottom-nav-height-mobile);
+    background-color: var(--panel-bg);
+    border-top: 1px solid var(--border-soft);
+    display: flex; align-items: stretch; justify-content: space-around;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+}
+.bottom-nav-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 1; text-decoration: none; color: var(--text-muted);
+    padding: 6px 0;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+.bottom-nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; }
+.bottom-nav-item span { font-size: 0.7rem; font-weight: 500; }
+.bottom-nav-item.active { color: var(--btn-inprogress-text); }
+.bottom-nav-item:hover { color: var(--text-color); background-color: rgba(0,0,0,0.03); }
+
+/* ======================================= */
+/* 4. Componentes Compartidos              */
+/* ======================================= */
+
+/* Menú de perfil (compartido) */
+.perfil-wrap { position: relative; }
+.menu-perfil {
+    position: absolute; top: calc(100% + 10px); right: 0; width: 220px;
+    background: var(--panel-bg); border-radius: 12px; border: 1px solid var(--border-soft);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1); padding: 8px; z-index: 300;
+    display: flex; flex-direction: column; gap: 5px; opacity: 0;
+    transform: translateY(10px); transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+    pointer-events: none;
+}
+.menu-perfil.is-open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.menu-perfil__header { padding: 10px 12px; font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+.menu-perfil__header strong { font-size: 14px; color: var(--text-color); }
+.menu-sep { height: 1px; background: var(--border-soft); margin: 4px 0; }
+.menu-item {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 10px 12px; border-radius: 8px; border: none; background: transparent;
+    cursor: pointer; text-align: left; font-size: 14px; font-weight: 500;
+    color: var(--text-color); transition: background-color 0.2s ease, color 0.2s ease;
+}
+.menu-item svg { color: var(--text-muted); transition: color 0.2s ease; }
+.menu-item:hover { background-color: #f5f5f5; }
+.menu-item.danger:hover { background-color: var(--btn-failed-bg); color: var(--btn-failed-text); }
+.menu-item.danger:hover svg { color: var(--btn-failed-text); }
+
+/* Modales compartidos */
+.modal.hidden { display: none; }
+.modal {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.4); z-index: 9999; padding: 16px;
+}
+.modal-card {
+  background: #fff; border-radius: 12px; padding: 20px; max-width: 440px; width: 100%;
+  box-shadow: 0 10px 30px rgba(0,0,0,.2); font-family: inherit;
+}
+.modal-card h3 { margin: 0 0 8px; font-size: 1.1rem; }
+.modal-card p { margin: 0 0 16px; line-height: 1.4; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.btn-cerrar {
+  padding: 8px 14px; border: 0; border-radius: 8px; cursor: pointer;
+  background: #2563eb; color: #fff; font-weight: 600;
+}
+
+/* Botones de formularios del perfil */
+.btn-guardar { background-color: var(--btn-success-text); color: white; }
+.btn-cancelar { background-color: #f1f1f1; color: var(--text-muted); }
+.btn-cancelar:hover { background-color: #e7e7e7; }
+.btn-editar { background-color: var(--btn-inprogress-bg); color: var(--btn-inprogress-text); }
+.form-actions button {
+    padding: 12px 25px; font-size: 15px; font-weight: 600;
+    border-radius: var(--btn-radius); border: none; cursor: pointer;
+    transition: all 0.25s ease;
+}
+.form-actions button:hover { transform: translateY(-2px); box-shadow: var(--btn-hover-shadow); }
+
+/* ======================================= */
+/* 5. Estilos Específicos de Página        */
+/* ======================================= */
+
+.perfil-form { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start; }
+.form-columna { display: flex; flex-direction: column; gap: 20px; }
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-group label, .stat-item label { font-weight: 600; font-size: 14px; color: #555; }
+.form-group input {
+    width: 100%; padding: 12px 16px; border-radius: 10px;
+    border: 1px solid var(--border-soft); font-size: 1rem;
+    background: #fdfdfd; transition: all 0.2s ease;
+}
+.form-group input:focus {
+    outline: none; border-color: var(--btn-inprogress-text);
+    background-color: var(--panel-bg);
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.15);
+}
+.form-group input[readonly] { background-color: #f5f5f5; cursor: not-allowed; color: var(--text-muted); border-color: #e9ecef; }
+.foto-perfil-group .foto-container { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+.foto-container .foto-preview, .foto-container .avatar {
+    width: 150px; height: 150px; border-radius: 50%;
+    object-fit: cover; border: 3px solid var(--border-soft);
+}
+.foto-perfil-group .btn-cambiar-foto {
+    padding: 10px 20px; border-radius: var(--btn-radius); border: none;
+    background-color: var(--btn-inprogress-bg); color: var(--btn-inprogress-text);
+    font-weight: var(--btn-font-weight); cursor: pointer; transition: all 0.2s ease;
+}
+.foto-perfil-group .btn-cambiar-foto:hover { box-shadow: var(--btn-hover-shadow); transform: translateY(-1px); }
+.form-actions {
+    grid-column: 1 / -1; display: flex; justify-content: flex-end;
+    gap: 15px; margin-top: 20px; padding-top: 25px; border-top: 1px solid var(--border-soft);
+}
+.stat-item { display: flex; flex-direction: column; gap: 10px; }
+.progress-bar-container { width: 100%; height: 12px; background-color: #e9ecef; border-radius: 50px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background-color: var(--btn-success-text); border-radius: 50px; transition: width 0.4s ease-in-out; }
+.progress-bar-text { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.stat-value-icon {
+    display: flex; align-items: center; gap: 10px; background-color: #fdfdfd; padding: 10px 16px;
+    border: 1px solid var(--border-soft); border-radius: 10px;
+}
+.stat-value-icon svg { color: #f7b731; flex-shrink: 0; }
+.stat-value-icon span { font-size: 1.1rem; font-weight: 600; color: var(--text-color); }
+.form-control-static { font-size: 1rem; font-weight: 500; padding: 12px 16px; background-color: #f8f9fa; border: 1px solid #f8f9fa; border-radius: 10px; min-height: 48px; }
+
+.perfil-form .form-group input,
+.perfil-form .btn-cambiar-foto,
+.perfil-form .edit-actions { display: none; }
+.perfil-form.is-editing .form-control-static,
+.perfil-form.is-editing .btn-editar { display: none; }
+.perfil-form.is-editing .form-group input,
+.perfil-form.is-editing .btn-cambiar-foto,
+.perfil-form.is-editing .edit-actions { display: flex; }
+.perfil-form.is-editing .form-group input { display: block; }
+.edit-actions { display: flex; gap: 15px; }
+
+/* ======================================= */
+/* 6. Media Query para Desktop (>= 1024px) */
+/* ======================================= */
+@media (min-width: 1024px) {
+    body {
+        display: flex;
+        flex-direction: row;
+        padding: 10px;
+        height: 100vh;
+        gap: 10px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        overflow: auto;
+    }
+
+    /* En desktop ocultamos header y bottom nav móvil */
+    .app-header, .bottom-nav-mobile { display: none; }
+
+    /* Extra: oculta explícitamente el botón hamburguesa en desktop por si existe fuera del header móvil */
+    .btn-menu-mobile { display: none !important; }
+
+    /* Sidebar visible como columna fija con separación del logo */
+    .contenedor-izquierda {
+        position: relative;
+        transform: none;
+        width: 18vw;
+        height: 100%;
+        max-width: none;
+        padding-top: 0;
+        box-shadow: none;
+        background: transparent;
+        display: flex;
+        flex-direction: column;
+        gap: 10px; /* gap entre el bloque del logo y el aside */
+    }
+    .aside-superior {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: var(--panel-bg);
+        border-radius: 24px;
+        border: 0.5px solid var(--border-soft);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        height: 65px;
+        flex-shrink: 0;
+        padding: 10px;
+        margin-bottom: 10px; /* separación extra debajo del logo */
+    }
+    .aside-superior img { height: 100%; width: auto; object-fit: contain; cursor: pointer; }
+
+    .btn-cerrar-menu { display: none; }
+
+    .aside {
+        display: flex;
+        width: 100%;
+        height: calc(100% - 75px);
+        border-radius: 24px;
+        border: 0.5px solid var(--border-soft);
+        padding: 20px 10px;
+        flex-direction: column;
+        background-color: var(--panel-bg);
+        gap: 20px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Perfil de Sidebar */
+    .perfil-usuario {
+        display: flex; flex-direction: column; align-items: center;
+
+        gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--border-soft);
+    }
+    .img-perfil {
+        position: relative;
+        width: 80%;
+        max-width: 120px;
+        aspect-ratio: 1 / 1;
+        border-radius: 50%;
+        background-color: var(--panel-bg);
+        padding: 4px;
+        outline: 4px solid var(--btn-inprogress-text);
+        outline-offset: 4px;
+        box-shadow: var(--panel-shadow);
+    }
+    .img-perfil .avatar {
+        width: 100%; height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        position: relative; z-index: 1;
+    }
+    .img-perfil .marco-activo {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%; height: 100%; border-radius: 50%;
+        object-fit: contain; pointer-events: none; z-index: 2;
+    }
+    .perfil-usuario .info-usuario { display: flex; flex-direction: column; align-items: center; margin-top: 5px; text-align: center; }
+
+    .info-usuario strong { font-size: 1.1rem; font-weight: 600; }
+    .info-usuario i { font-style: normal; font-size: 0.9rem; color: #888; }
+
+    /* Contenedor derecho y nav desktop */
+    .contenedor-derecha {
+        display: flex; flex-direction: column; width: 100%; gap: 10px;
+    }
+    .nav {
+        display: flex; justify-content: space-between; align-items: center;
+        height: 65px; width: 100%; flex-shrink: 0; gap: 20px;
+    }
+    .nav-buscar { height: 75%; flex-grow: 1; display: flex; align-items: center; gap: 10px; }
+    .nav-buscar input {
+        width: 100%; height: 100%; border: 1px solid var(--border-soft);
+        outline: none; font-size: 1rem; padding: 8px 20px;
+        border-radius: 50px; background-color: var(--panel-bg);
+        color: var(--text-color); transition: all 0.2s ease;
+    }
+    .nav-buscar input:focus { border-color: var(--btn-inprogress-text); box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.15); }
+    .nav-buscar button {
+        background-color: var(--panel-bg); cursor: pointer; height: 100%;
+        aspect-ratio: 1/1; border: 1px solid var(--border-soft);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-muted);
+        transition: all 0.2s ease-in-out;
+    }
+    .nav-buscar button:hover { color: var(--btn-inprogress-text); border-color: var(--btn-inprogress-text); }
+    .nav-grupo-derecha { display: flex; align-items: center; gap: 10px; height: 100%; }
+    #btn-nuevo {
+        display: inline-flex; align-items: center; gap: var(--btn-gap);
+        background-color: var(--btn-success-bg); color: var(--btn-success-text);
+        border: 2px solid transparent; border-radius: var(--btn-radius);
+        padding: var(--btn-padding-y) var(--btn-padding-x);
+        font-size: 15px; font-weight: var(--btn-font-weight); cursor: pointer;
+        transition: all 0.25s ease-in-out; height: 75%;
+    }
+    #btn-nuevo:hover { transform: translateY(-2px); box-shadow: var(--btn-hover-shadow); border-color: var(--btn-success-text); }
+    .btn-notificaciones {
+        background-color: var(--btn-pending-bg); color: var(--btn-pending-text);
+        height: 75%; aspect-ratio: 1 / 1; border: 2px solid transparent;
+        border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+        transition: all 0.25s ease-in-out;
+    }
+    .btn-notificaciones:hover { transform: translateY(-2px); box-shadow: var(--btn-hover-shadow); border-color: var(--btn-pending-text); }
+    .icon-notificaciones { width: 22px; height: 22px; }
+
+    .nav-perfil {
+        display: flex; align-items: center; gap: 10px; height: 75%;
+        background-color: var(--panel-bg); border: 1px solid var(--border-soft);
+        border-radius: 50px; padding: 0 8px 0 15px;
+    }
+
+    .perfil-trigger {
+        border-radius: 50%; width: 38px; height: 38px;
+        padding: 0; display: inline-flex; align-items: center; justify-content: center;
+        background: var(--panel-bg); cursor: pointer; transition: all 0.2s ease; position: relative; border: none;
+    }
+    .perfil-trigger .avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; z-index: 1; border: 2px solid var(--btn-inprogress-text); }
+    .perfil-trigger .marco-activo {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 100%; height: 100%; border-radius: 50%; object-fit: contain; pointer-events: none; z-index: 2;
+    }
+    .perfil-trigger:hover { transform: scale(1.1); }
+
+    /* Contenido desktop */
+    .dashboard {
+        padding: 30px;
+        background-color: #FFFFFF;
+        border-radius: 24px;
+        border: 0.5px solid var(--border-soft);
+        overflow-y: auto;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    }
+    .dashboard h1 { font-size: 1.8rem; }
+    .dashboard .subtitulo { font-size: 1rem; margin-bottom: 30px; padding-bottom: 20px; }
+
+    /* Formulario desktop */
+    .perfil-form { grid-template-columns: repeat(2, 1fr); gap: 30px 50px; }
+    .form-columna { gap: 30px; }
+    .form-group label, .stat-item label { font-size: 15px; }
+    .foto-perfil-group .foto-container { flex-direction: row; align-items: center; gap: 20px; }
+    .foto-container .foto-preview, .foto-container .avatar { width: 200px; height: 200px; }
+
+    .delete-account-container { grid-template-columns: 1fr 1.2fr; }
+}
+/* Avatar circular en el aside (MÓVIL y DESKTOP) */
+.perfil-usuario {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.info-usuario{
+    display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.img-perfil {
+  position: relative;
+  width: 120px;           /* puedes ajustar */
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  overflow: hidden;        /* asegura el recorte circular */
+  background-color: var(--panel-bg);
+}
+
+.img-perfil .avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;      /* hace circular la imagen */
+  display: block;
+}
+
+.img-perfil .marco-activo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  object-fit: contain;
+  pointer-events: none;
+}

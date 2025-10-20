@@ -1,0 +1,9 @@
+
+mysite/token.json
+mysite/old-token.json
+mysite/credentials.json
+
+.venv/
+__pycache__/
+*.pyc
+.env

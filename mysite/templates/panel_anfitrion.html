@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Anfitrión - {{ pin }}</title>
+    <style>
+        /* Estilos simples para la demo */
+        body {
+            font-family: sans-serif;
+            text-align: center;
+        }
+
+        .grupos-container {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .grupo-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 1rem;
+            min-width: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>¡Partida Creada!</h1>
+    <p>Comparte este PIN con tus participantes:</p>
+    <h2 style="font-size: 3rem;">{{ pin }}</h2>
+
+    <div id="lobby-container">
+    </div>
+
+    <button>Comenzar Juego</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const pin = "{{ pin }}";
+
+        function actualizarLobby(data) {
+            const container = document.getElementById('lobby-container');
+            container.innerHTML = '<h3>Jugadores Conectados:</h3>';
+
+            if (data.modalidad_grupal) { // Si es grupal, mostramos los grupos
+                const gruposContainer = document.createElement('div');
+                gruposContainer.className = 'grupos-container';
+                data.grupos.forEach(grupo => {
+                    const grupoCard = document.createElement('div');
+                    grupoCard.className = 'grupo-card';
+                    grupoCard.innerHTML = `<h4>${grupo.nombre}</h4><ul>${grupo.miembros.map(m => `<li>${m}</li>`).join('')}</ul>`;
+                    gruposContainer.appendChild(grupoCard);
+                });
+                container.appendChild(gruposContainer);
+            }
+            
+            // Siempre mostramos los jugadores sin asignar (para ambos modos)
+            if (data.participantes_sin_grupo.length > 0) {
+                const titulo = data.modalidad_grupal ? '<h4>Jugadores sin grupo:</h4>' : '';
+                container.innerHTML += titulo;
+                const lista = document.createElement('ul');
+                data.participantes_sin_grupo.forEach(jugador => {
+                    lista.innerHTML += `<li>${jugador}</li>`;
+                });
+                container.appendChild(lista);
+            }
+        }
+
+        socket.on('connect', () => socket.emit('iniciar_panel_anfitrion', { pin: pin }));
+        socket.on('actualizar_estado_lobby', actualizarLobby);
+    </script>
+</body>
+
+</html>

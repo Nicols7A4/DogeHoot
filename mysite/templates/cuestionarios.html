@@ -1,0 +1,473 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<style>
+/* ====== Variables base (usan tu paleta) ====== */
+:root{
+  --btn-pending-bg:#FFECD1; --btn-inprogress-bg:#E6F2FF; --btn-submitted-bg:#F1E8FF;
+  --btn-inreview-bg:#FFF5C2; --btn-success-bg:#E8F9E9; --btn-failed-bg:#FFE6E6; --btn-expired-bg:#F5F5F5;
+
+  --btn-pending-text:#F77F00; --btn-inprogress-text:#1E88E5; --btn-submitted-text:#8E5CF6;
+  --btn-inreview-text:#E3B505; --btn-success-text:#2BB673; --btn-failed-text:#E53935; --btn-expired-text:#9E9E9E;
+
+  --btn-radius:12px; --btn-padding-y:10px; --btn-padding-x:16px; --btn-font-size:14px; --btn-gap:10px;
+  --btn-shadow:0 2px 5px rgba(0,0,0,.08); --btn-hover-shadow:0 3px 8px rgba(0,0,0,.1);
+
+  --main-bg:#FFF9ED; --panel-bg:#FFFFFF; --border-soft:#E0E0E0; --text-color:#333333;
+
+  --title-color:#374785; --muted:#616161;
+}
+
+/* ====== Contenedor página ====== */
+.mis-cuestionarios-container{max-width:1200px;margin:0 auto;padding:22px;}
+.mc-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;}
+.mc-header h1{font-size:1.6rem;font-weight:700;color:var(--text-color);}
+
+/* ====== SECCIÓN DE CÓDIGO DE ACCESO ====== */
+.codigo-acceso-section{
+  background:linear-gradient(135deg, var(--btn-inprogress-bg) 0%, #f0f7ff 100%);
+  border:2px solid var(--btn-inprogress-text);
+  border-radius:20px;
+  padding:24px;
+  margin-bottom:24px;
+  box-shadow:var(--btn-shadow);
+}
+.codigo-acceso-section h2{
+  font-size:1.3rem;
+  font-weight:700;
+  color:var(--btn-inprogress-text);
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.codigo-acceso-section p{
+  font-size:14px;
+  color:var(--muted);
+  margin-bottom:18px;
+}
+.codigo-form{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.codigo-input{
+  flex:1;
+  min-width:200px;
+  padding:14px 18px;
+  border:2px solid var(--border-soft);
+  border-radius:var(--btn-radius);
+  font-size:1.1rem;
+  font-weight:600;
+  letter-spacing:2px;
+  text-align:center;
+  text-transform:uppercase;
+  transition:all .2s ease;
+  background:#fff;
+}
+.codigo-input:focus{
+  outline:none;
+  border-color:var(--btn-inprogress-text);
+  box-shadow:0 0 0 3px rgba(30,136,229,.15);
+}
+.codigo-input.error{
+  border-color:var(--btn-failed-text);
+  background:var(--btn-failed-bg);
+}
+.btn-codigo{
+  padding:14px 28px;
+  background:var(--btn-inprogress-bg);
+  color:var(--btn-inprogress-text);
+  border:2px solid transparent;
+  border-radius:var(--btn-radius);
+  font-weight:700;
+  font-size:15px;
+  cursor:pointer;
+  transition:all .2s ease;
+  box-shadow:var(--btn-shadow);
+  white-space:nowrap;
+}
+.btn-codigo:hover{
+  border-color:var(--btn-inprogress-text);
+  transform:translateY(-2px);
+  box-shadow:var(--btn-hover-shadow);
+}
+.btn-codigo:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
+  transform:none;
+}
+.mensaje-error{
+  color:var(--btn-failed-text);
+  font-size:13px;
+  font-weight:600;
+  margin-top:8px;
+  display:none;
+}
+.mensaje-error.show{
+  display:block;
+}
+
+/* Botón "Agregar Cuestionario" con la estética global */
+.btn-agregar{
+  display:inline-flex;align-items:center;gap:var(--btn-gap);
+  background:var(--btn-success-bg);color:var(--btn-success-text);
+  border:2px solid transparent;border-radius:var(--btn-radius);
+  padding:12px 16px;font-weight:700;font-size:15px;text-decoration:none;
+  box-shadow:var(--btn-shadow);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.btn-agregar:hover{border-color:var(--btn-success-text);transform:translateY(-1px);box-shadow:var(--btn-hover-shadow);}
+
+/* ====== Grid ====== */
+.card-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px;}
+/* 3 por fila en desktop */
+.cuestionario-card{grid-column:span 4;}
+
+/* ====== CARD SIMÉTRICA ====== */
+.cuestionario-card{
+  background:#FFF6E8;border:0.5px solid var(--border-soft);border-radius:24px;
+  box-shadow:0 4px 12px rgba(0,0,0,.06);overflow:hidden;
+  display:flex;flex-direction:column;min-height:430px;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+
+.card-imagen{overflow:hidden;}
+.card-imagen img{width:100%;height:170px;object-fit:cover;display:block;}
+
+.card-body{display:flex;flex-direction:column;gap:12px;padding:16px;flex:1;}
+
+/* Header de texto */
+.card-info{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;}
+.card-info h3{
+  color:var(--title-color);font-weight:800;font-size:22px;line-height:1.2;margin-right:auto;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+
+/* Descripción con clamp para alinear alturas */
+.card-descripcion{
+  color:var(--muted);font-size:14.5px;line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  min-height:3.0em;
+}
+
+/* Footer pegado al fondo para que todas las cards cierren igual */
+.card-footer{
+  margin-top:auto;padding-top:12px;border-top:1px solid #EFEFEF;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.card-stats{display:flex;align-items:center;gap:14px;color:var(--btn-inprogress-text);font-weight:500;font-size:13.5px;}
+.card-actions{margin-left:auto;display:inline-flex;align-items:center;gap:8px;flex-shrink:0;}
+
+/* ====== Botones de acción con TU estética de botones ====== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:var(--btn-padding-y) var(--btn-padding-x);
+  border-radius:var(--btn-radius);border:2px solid transparent;
+  font-weight:700;font-size:var(--btn-font-size);text-decoration:none;cursor:pointer;
+  box-shadow:var(--btn-shadow);
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:var(--btn-hover-shadow);}
+.btn:active{transform:translateY(0);box-shadow:none}
+
+/* Jugar = verde (success) */
+.btn-jugar{
+  background:var(--btn-success-bg);color:var(--btn-success-text);
+}
+.btn-jugar:hover{border-color:var(--btn-success-text);}
+
+/* Editar = azul (in-progress) */
+.btn-editar{
+  background:var(--btn-inprogress-bg);color:var(--btn-inprogress-text);
+}
+.btn-editar:hover{border-color:var(--btn-inprogress-text);}
+
+/* Borrar = rojo (failed) */
+.btn-borrar{
+  background:var(--btn-failed-bg);color:var(--btn-failed-text);
+}
+.btn-borrar:hover{border-color:var(--btn-failed-text);}
+
+/* ====== Badges ====== */
+.badge{
+  display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.3px;border:1px solid transparent;white-space:nowrap;
+}
+.badge-publico{background:var(--btn-inprogress-bg);color:var(--btn-inprogress-text);border-color:rgba(30,136,229,.2);}
+.badge-privado{background:var(--btn-failed-bg);color:var(--btn-failed-text);border-color:rgba(229,57,53,.2);}
+
+/* ====== Estado vacío ====== */
+.sin-cuestionarios{font-size:15px;color:var(--muted);background:var(--panel-bg);border:1px dashed var(--border-soft);border-radius:14px;padding:18px;}
+.sin-cuestionarios a{color:var(--btn-inprogress-text);font-weight:700;text-decoration:none;}
+.sin-cuestionarios a:hover{text-decoration:underline;}
+
+/* ====== Responsivo ====== */
+@media (max-width:1200px){ .cuestionario-card{grid-column:span 6;} }
+@media (max-width:700px){
+  .mis-cuestionarios-container{padding:18px;}
+  .mc-header{flex-direction:column;align-items:flex-start;gap:8px;}
+  .btn-agregar{width:100%;justify-content:center;}
+  .cuestionario-card{grid-column:1 / -1;min-height:unset;}
+  .card-imagen img{height:160px;}
+  .card-stats{width:100%;}
+  .card-actions{width:100%;justify-content:flex-end;}
+  .codigo-form{flex-direction:column;}
+  .codigo-input{min-width:100%;}
+  .btn-codigo{width:100%;}
+}
+
+  .modal-overlay {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-content {
+        background-color: #fff;
+        padding: 20px 30px;
+        border-radius: 12px;
+        min-width: 300px;
+        max-width: 500px;
+        position: relative;
+        text-align: center;
+    }
+    .close-button {
+        position: absolute;
+        top: 10px; right: 15px;
+        color: #aaa;
+        font-size: 28px;
+        cursor: pointer;
+    }
+    .alerta {
+        padding: 15px;
+        margin-top: 10px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    .alerta-success { background-color: #d4edda; color: #155724; }
+    .alerta-danger { background-color: #f8d7da; color: #721c24; }
+    .alerta-info { background-color: #d1ecf1; color: #0c5460; }
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div id="flash-modal" class="modal-overlay" data-has-messages="{{ 'true' if get_flashed_messages() else 'false' }}">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="contenedor-flash">
+                {% for category, message in messages %}
+                    <div class="alerta alerta-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+
+<div class="mis-cuestionarios-container">
+
+    <!-- ====== NUEVA SECCIÓN: ACCESO CON CÓDIGO ====== -->
+    <div class="codigo-acceso-section">
+        <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Acceder a un Cuestionario
+        </h2>
+        <p>Ingresa el código de 6 dígitos de la sesión para visualizar el cuestionario</p>
+        <form class="codigo-form" onsubmit="validarCodigo(event)">
+            <input
+                type="text"
+                id="codigoInput"
+                class="codigo-input"
+                placeholder="Ej: ABC123"
+                maxlength="6"
+                pattern="[A-Za-z0-9]{6}"
+                required
+            >
+            <button type="submit" class="btn-codigo" id="btnAcceder">
+                Acceder al Cuestionario
+            </button>
+        </form>
+        <div class="mensaje-error" id="mensajeError"></div>
+    </div>
+
+    <div class="mc-header">
+        <h1>Mis cuestionarios</h1>
+        <a href="{{ url_for('cuestionarios_nuevo') }}" class="btn-agregar">Agregar Cuestionario</a>
+    </div>
+
+    <div class="card-grid">
+
+        {% for c in cuestionarios %}
+            <div class="cuestionario-card">
+                <div class="card-imagen">
+                    <img src="{{ url_for('static', filename='img/registro-aside.png') }}" alt="Imagen del cuestionario">
+                </div>
+
+                <div class="card-body">
+                    <div class="card-info">
+                        <h3>{{ c.titulo }}</h3>
+                        {% if c.es_publico %}
+                            <span class="badge badge-publico">Público</span>
+                        {% else %}
+                            <span class="badge badge-privado">Privado</span>
+                        {% endif %}
+                    </div>
+
+                    <p class="card-descripcion">{{ c.descripcion }}</p>
+
+                    <div class="card-footer">
+                        <div class="card-actions">
+                            <!--<a href="{{ url_for('generar_partida',id_cuestionario = c.id_cuestionario) }}" class="btn btn-jugar" data-c="{{c.id_cuestionario}}">Jugar</a>-->
+                            <a href="{{ url_for('configurar_partida',id_cuestionario = c.id_cuestionario) }}" class="btn btn-jugar" data-c="{{c.id_cuestionario}}">Jugar</a>
+                            <a href="{{ url_for('cuestionarios_editar', id_cuestionario=c.id_cuestionario) }}" class="btn btn-editar">Editar</a>
+                            <a data-id="{{ c.id_cuestionario }}" class="btn btn-borrar">Borrar</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p class="sin-cuestionarios" style="text-align: center; grid-column: 1 / -1;">
+                Aún no has creado ningún cuestionario. <a href="{{ url_for('cuestionarios_nuevo') }}">¡Crea tu primer cuestionario ahora!</a>
+            </p>
+        {% endfor %}
+    </div>
+
+</div>
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const flashModal = document.getElementById('flash-modal');
+        const closeButton = flashModal.querySelector('.close-button');
+
+        // Si el servidor le puso 'true' al data-set, mostramos el pop-up.
+        if (flashModal.dataset.hasMessages === 'true') {
+            flashModal.style.display = 'flex';
+        } else {
+            flashModal.style.display = 'none'; // Aseguramos que esté oculto si no hay mensajes
+        }
+
+        function closeModal() {
+            flashModal.style.display = 'none';
+        }
+
+        if (closeButton) {
+            closeButton.addEventListener('click', closeModal);
+        }
+
+        flashModal.addEventListener('click', function(event) {
+            if (event.target === flashModal) {
+                closeModal();
+            }
+        });
+    });
+
+    // ====== VALIDACIÓN DEL CÓDIGO ======
+    const codigoInput = document.getElementById('codigoInput');
+    const mensajeError = document.getElementById('mensajeError');
+    const btnAcceder = document.getElementById('btnAcceder');
+
+    // Formato automático: solo alfanuméricos y mayúsculas
+    codigoInput.addEventListener('input', function(e) {
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        this.classList.remove('error');
+        mensajeError.classList.remove('show');
+    });
+
+    async function validarCodigo(event) {
+        event.preventDefault();
+
+        const codigo = codigoInput.value.trim();
+
+        // Validación básica
+        if (codigo.length !== 6) {
+            mostrarError('El código debe tener exactamente 6 caracteres');
+            return;
+        }
+
+        // Deshabilitar botón mientras se valida
+        btnAcceder.disabled = true;
+        btnAcceder.textContent = 'Validando...';
+
+        try {
+            const response = await fetch('/api/validar-codigo-sesion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ codigo: codigo })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Código válido, redirigir a la visualización
+                window.location.href = `/cuestionarios/${data.id_cuestionario}/visualizar?pin=${codigo}`;
+            } else {
+                // Código inválido
+                mostrarError(data.error || 'Código de sesión inválido o expirado');
+            }
+        } catch (error) {
+            mostrarError('Error de conexión. Intenta nuevamente.');
+        } finally {
+            btnAcceder.disabled = false;
+            btnAcceder.textContent = 'Acceder al Cuestionario';
+        }
+    }
+
+    function mostrarError(mensaje) {
+        mensajeError.textContent = mensaje;
+        mensajeError.classList.add('show');
+        codigoInput.classList.add('error');
+        codigoInput.focus();
+    }
+
+    // ====== ELIMINACIÓN DE CUESTIONARIOS (código original) ======
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('btn-borrar')) {
+            const id = event.target.dataset.id;
+            eliminarCuestionario(id);
+        }
+        // if (event.target.classList.contains('btn-jugar')){
+        //     alert("Hola")
+        //     console.log("Hola")
+        // }
+    });
+
+    async function eliminarCuestionario(id_cuestionario) {
+
+        if (!confirm("¿Seguro que desea borrar el cuestionario?")) {
+            return;
+        }
+
+        const response = await fetch(`/api/cuestionarios/${id_cuestionario}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            alert('¡Cuestionario eliminado con éxito!');
+            location.reload();
+        } else {
+            alert('Hubo un error al eliminar el cuestionario.');
+        }
+    }
+</script>
+
+{% endblock %}

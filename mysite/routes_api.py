@@ -1,0 +1,680 @@
+from flask import jsonify, request, url_for
+import traceback
+import os
+import time
+from main import app
+from werkzeug.utils import secure_filename
+
+from bd import obtener_conexion
+from controladores import cuestionarios as cc
+from controladores import preguntas_opciones as cpo
+from controladores import controlador_partidas as c_part
+from controladores import controlador_recompensas as c_rec
+from controladores import usuarios as ctrl
+from controladores import email_sender
+
+
+# --- Auxiliares --------
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# ----------------------------
+
+
+@app.route("/api/test")
+def api_test():
+    return jsonify({"mensaje": "La API funciona correctamente"})
+
+
+# ------------------------------------------------------------------------------
+# USUARIOS
+
+
+@app.route("/api/usuarios", methods=['GET'])
+def api_get_usuarios():
+    # Lógica para llamar al controlador que obtiene todos los usuarios
+    # usuarios = controladores.usuarios.obtener_todos()
+    return jsonify({"mensaje": "Devuelve lista de usuarios"})
+
+
+@app.route("/api/usuarios", methods=['POST'])
+def api_create_usuario():
+    data = request.get_json(force=True) or {}
+    nombre_completo = (data.get("nombre_completo") or "").strip()
+    nombre_usuario  = (data.get("nombre_usuario")  or "").strip()
+    correo          = (data.get("correo")          or "").strip().lower()
+    contrasena      = (data.get("contrasena")      or "")
+    tipo            = (data.get("tipo")            or "E").strip()
+
+    if not (nombre_completo and nombre_usuario and correo and contrasena):
+        return jsonify({"error": "Faltan campos obligatorios"}), 400
+
+    modo = (request.args.get("modo") or "pendiente").lower()
+    if modo == "directo":
+        ok, msg = ctrl.crear_usuario(nombre_completo, nombre_usuario, correo, contrasena, tipo)
+        return (jsonify({"ok": True, "mensaje": msg}), 201) if ok else (jsonify({"error": msg}), 409)
+
+    ok, resultado = ctrl.crear_usuario_pendiente(nombre_completo, nombre_usuario, correo, contrasena, tipo)
+    if ok:
+        return jsonify({"ok": True, "codigo_verificacion": resultado}), 201
+    return jsonify({"error": resultado}), 409
+
+@app.route("/api/usuarios/verificacion", methods=["POST"])
+def usuarios_verificar():
+    data = request.get_json(force=True) or {}
+    correo = (data.get("correo") or "").strip().lower()
+    codigo = (data.get("codigo") or "").strip()
+    if not (correo and codigo):
+        return jsonify({"error": "correo y codigo son obligatorios"}), 400
+
+    res = ctrl.verificar_y_activar_usuario(correo, codigo)
+    if res == "OK":
+        return jsonify({"ok": True}), 200
+    return jsonify({"error": res}), 400
+
+@app.route("/api/usuarios/<int:id_usuario>", methods=['GET'])
+def api_get_usuario(id_usuario):
+    u = ctrl.obtener_por_id(id_usuario)
+    if not u:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+    # no exponer contraseña
+    u.pop("contraseña", None)
+    return jsonify(u), 200
+
+
+@app.route("/api/usuarios/<int:id_usuario>", methods=['PUT'])
+def api_update_usuario(id_usuario):
+    # Lógica para actualizar un usuario
+    actual = ctrl.obtener_por_id(id_usuario)
+    if not actual:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+
+    data = request.get_json(force=True) or {}
+
+    # merge con valores actuales
+    nombre_completo = (data.get("nombre_completo") or actual["nombre_completo"]).strip()
+    nombre_usuario  = (data.get("nombre_usuario")  or actual["nombre_usuario"]).strip()
+    correo          = (data.get("correo")          or actual["correo"]).strip().lower()
+    tipo            = (data.get("tipo")            or actual["tipo"]).strip()
+    puntos          = int(data.get("puntos")  if data.get("puntos")  is not None else actual["puntos"])
+    monedas         = int(data.get("monedas") if data.get("monedas") is not None else actual["monedas"])
+    vigente         = bool(data.get("vigente") if data.get("vigente") is not None else actual["vigente"])
+
+    # unicidad correo / nombre_usuario (excluyendo mi propio id)
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as c:
+            c.execute("SELECT id_usuario FROM USUARIO WHERE correo=%s AND id_usuario<>%s LIMIT 1", (correo, id_usuario))
+            if c.fetchone():
+                return jsonify({"error":"El correo ya está en uso", "campo":"correo"}), 409
+            c.execute("SELECT id_usuario FROM USUARIO WHERE nombre_usuario=%s AND id_usuario<>%s LIMIT 1", (nombre_usuario, id_usuario))
+            if c.fetchone():
+                return jsonify({"error":"El nombre de usuario ya está en uso", "campo":"nombre_usuario"}), 409
+    finally:
+        if conexion:
+            conexion.close()
+
+    ctrl.actualizar(id_usuario, nombre_completo, nombre_usuario, correo, tipo, puntos, monedas, vigente)
+    actualizado = ctrl.obtener_por_id(id_usuario)
+    actualizado.pop("contraseña", None)
+    return jsonify(actualizado), 200
+
+@app.route("/api/usuarios/<int:id_usuario>/cambiar_password", methods=['POST'])
+def api_cambiar_password(id_usuario):
+    try:
+        data = request.get_json(force=True) or {}
+    except Exception:
+        return jsonify({"error": "Solicitud inválida"}), 400
+
+    antigua = (data.get("actual") or "").strip()
+    nueva   = (data.get("nueva")  or "").strip()
+
+    if not antigua or not nueva:
+        return jsonify({"error": "Faltan datos"}), 400
+
+    ok, msg = ctrl.actualizar_contrasena(id_usuario, antigua, nueva)
+
+    if ok:
+        return jsonify({"ok": True}), 200
+
+    # Mapeo de mensajes a lo que espera el frontend
+    m = (msg or "").lower()
+    if "usuario no encontrado" in m:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+    if "contraseña actual es incorrecta" in m or "contrasena actual es incorrecta" in m:
+        return jsonify({"error": "Tu contraseña actual no es la correcta"}), 409
+
+    return jsonify({"error": "Algo salió mal, vuelve a intentarlo"}), 500
+
+@app.route("/api/usuarios/<int:id_usuario>", methods=['DELETE'])
+def api_delete_usuario(id_usuario):
+    # Lógica para eliminar (o desactivar) un usuario
+    if not ctrl.obtener_por_id(id_usuario):
+        return jsonify({"error": "Usuario no encontrado"}), 404
+
+    ok = ctrl.desactivar(id_usuario)  # True/False
+    if not ok:
+        # No se afectó ninguna fila
+        return jsonify({"error": "No se pudo desactivar el usuario"}), 500
+
+    return jsonify({"ok": True, "id_usuario": id_usuario, "vigente": False}), 200
+
+@app.route("/api/verificar_correo/<correo>")
+def verificar_correo(correo):
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor(dictionary=True)
+        query = "SELECT vigente FROM USUARIO WHERE correo = %s"
+        cursor.execute(query, (correo,))
+        usuario = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if usuario:
+            return jsonify({"existe": True, "vigente": bool(usuario["vigente"])})
+        else:
+            return jsonify({"existe": False, "vigente": False})
+    except Exception as e:
+        print("Error en verificar_correo:", e)
+        return jsonify({"error": "Error interno"}), 500
+
+
+@app.get("/api/correo_activo")
+def api_correo_activo():
+    correo = (request.args.get("correo") or "").strip()
+    if not correo:
+        return jsonify({"ok": False, "error": "correo_requerido"}), 400
+
+    require_verificado = request.args.get("require_verificado", "false").lower() == "true"
+
+    try:
+        valido = ctrl.correo_activo(correo, require_verificado=require_verificado)
+        return jsonify({"ok": True, "valido": bool(valido), "require_verificado": require_verificado}), 200
+    except Exception:
+        traceback.print_exc()  # <-- log más útil
+        return jsonify({"ok": False, "error": "interno"}), 500
+# ------------------------------------------------------------------------------
+# CUESTIONARIOS Y SUS PARTES
+
+
+@app.route("/api/cuestionarios", methods=['GET'])
+def api_get_cuestionarios():
+    try:
+        # Leemos los filtros opcionales de la URL
+        id_usuario = request.args.get('id_usuario', type=int)
+        id_categoria = request.args.get('id_categoria', type=int)
+        es_publico = request.args.get('publico', type=bool)
+
+        # Llamamos al controlador con los filtros
+        cuestionarios = cc.obtener_con_filtros(id_usuario, id_categoria, es_publico)
+        return jsonify({"data": cuestionarios}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/cuestionarios", methods=['POST'])
+def api_create_cuestionario():
+    try:
+        data = request.json
+        cc.crear(
+            titulo=data['titulo'],
+            descripcion=data['descripcion'],
+            es_publico=data['es_publico'],
+            id_usuario=data['id_usuario'],
+            id_categoria=data['id_categoria'],
+            id_cuestionario_original=data.get('id_cuestionario_original') # .get() para campos opcionales
+        )
+        return jsonify({"mensaje": "Cuestionario creado con éxito"}), 201
+    except KeyError:
+        return jsonify({"error": "Faltan datos requeridos"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/cuestionarios/<int:id_cuestionario>", methods=['GET'])
+def api_get_cuestionario(id_cuestionario):
+    cuestionario = cc.obtener_por_id(id_cuestionario)
+    if cuestionario:
+        return jsonify({"data": cuestionario}), 200
+    return jsonify({"mensaje": "Cuestionario no encontrado"}), 404
+
+
+@app.route("/api/cuestionarios", methods=['PUT'])
+def api_update_cuestionario():
+    try:
+        data = request.json
+        cc.actualizar(
+            id_cuestionario=data['id_cuestionario'],
+            titulo=data['titulo'],
+            descripcion=data['descripcion'],
+            es_publico=data['es_publico'],
+            #id_usuario=data['id_usuario'],
+            id_categoria=data['id_categoria'],
+            vigente=data['vigente']
+        )
+        return jsonify({"mensaje": "Cuestionario actualizado con éxito"}), 201
+    except KeyError:
+        return jsonify({"error": "Faltan datos requeridos"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/cuestionarios/<int:id_cuestionario>", methods=['DELETE'])
+def api_delete_cuestionario(id_cuestionario):
+    try:
+        # Llama a la función del controlador para desactivar
+        exito = cc.desactivar(id_cuestionario)
+
+        if exito:
+            return jsonify({"mensaje": "Cuestionario desactivado correctamente"}), 200
+        else:
+            return jsonify({"error": "Cuestionario no encontrado"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/cuestionarios/guardar-completo", methods=['POST'])
+def api_guardar_cuestionario_completo():
+    data = request.json # Aquí recibes el objeto cuestionarioData completo
+
+    # Llama a una nueva función del controlador que se encargue de todo
+    # Esta función debe usar una "transacción" para asegurar que todo se guarde correctamente
+    id_cuestionario_guardado = cc.guardar_o_actualizar_completo(data)
+
+    return jsonify({"mensaje": "Cuestionario guardado con éxito", "id_cuestionario": id_cuestionario_guardado})
+
+
+@app.route("/api/preguntas/<int:id_pregunta>/imagen", methods=['POST'])
+def api_upload_pregunta_imagen(id_pregunta):
+    if 'imagen' not in request.files:
+        return jsonify({"error": "No se encontró el archivo"}), 400
+
+    file = request.files['imagen']
+    if file.filename == '':
+        return jsonify({"error": "No se seleccionó ningún archivo"}), 400
+
+    if file and allowed_file(file.filename):
+        # 1. Obtenemos el id_cuestionario para crear la carpeta correcta
+        pregunta = cpo.obtener_pregunta_por_id(id_pregunta)
+        if not pregunta:
+            return jsonify({"error": "La pregunta no existe"}), 404
+        id_cuestionario = pregunta['id_cuestionario']
+
+        # 2. Creamos un nombre de archivo seguro y único
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        timestamp = int(time.time())
+        filename = secure_filename(f"pregunta_{id_pregunta}_{timestamp}.{ext}")
+
+        # 3. Creamos la ruta y la carpeta si no existe
+        upload_folder = os.path.join(app.root_path, 'static', 'img', 'cuestionarios', f'c_{id_cuestionario}')
+        os.makedirs(upload_folder, exist_ok=True)
+
+        # 4. Guardamos el archivo en el servidor
+        file.save(os.path.join(upload_folder, filename))
+
+        # 5. Guardamos la ruta relativa en la base de datos
+        ruta_para_bd = f"img/cuestionarios/c_{id_cuestionario}/{filename}"
+        cpo.actualizar_ruta_imagen(id_pregunta, ruta_para_bd)
+
+        return jsonify({"mensaje": "Imagen subida con éxito", "ruta_img": ruta_para_bd}), 200
+
+    return jsonify({"error": "Tipo de archivo no permitido"}), 400
+
+
+@app.route("/api/preguntas/<int:id_pregunta>/imagen", methods=['DELETE'])
+def api_delete_pregunta_imagen(id_pregunta):
+    exito = cpo.quitar_imagen_pregunta(id_pregunta)
+    if exito:
+        return jsonify({"mensaje": "Imagen eliminada con éxito"}), 200
+    else:
+        return jsonify({"error": "No se pudo eliminar la imagen"}), 500
+
+
+
+
+# --- PREGUNTAS ---
+
+@app.route("/api/cuestionarios/<int:id_cuestionario>/preguntas", methods=['GET'])
+def api_get_preguntas(id_cuestionario):
+    preguntas = cpo.obtener_preguntas_por_cuestionario(id_cuestionario)
+    return jsonify({"data": preguntas}), 200
+
+
+@app.route("/api/cuestionarios/<int:id_cuestionario>/preguntas", methods=['POST'])
+def api_create_pregunta(id_cuestionario):
+    try:
+        data = request.json
+        cpo.crear_pregunta(
+            id_cuestionario=id_cuestionario,
+            pregunta=data['pregunta'],
+            num_pregunta=data['num_pregunta'],
+            puntaje_base=data['puntaje_base'],
+            adjunto=data.get('adjunto')
+        )
+        return jsonify({"mensaje": "Pregunta creada con éxito"}), 201
+    except KeyError:
+        return jsonify({"error": "Faltan datos requeridos"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/preguntas/<int:id_pregunta>", methods=['GET'])
+def api_get_pregunta_por_id(id_pregunta):
+    pregunta = cpo.obtener_pregunta_por_id(id_pregunta)
+    return jsonify({"data": pregunta}) if pregunta else (jsonify({"error": "Pregunta no encontrada"}), 404)
+
+
+@app.route("/api/preguntas/<int:id_pregunta>", methods=['PUT'])
+def api_update_pregunta(id_pregunta):
+    data = request.json
+    cpo.actualizar_pregunta(id_pregunta, data['pregunta'], data['puntaje_base'])
+    return jsonify({"mensaje": "Pregunta actualizada"})
+
+
+@app.route("/api/preguntas/<int:id_pregunta>", methods=['DELETE'])
+def api_delete_pregunta(id_pregunta):
+    cpo.eliminar_pregunta(id_pregunta)
+    return jsonify({"mensaje": "Pregunta eliminada"})
+
+
+# --- OPCIONES ---
+
+@app.route("/api/preguntas/<int:id_pregunta>/opciones", methods=['GET'])
+def api_get_opciones(id_pregunta):
+    opciones = cpo.obtener_opciones_por_pregunta(id_pregunta)
+    return jsonify({"data": opciones}), 200
+
+
+@app.route("/api/preguntas/<int:id_pregunta>/opciones", methods=['POST'])
+def api_create_opcion(id_pregunta):
+    try:
+        data = request.json
+        cpo.crear_opcion(
+            id_pregunta=id_pregunta,
+            opcion=data['opcion'],
+            es_correcta_bool=data['es_correcta_bool'],
+            descripcion=data.get('descripcion'),
+            adjunto=data.get('adjunto')
+        )
+        return jsonify({"mensaje": "Opción creada con éxito"}), 201
+    except KeyError:
+        return jsonify({"error": "Faltan datos requeridos"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/opciones/<int:id_opcion>", methods=['GET'])
+def api_get_opcion_por_id(id_opcion):
+    opcion = cpo.obtener_opcion_por_id(id_opcion)
+    return jsonify({"data": opcion}) if opcion else (jsonify({"error": "Opción no encontrada"}), 404)
+
+@app.route("/api/opciones/<int:id_opcion>", methods=['PUT'])
+def api_update_opcion(id_opcion):
+    data = request.json
+    cpo.actualizar_opcion(id_opcion, data['opcion'])
+    return jsonify({"mensaje": "Opción actualizada"})
+
+
+@app.route("/api/opciones/<int:id_opcion>", methods=['DELETE'])
+def api_delete_opcion(id_opcion):
+    cpo.eliminar_opcion(id_opcion)
+    return jsonify({"mensaje": "Opción eliminada"})
+
+
+# ------------------------------------------------------------------------------
+# PARTIDAS (SESIONES DE JUEGO)
+
+
+@app.route("/api/partidas", methods=['POST'])
+def api_create_partida():
+    # Lógica para crear una partida a partir de un id_cuestionario
+    # Debería generar un PIN y devolverlo
+    return jsonify({"mensaje": "Inicia una nueva partida y devuelve el PIN"}), 201
+
+
+@app.route("/api/partidas/pin/<string:pin>", methods=['GET'])
+def api_get_partida_by_pin(pin):
+    # Lógica para que un jugador obtenga datos de la partida antes de unirse
+    return jsonify({"mensaje": f"Devuelve info de la partida con PIN {pin}"})
+
+
+@app.route("/api/partidas/<int:id_partida>/participantes", methods=['POST'])
+def api_join_partida(id_partida):
+    # Lógica para que un participante se una a una partida
+    return jsonify({"mensaje": f"Un jugador se une a la partida {id_partida}"}), 201
+
+
+@app.route("/api/partidas/<int:id_partida>/respuestas", methods=['POST'])
+def api_submit_respuesta(id_partida):
+    # Lógica para que un participante envíe su respuesta
+    # Recibe: id_participante, id_opcion, tiempo_respuesta
+    return jsonify({"mensaje": "Un jugador envía una respuesta"})
+
+    #-------------------RECOMPENSAS----------------------------------
+
+
+@app.route("/api/partidas/<int:id_partida>/finalizar", methods=['POST'])
+def api_finalizar_partida(id_partida):
+    """Finaliza una partida, otorga recompensas y muestra cambios en monedas."""
+    import traceback
+    import pymysql
+
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            # Verificar si la partida existe
+            cursor.execute("SELECT estado FROM PARTIDA WHERE id_partida = %s", (id_partida,))
+            partida = cursor.fetchone()
+            if not partida:
+                return jsonify({"error": f"La partida {id_partida} no existe"}), 404
+            if partida["estado"] == "F":
+                return jsonify({"mensaje": f"La partida {id_partida} ya estaba finalizada"}), 200
+
+            # Obtener datos antes de otorgar recompensas
+            cursor.execute("""
+                SELECT p.id_usuario, u.nombre_completo, p.puntaje, u.monedas
+                FROM PARTICIPANTE p
+                JOIN USUARIO u ON p.id_usuario = u.id_usuario
+                WHERE p.id_partida = %s
+            """, (id_partida,))
+            antes = cursor.fetchall()
+
+        # Finalizar partida
+        exito = c_part.finalizar_partida(id_partida)
+        if not exito:
+            return jsonify({"error": "No se pudo finalizar la partida"}), 500
+
+        # Obtener datos después de otorgar recompensas
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT p.id_usuario, u.nombre_completo, p.puntaje, u.monedas
+                FROM PARTICIPANTE p
+                JOIN USUARIO u ON p.id_usuario = u.id_usuario
+                WHERE p.id_partida = %s
+            """, (id_partida,))
+            despues = cursor.fetchall()
+
+        conexion.close()
+
+        # Comparar resultados
+        resumen = []
+        for a in antes:
+            d = next((x for x in despues if x["id_usuario"] == a["id_usuario"]), None)
+            if d:
+                resumen.append({
+                    "id_usuario": a["id_usuario"],
+                    "participante": a["nombre_completo"],
+                    "puntaje": a["puntaje"],
+                    "monedas_antes": a["monedas"],
+                    "monedas_despues": d["monedas"],
+                    "diferencia": d["monedas"] - a["monedas"]
+                })
+
+        return jsonify({
+            "mensaje": f"Partida {id_partida} finalizada y recompensas otorgadas correctamente",
+            "recompensas": resumen
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "error": "Error interno al finalizar la partida",
+            "detalle": str(e),
+            "traza": traceback.format_exc()
+        }), 500
+
+#------------------CODIGO PARA ACCEDER AL CUESTIONARIO EN MODO VISUALIZACION------
+
+
+@app.route("/api/validar-codigo-sesion", methods=['POST'])
+def api_validar_codigo_sesion():
+    """Valida el código (PIN) de una sesión y devuelve el id_cuestionario asociado"""
+    try:
+        data = request.get_json(force=True) or {}
+        codigo = (data.get("codigo") or "").strip().upper()
+
+        if not codigo or len(codigo) != 6:
+            return jsonify({"error": "El código debe tener 6 caracteres"}), 400
+
+        conexion = obtener_conexion()
+        try:
+            with conexion.cursor() as cursor:
+                # Buscar partida con ese PIN que esté activa (estado 'E' o 'P')
+                cursor.execute("""
+                    SELECT p.id_partida, p.id_cuestionario, p.estado, c.titulo
+                    FROM PARTIDA p
+                    JOIN CUESTIONARIO c ON p.id_cuestionario = c.id_cuestionario
+                    WHERE p.pin = %s AND p.estado IN ('E', 'P')
+                    LIMIT 1
+                """, (codigo,))
+
+                partida = cursor.fetchone()
+
+                if not partida:
+                    return jsonify({"error": "Código de sesión inválido o expirado"}), 404
+
+                return jsonify({
+                    "ok": True,
+                    "id_cuestionario": partida["id_cuestionario"],
+                    "titulo": partida["titulo"],
+                    "id_partida": partida["id_partida"]
+                }), 200
+
+
+        finally:
+            conexion.close()
+
+    except Exception as e:
+
+        return jsonify({
+            "error": "Error al validar el código",
+            "detalle": str(e),
+            "trace": traceback.format_exc()
+        }), 500
+
+
+#@app.route("/api/validar-codigo-sesion", methods=['POST'])
+#def api_validar_codigo_sesion():
+#    """Valida el código (PIN) de una sesión y devuelve el id_cuestionario asociado"""
+#    try:
+#        data = request.get_json(force=True) or {}
+#        codigo = (data.get("codigo") or "").strip().upper()
+#
+#        if not codigo or len(codigo) != 6:
+#            return jsonify({"error": "El código debe tener 6 caracteres"}), 400
+#
+#        conexion = obtener_conexion()
+#        try:
+#            with conexion.cursor() as cursor:
+#                # Buscar partida con ese PIN (cualquier estado: E, P o F)
+#                cursor.execute("""
+#                    SELECT
+#                        p.id_partida,
+#                        p.id_cuestionario,
+#                        p.estado,
+#                        c.titulo,
+#                        CASE
+#                            WHEN p.estado = 'E' THEN 'En espera'
+#                            WHEN p.estado = 'P' THEN 'En progreso'
+#                           WHEN p.estado = 'F' THEN 'Finalizada'
+#                        END as estado_texto
+#                    FROM PARTIDA p
+#                    JOIN CUESTIONARIO c ON p.id_cuestionario = c.id_cuestionario
+#                    WHERE p.pin = %s
+#                    LIMIT 1
+#                """, (codigo,))
+#
+#                partida = cursor.fetchone()
+#
+#                if not partida:
+#                    return jsonify({"error": "Código de sesión inválido"}), 404
+
+#                # Validar según el estado
+#                id_partida, id_cuestionario, estado, titulo, estado_texto = partida
+#
+#                # OPCIÓN A: Permitir todos los estados
+#                return jsonify({
+#                    "ok": True,
+#                    "id_cuestionario": id_cuestionario,
+#                    "titulo": titulo,
+#                    "id_partida": id_partida,
+#                    "estado": estado,
+#                    "estado_texto": estado_texto
+#                }), 200
+
+                # OPCIÓN B: Solo permitir E y P (descomenta para usar)
+                # if estado not in ('E', 'P'):
+                #     return jsonify({
+                #         "error": f"Esta sesión ya ha finalizado. Estado actual: {estado_texto}"
+                #     }), 403
+
+                # OPCIÓN C: Solo permitir E (descomenta para usar)
+                # if estado != 'E':
+                #     return jsonify({
+                #         "error": f"Esta sesión ya comenzó o finalizó. Estado: {estado_texto}"
+                #     }), 403
+
+#        finally:
+#            conexion.close()
+
+    except Exception as e:
+        return jsonify({"error": "Error al validar el código", "detalle": str(e)}), 500
+
+# --- INICIO: NUEVO ENDPOINT PARA SOLICITAR RESTABLECIMIENTO ---
+
+@app.route("/api/solicitar-restablecimiento", methods=['POST'])
+def api_solicitar_restablecimiento():
+    data = request.get_json()
+    if not data or 'correo' not in data:
+        return jsonify({"error": "Falta el campo 'correo'."}), 400
+
+    correo = (data['correo'] or '').strip().lower()
+
+    # Consulta "fuerte": solo trae si está vigente y verificado
+    usuario_ok = ctrl.obtener_por_correo(correo)
+
+    if not usuario_ok:
+        # Consulta adicional para diferenciar si es "no verificado" o "no existe"
+        usuario_any = ctrl.obtener_por_correo_sin_filtros(correo)
+        if usuario_any and usuario_any.get('vigente') and not usuario_any.get('verificado'):
+            return jsonify({"mensaje": "No has verificado el correo que has ingresado."}), 200
+
+        # Genérico para no enumerar
+        return jsonify({"mensaje": "Si tu correo está en nuestro sistema, recibirás un enlace para restablecer tu contraseña."}), 200
+
+    # Si llegó acá, está vigente y verificado → envía correo
+    try:
+        token = ctrl.generar_token_restablecimiento(usuario_ok['id_usuario'])
+        url_de_restablecimiento = url_for('restablecer_con_token', token=token, _external=True)
+        enviado, mensaje_email = email_sender.enviar_correo_restablecimiento(usuario_ok['correo'], url_de_restablecimiento)
+        if not enviado:
+            return jsonify({"error": f"No se pudo enviar el correo. Detalles: {mensaje_email}"}), 500
+    except Exception as e:
+        return jsonify({"error": f"Error interno del servidor: {str(e)}"}), 500
+
+    return jsonify({"mensaje": "Si tu correo está en nuestro sistema, recibirás un enlace para restablecer tu contraseña."}), 200
+# --- FIN: NUEVO ENDPOINT ---

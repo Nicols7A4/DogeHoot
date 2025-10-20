@@ -1,0 +1,840 @@
+{% extends "layout.html" %}
+
+{% block head %}
+{{ super() }}
+<style>
+    /* ======================================================= */
+    /* CSS Corregido y Detallado para el Editor de Cuestionarios */
+    /* ======================================================= */
+
+    /* --- Contenedor Principal --- */
+    .editor-container {
+        max-width: 900px;
+        margin: 2rem auto;
+    }
+
+    /* --- Botones de Acción Superiores --- */
+    .editor-actions {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    /* --- MODO VISUALIZACIÓN: Banner informativo --- */
+    .modo-visualizacion-banner {
+        background: linear-gradient(135deg, #E6F2FF 0%, #f0f7ff 100%);
+        border: 2px solid #1E88E5;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: 0 4px 12px rgba(30, 136, 229, 0.15);
+    }
+    .modo-visualizacion-banner svg {
+        flex-shrink: 0;
+        color: #1E88E5;
+    }
+    .modo-visualizacion-banner .content h3 {
+        margin: 0 0 6px;
+        color: #1E88E5;
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+    .modo-visualizacion-banner .content p {
+        margin: 0;
+        color: #616161;
+        font-size: 0.95rem;
+    }
+    .modo-visualizacion-banner .pin-display {
+        margin-top: 10px;
+        padding: 8px 16px;
+        background: white;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        letter-spacing: 2px;
+        color: #1E88E5;
+        border: 1px solid #1E88E5;
+    }
+
+    /* --- Estructura de Tarjetas (Paneles) --- */
+    .editor-container .card {
+        background: var(--panel-bg);
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        box-shadow: var(--panel-shadow);
+        border: 1px solid var(--border-soft);
+        overflow: hidden;
+    }
+    .editor-container .card-header {
+        padding: 1.25rem 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-color);
+        border-bottom: 1px solid var(--border-soft);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .editor-container .card-body {
+        padding: 1.5rem;
+    }
+
+    /* --- Estilos de Formulario consistentes --- */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-color);
+    }
+    .input-with-counter {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+    .form-control, .form-select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border-soft);
+        border-radius: var(--btn-radius);
+        box-sizing: border-box;
+        background-color: #fdfdfd;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+    }
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--btn-inprogress-text);
+        box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.15);
+        background-color: var(--panel-bg);
+    }
+
+    /* --- MODO VISUALIZACIÓN: Deshabilitar inputs --- */
+    .modo-visualizacion .form-control,
+    .modo-visualizacion .form-select {
+        background-color: #f5f5f5;
+        border-color: #e0e0e0;
+        color: #616161;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    .modo-visualizacion .form-check input[type="checkbox"] {
+        pointer-events: none;
+        cursor: not-allowed;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 120px;
+    }
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 500;
+    }
+    .form-check input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--btn-inprogress-text);
+    }
+
+    /* --- Estilos para el Contador de Caracteres --- */
+    .char-counter-container {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 0.5rem;
+        padding-right: 0.25rem;
+    }
+    .char-counter {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        transition: color 0.2s ease, font-weight 0.2s ease;
+    }
+    .char-counter.warning {
+        color: var(--btn-pending-text);
+    }
+    .char-counter.limit {
+        color: var(--btn-failed-text);
+        font-weight: 600;
+    }
+
+    /* --- Tarjetas de Pregunta Anidadas --- */
+    .pregunta-card {
+        border: 1px solid var(--border-soft);
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        background-color: #fcfcfc;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .pregunta-card > .card-header {
+        padding: 1rem 1.25rem;
+        background-color: transparent;
+        font-size: 1rem;
+    }
+    .pregunta-card .puntaje-group,
+    .tiempo-card .tiempo-group{
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 1rem;
+    }
+    .puntaje-group label,
+    .tiempo-group label{
+        font-size: 0.85em;
+        font-weight: 500;
+        margin-bottom: 0;
+        color: var(--text-muted);
+    }
+    .puntaje-group .form-control,
+    .tiempo-group .form-control{
+        width: 80px;
+        padding: 8px;
+        text-align: center;
+    }
+    #descripcion {
+        resize: none;
+    }
+
+    /* --- Items de Opción --- */
+    .opcion-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        border: 1px solid var(--border-soft);
+        background-color: var(--panel-bg);
+    }
+    .opcion-item.correcta {
+        font-weight: 600;
+        background-color: var(--btn-success-bg);
+        color: var(--btn-success-text);
+        border-color: var(--btn-success-text);
+    }
+
+    /* --- Botones de Acción (Iconos) --- */
+    .actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .btn-action {
+        background: none; border: none; cursor: pointer; color: var(--text-muted);
+        padding: 6px; border-radius: 50%; display: inline-flex;
+        align-items: center; justify-content: center;
+        width: 32px; height: 32px; transition: all 0.2s ease;
+    }
+    .btn-action:hover { background-color: rgba(0,0,0,0.05); }
+    .btn-action.correct:hover { color: var(--btn-success-text); background-color: var(--btn-success-bg); }
+    .btn-action.delete:hover { color: var(--btn-failed-text); background-color: var(--btn-failed-bg); }
+    .btn-action svg { width: 18px; height: 18px; }
+
+    /* --- MODO VISUALIZACIÓN: Ocultar botones de acción --- */
+    .modo-visualizacion .btn-action,
+    .modo-visualizacion .actions {
+        display: none !important;
+    }
+
+    /* --- ESTILOS PARA POPUPS (Integrados con la Estética Global) --- */
+    .popup-overlay {
+        position: fixed; top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex; justify-content: center; align-items: center;
+        z-index: 1000; backdrop-filter: blur(4px);
+    }
+    .popup-box {
+        background-color: var(--panel-bg); padding: 30px;
+        border-radius: 16px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        text-align: center; width: 90%; max-width: 400px;
+        border: 1px solid var(--border-soft);
+    }
+    .popup-box p {
+        margin: 0 0 25px; font-size: 1.1rem;
+        color: var(--text-color); line-height: 1.6;
+    }
+    .popup-buttons { display: flex; justify-content: center; gap: 15px; }
+
+    /* --- ESTILOS PARA BOTONES --- */
+    .btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        gap: var(--btn-gap); border: 2px solid transparent; border-radius: var(--btn-radius);
+        padding: 12px 24px; font-size: 1rem; font-weight: var(--btn-font-weight);
+        cursor: pointer; text-decoration: none; transition: all 0.25s ease-in-out;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: var(--btn-hover-shadow); }
+    .btn-success { background-color: var(--btn-success-bg); color: var(--btn-success-text); }
+    .btn-success:hover { border-color: var(--btn-success-text); }
+    .btn-secondary { background-color: var(--btn-expired-bg); color: var(--text-muted); }
+    .btn-secondary:hover { border-color: var(--text-muted); background-color: #e9ecef; }
+    .btn-primary { background-color: var(--btn-inprogress-bg); color: var(--btn-inprogress-text); }
+    .btn-primary:hover { border-color: var(--btn-inprogress-text); }
+    .btn-sm { padding: 8px 16px; font-size: 0.9em; }
+
+    /* --- MODO VISUALIZACIÓN: Ocultar botones de edición --- */
+    .modo-visualizacion .editor-actions,
+    .modo-visualizacion .card-header button {
+        display: none !important;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="editor-container {% if modo_visualizacion %}modo-visualizacion{% endif %}">
+
+
+
+    {% if modo_visualizacion %}
+
+    <div class="d-flex justify-content-start">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-dashboard">
+        Ir al Dashboard
+        </a>
+    </div>
+
+
+    <!-- Banner informativo para modo visualización -->
+    <div class="modo-visualizacion-banner">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        <div class="content">
+            <h3>Modo Visualización</h3>
+            <p>Estás viendo este cuestionario en modo solo lectura. No podrás realizar cambios.</p>
+            {% if pin_sesion %}
+            <div class="pin-display">PIN: {{ pin_sesion }}</div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <!-- Botones de acción (solo en modo edición) -->
+    <div class="editor-actions">
+        <button class="btn btn-success" onclick="guardarTodo()">Guardar Cambios</button>
+        <button class="btn btn-secondary" onclick="cancelarTodo()">Cancelar</button>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <span id="titulo-pagina"></span>
+        </div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="titulo">Título</label>
+                <input type="text" id="titulo" class="form-control" oninput="actualizarDato('titulo', this.value)" maxlength="100" {% if modo_visualizacion %}readonly{% endif %}>
+            </div>
+            <div class="form-group">
+                <label for="descripcion">Descripción</label>
+                <textarea id="descripcion" class="form-control" oninput="actualizarDato('descripcion', this.value)" maxlength="500" {% if modo_visualizacion %}readonly{% endif %}></textarea>
+                <div class="char-counter-container">
+                    <span id="descripcion-char-counter" class="char-counter">0 / 500</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 2rem; align-items: center;">
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label for="id_categoria">Categoría</label>
+                    <select id="id_categoria" class="form-select" onchange="actualizarDato('id_categoria', parseInt(this.value, 10))" {% if modo_visualizacion %}disabled{% endif %}>
+                        {% for cat in categorias %}
+                            <option value="{{ cat.id_categoria }}">{{ cat.categoria }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="padding-top: 1.5rem; margin-bottom: 0;">
+                    <label class="form-check">
+                        <input type="checkbox" id="es_publico" onchange="actualizarDato('es_publico', this.checked)" {% if modo_visualizacion %}disabled{% endif %}>
+                        ¿Hacer público?
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span>Preguntas</span>
+            {% if not modo_visualizacion %}
+            <button class="btn btn-primary btn-sm" onclick="agregarPregunta()">Agregar Pregunta</button>
+            {% endif %}
+        </div>
+        <div class="card-body" id="lista-preguntas-container">
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- ESTADO Y DATOS INICIALES ---
+    const CUESTIONARIO_ID = {{ cuestionario_data.id_cuestionario if cuestionario_data else 'null' }};
+    const MODO_VISUALIZACION = {{ 'true' if modo_visualizacion else 'false' }};
+
+    let cuestionarioData = {
+        id_cuestionario: null,
+        titulo: 'Nuevo Cuestionario',
+        descripcion: '',
+        id_categoria: 1,
+        es_publico: false,
+        id_usuario: {{ session.user_id }},
+        preguntas: []
+    };
+    let originalCuestionarioData;
+    const datosDesdeServidor = {{ cuestionario_data | tojson | safe if cuestionario_data else 'null' }};
+    if (datosDesdeServidor) {
+        cuestionarioData = datosDesdeServidor;
+    }
+
+    // --- CARGA INICIAL ---
+    document.addEventListener('DOMContentLoaded', () => {
+        originalCuestionarioData = JSON.parse(JSON.stringify(cuestionarioData));
+
+        const descTextarea = document.getElementById('descripcion');
+        descTextarea.addEventListener('input', () => updateCharCounter(descTextarea, 'descripcion-char-counter'));
+
+        document.addEventListener('input', function(e) {
+
+            // Solo actuamos si el input tiene la clase 'inPuntos'
+            if (e.target.classList.contains('inPuntos') || e.target.classList.contains('inTiempo')) {
+                const input = e.target;
+                const min = parseInt(input.min, 10) || 1;
+                const max = parseInt(input.max, 10) || 1000;
+
+                let valor = parseInt(input.value, 10);
+
+                if (isNaN(valor)) return;
+
+                if (valor < min) input.value = min;
+                else if (valor > max) input.value = max;
+
+            }
+
+        });
+
+        renderizarVista();
+    });
+
+    // --- RENDERIZADO DE VISTA ---
+    function renderizarVista() {
+        document.getElementById('titulo-pagina').textContent = cuestionarioData.titulo || 'Nuevo Cuestionario';
+        document.getElementById('titulo').value = cuestionarioData.titulo;
+        document.getElementById('descripcion').value = cuestionarioData.descripcion;
+        document.getElementById('id_categoria').value = cuestionarioData.id_categoria;
+        document.getElementById('es_publico').checked = cuestionarioData.es_publico;
+
+        const container = document.getElementById('lista-preguntas-container');
+        container.innerHTML = '';
+
+        cuestionarioData.preguntas.forEach((pregunta, indexPregunta) => {
+            const preguntaCard = document.createElement('div');
+            preguntaCard.className = 'pregunta-card';
+
+            const readonly = MODO_VISUALIZACION ? 'readonly' : '';
+
+            // Verificamos si la ruta de la imagen es válida para la vista previa
+            const esPreguntaNueva = String(pregunta.id_pregunta).startsWith('temp_');
+            const imgSrc = pregunta.adjunto ? `{{ url_for('static', filename='') }}${pregunta.adjunto}` : '';
+            const botonQuitar = pregunta.adjunto ?
+                `<button type="button" class="btn-action delete" onclick="quitarImagen(${indexPregunta})" title="Quitar Imagen">🗑️</button>` : '';
+
+            // En modo visualización, no mostramos los botones de acción
+            const botonesAccion = MODO_VISUALIZACION ? '' : `
+                <div class="actions">
+                    <button class="btn-action delete" onclick="eliminarPregunta(${indexPregunta})" title="Eliminar Pregunta">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>
+            `;
+
+            const seccionImagenHTML = MODO_VISUALIZACION ? `
+            ${pregunta.adjunto ? `<img src="${imgSrc}" style="max-width:100px; border-radius:8px;">` : ''}
+            ` : `
+                <div class="form-group" style="border-top: 1px solid #eee; padding-top: 1rem; margin-top: 1rem;">
+                    <label>Imagen de la pregunta (Opcional)</label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <img id="preview-${indexPregunta}" src="${imgSrc}" alt="Vista previa" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; background: #f0f0f0;">
+                        <div style="flex-grow: 1;">
+                            <input
+                                type="file"
+                                id="input-file-${indexPregunta}"
+                                class="form-control"
+                                accept="image/*"
+                                onchange="convertirImagen(this, ${indexPregunta})"
+                            >
+                            ${esPreguntaNueva ? '<small style="color: #6c757d; font-size: 0.8em;">Guarda los cambios para poder añadir una imagen.</small>' : ''} // <-- Mensaje de ayuda
+                        </div>
+                        ${botonQuitar}
+                    </div>
+                </div>
+            `;
+            // ==========================================
+
+            preguntaCard.innerHTML = `
+                <div class="card-header">
+                    <div class="input-with-counter">
+                        <input type="text" class="form-control" value="${pregunta.pregunta}" oninput="actualizarPregunta(${indexPregunta}, 'pregunta', this.value); updateCharCounter(this, 'pregunta-counter-${indexPregunta}')" maxlength="150" ${readonly}>
+                        <div class="char-counter-container">
+                            <span id="pregunta-counter-${indexPregunta}" class="char-counter">0 / 150</span>
+                        </div>
+                    </div>
+                    <div class="puntaje-group">
+                        <label for="puntaje-${indexPregunta}">Puntaje</label>
+                        <input type="number" id="puntaje-${indexPregunta}" class="form-control inPuntos" value="${pregunta.puntaje_base}" oninput="actualizarPregunta(${indexPregunta}, 'puntaje_base', parseInt(this.value, 10))" min="1" max="1000" ${readonly}>
+                    </div>
+                    <div class="tiempo-group">
+                        <label for="tiempo-${indexPregunta}">Tiempo</label>
+                        <input type="number" id="tiempo-${indexPregunta}" class="form-control inTiempo" value="${pregunta.tiempo}" oninput="actualizarPregunta(${indexPregunta}, 'tiempo', parseInt(this.value, 10))" min="10" max="100" ${readonly}>
+                    </div>
+                    ${botonesAccion}
+                </div>
+                <div class="card-body">
+                    ${seccionImagenHTML}
+                    <h6>Opciones</h6>
+                    ${pregunta.opciones.map((opcion, indexOpcion) => {
+                        const botonesOpcion = MODO_VISUALIZACION ? '' : `
+                            <div class="actions">
+                                <button class="btn-action correct" onclick="marcarOpcionCorrecta(${indexPregunta}, ${indexOpcion})" title="Marcar como Correcta">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </button>
+                                <button class="btn-action delete" onclick="eliminarOpcion(${indexPregunta}, ${indexOpcion})" title="Eliminar Opción">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
+                        `;
+
+                        return `
+                        <div class="opcion-item ${opcion.es_correcta_bool ? 'correcta' : ''}">
+                            <div class="input-with-counter">
+                                <input type="text" class="form-control" value="${opcion.opcion}" oninput="actualizarOpcion(${indexPregunta}, ${indexOpcion}, 'opcion', this.value); updateCharCounter(this, 'opcion-counter-${indexPregunta}-${indexOpcion}')" maxlength="100" ${readonly}>
+                                <div class="char-counter-container">
+                                    <span id="opcion-counter-${indexPregunta}-${indexOpcion}" class="char-counter">0 / 100</span>
+                                </div>
+                            </div>
+                            ${botonesOpcion}
+                        </div>
+                    `;
+                    }).join('')}
+                    ${MODO_VISUALIZACION ? '' : '<button class="btn btn-primary btn-sm" style="margin-top: 1rem;" onclick="agregarOpcion(' + indexPregunta + ')">Añadir Opción</button>'}
+                </div>
+            `;
+            container.appendChild(preguntaCard);
+        });
+
+        // Dispara un evento 'input' en todos los campos para inicializar los contadores
+        document.querySelectorAll('.editor-container .form-control[maxlength]').forEach(input => {
+            input.dispatchEvent(new Event('input'));
+        });
+    }
+
+    // --- LÓGICA DE MANIPULACIÓN DE DATOS ---
+    function actualizarDato(campo, valor) {
+        if (!MODO_VISUALIZACION) {
+            cuestionarioData[campo] = valor;
+        }
+    }
+    function agregarPregunta() {
+        if (MODO_VISUALIZACION) return;
+        const cant = cuestionarioData.preguntas.length;
+        cuestionarioData.preguntas.push({
+            id_pregunta: 'temp_' + Date.now(),
+            pregunta: `Nueva Pregunta ${cant + 1}`,
+            num_pregunta: cant + 1,
+            puntaje_base: 1000,
+            tiempo: 15,
+            opciones: []
+        });
+        agregarOpcion(cuestionarioData.preguntas.length - 1);
+    }
+    function actualizarPregunta(index, campo, valor) {
+        if (!MODO_VISUALIZACION) {
+            cuestionarioData.preguntas[index][campo] = valor;
+        }
+    }
+    async function eliminarPregunta(index) {
+        if (MODO_VISUALIZACION) return;
+        if (await mostrarConfirmacion("¿Seguro que desea quitar esta pregunta?")) {
+            cuestionarioData.preguntas.splice(index, 1);
+            renderizarVista();
+        }
+    }
+
+    function convertirImagen(input, indexPregunta) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        // Cuando el lector termine, actualiza el estado y la vista
+        reader.onload = function(e) {
+            const base64String = e.target.result;
+
+            // 1. Guardamos la cadena Base64 en nuestro estado
+            cuestionarioData.preguntas[indexPregunta].adjunto = base64String;
+
+            // 2. Actualizamos la vista previa instantáneamente
+            document.getElementById(`preview-${indexPregunta}`).src = base64String;
+        };
+
+        // Le decimos al lector que empiece a leer el archivo
+        reader.readAsDataURL(file);
+    }
+
+    function quitarImagen(indexPregunta) {
+        // Quitar la imagen ahora es súper simple, solo actualiza el estado y redibuja
+        if (confirm("¿Estás seguro de que quieres quitar esta imagen?")) {
+            cuestionarioData.preguntas[indexPregunta].adjunto = null;
+            renderizarVista();
+        }
+    }
+
+    // async function subirImagen(input, indexPregunta) {
+    //     const pregunta = cuestionarioData.preguntas[indexPregunta];
+    //     const id_pregunta = pregunta.id_pregunta;
+
+    //     if (String(id_pregunta).startsWith('temp_')) {
+    //         alert("Primero debes guardar los cambios del cuestionario para poder subir una imagen a esta nueva pregunta.");
+    //         input.value = '';
+    //         return;
+    //     }
+
+    //     const file = input.files[0];
+    //     if (!file) return;
+
+    //     const formData = new FormData();
+    //     formData.append('imagen', file);
+
+    //     try {
+    //         const response = await fetch(`/api/preguntas/${id_pregunta}/imagen`, {
+    //             method: 'POST',
+    //             body: formData
+    //         });
+    //         const data = await response.json();
+
+    //         if (response.ok) {
+    //             // 1. Actualizamos el estado con la nueva ruta
+    //             cuestionarioData.preguntas[indexPregunta].adjunto = data.ruta_img;
+
+    //             // 2. ¡Llamamos a la función mágica para redibujar todo!
+    //             renderizarVista();
+
+    //             // Opcional: Podrías mostrar un mensaje flash o un toast más sutil en lugar de un alert
+    //             // alert(data.mensaje);
+    //         } else {
+    //             alert(`Error: ${data.error}`);
+    //             input.value = '';
+    //         }
+    //     } catch (error) {
+    //         alert("Error de conexión al subir la imagen.");
+    //         input.value = '';
+    //     }
+    // }
+
+    // // --- FUNCIÓN PARA QUITAR LA IMAGEN (YA ESTABA CORRECTA) ---
+    // async function quitarImagen(indexPregunta) {
+    //     if (!confirm("¿Estás seguro de que quieres quitar esta imagen?")) {
+    //         return;
+    //     }
+
+    //     const pregunta = cuestionarioData.preguntas[indexPregunta];
+    //     const id_pregunta = pregunta.id_pregunta;
+
+    //     try {
+    //         const response = await fetch(`/api/preguntas/${id_pregunta}/imagen`, {
+    //             method: 'DELETE'
+    //         });
+
+    //         if (response.ok) {
+    //             cuestionarioData.preguntas[indexPregunta].adjunto = null;
+
+    //             // Esta función ya estaba llamando a renderizarVista(), por eso funcionaba bien.
+    //             renderizarVista();
+
+    //             // alert("Imagen eliminada con éxito");
+    //         } else {
+    //             alert("Error al eliminar la imagen en el servidor.");
+    //         }
+    //     } catch (error) {
+    //         alert("Error de conexión al intentar quitar la imagen.");
+    //     }
+    // }
+
+
+    async function agregarOpcion(indexPregunta) {
+        if (MODO_VISUALIZACION) return;
+        const opts = cuestionarioData.preguntas[indexPregunta].opciones;
+        if (opts.length >= 6) return await mostrarAlerta("Límite de 6 opciones por pregunta alcanzado.");
+        opts.push({
+            id_opcion: 'temp_opt_' + Date.now(), opcion: `Nueva Opción ${opts.length + 1}`,
+            es_correcta_bool: opts.length === 0
+        });
+        renderizarVista();
+    }
+    function actualizarOpcion(indexPregunta, indexOpcion, campo, valor) {
+        if (!MODO_VISUALIZACION) {
+            cuestionarioData.preguntas[indexPregunta].opciones[indexOpcion][campo] = valor;
+        }
+    }
+    async function eliminarOpcion(indexPregunta, indexOpcion) {
+        if (MODO_VISUALIZACION) return;
+        if (await mostrarConfirmacion("¿Seguro que desea quitar esta opción?")) {
+            cuestionarioData.preguntas[indexPregunta].opciones.splice(indexOpcion, 1);
+            renderizarVista();
+        }
+    }
+    function marcarOpcionCorrecta(indexPregunta, indexOpcionCorrecta) {
+        if (MODO_VISUALIZACION) return;
+        cuestionarioData.preguntas[indexPregunta].opciones.forEach((opcion, index) => {
+            opcion.es_correcta_bool = (index === indexOpcionCorrecta);
+        });
+        renderizarVista();
+    }
+
+    // --- VALIDACIÓN Y GUARDADO ---
+    function hayCambios() { return JSON.stringify(cuestionarioData) !== JSON.stringify(originalCuestionarioData); }
+    function validarDatos() {
+        if (!cuestionarioData.titulo?.trim()) return "El título del cuestionario no puede estar vacío.";
+        for (let i = 0; i < cuestionarioData.preguntas.length; i++) {
+            const p = cuestionarioData.preguntas[i];
+            if (!p.pregunta?.trim()) return `El texto de la pregunta #${i + 1} no puede estar vacío.`;
+            if (p.opciones.length < 2) return `La pregunta #${i + 1} debe tener al menos dos opciones.`;
+            if (!p.opciones.some(o => o.es_correcta_bool)) return `La pregunta #${i + 1} debe tener una opción marcada como correcta.`;
+            for (let j = 0; j < p.opciones.length; j++) {
+                if (!p.opciones[j].opcion?.trim()) return `El texto de la opción #${j + 1} en la pregunta #${i + 1} no puede estar vacío.`;
+            }
+        }
+        return true;
+    }
+    async function guardarTodo() {
+        if (MODO_VISUALIZACION) {
+            await mostrarAlerta("No puedes guardar cambios en modo visualización.");
+            return;
+        }
+
+        const validacion = validarDatos();
+        if (validacion !== true) {
+            return await mostrarAlerta(validacion);
+        }
+        if (!hayCambios()) {
+            return await mostrarAlerta("No hay cambios para guardar.");
+        }
+        if (!(await mostrarConfirmacion("¿Seguro que desea guardar los cambios?"))) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/cuestionarios/guardar-completo', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(cuestionarioData)
+            });
+
+            const resultado = await response.json();
+
+            if (response.ok) {
+                await mostrarAlerta('¡Cuestionario guardado con éxito!');
+                window.removeEventListener('beforeunload', beforeUnloadHandler);
+
+                if (!cuestionarioData.id_cuestionario) {
+                    window.location.href = '/cuestionarios';
+                } else {
+                    window.location.href = '/cuestionarios';
+                }
+            } else {
+                await mostrarAlerta(`Error al guardar: ${resultado.error || 'Error desconocido'}`);
+            }
+        } catch (error) {
+            await mostrarAlerta('Error de conexión. No se pudo contactar al servidor.');
+        }
+    }
+    async function cancelarTodo() {
+        if (MODO_VISUALIZACION) {
+            window.location.href = '/cuestionarios';
+            return;
+        }
+
+        if (hayCambios() && !(await mostrarConfirmacion("¿Seguro que desea cancelar? Perderá los cambios no guardados."))) {
+            return;
+        }
+        window.removeEventListener('beforeunload', beforeUnloadHandler);
+        window.location.href = `/cuestionarios`;
+    }
+
+    const beforeUnloadHandler = e => {
+        if (!MODO_VISUALIZACION && hayCambios()) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    };
+
+    if (!MODO_VISUALIZACION) {
+        window.addEventListener('beforeunload', beforeUnloadHandler);
+    }
+
+    // --- FUNCIÓN REUTILIZABLE PARA CONTADORES ---
+    function updateCharCounter(inputEl, counterId) {
+        const counterEl = document.getElementById(counterId);
+        if (!counterEl) return;
+
+        const maxLength = parseInt(inputEl.getAttribute('maxlength'), 10);
+        const currentLength = inputEl.value.length;
+        counterEl.textContent = `${currentLength} / ${maxLength}`;
+
+        counterEl.classList.remove('warning', 'limit');
+        if (currentLength >= maxLength) {
+            counterEl.classList.add('limit');
+        } else if (currentLength >= maxLength * 0.9) {
+            counterEl.classList.add('warning');
+        }
+    }
+
+    // --- POPUPS ---
+    function crearPopup(message, buttons) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'popup-overlay';
+            const box = document.createElement('div');
+            box.className = 'popup-box';
+            const p = document.createElement('p');
+            p.textContent = message;
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'popup-buttons';
+            buttons.forEach(buttonInfo => {
+                const btn = document.createElement('button');
+                btn.textContent = buttonInfo.text;
+                btn.className = buttonInfo.className;
+                btn.onclick = () => {
+                    document.body.removeChild(overlay);
+                    resolve(buttonInfo.resolvesTo);
+                };
+                buttonContainer.appendChild(btn);
+            });
+            box.appendChild(p);
+            box.appendChild(buttonContainer);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+        });
+    }
+    function mostrarConfirmacion(message) {
+        return crearPopup(message, [
+            { text: 'Cancelar', className: 'btn btn-secondary', resolvesTo: false },
+            { text: 'Aceptar', className: 'btn btn-success', resolvesTo: true }
+        ]);
+    }
+    function mostrarAlerta(message) {
+        return crearPopup(message, [
+            { text: 'Aceptar', className: 'btn btn-primary', resolvesTo: true }
+        ]);
+    }
+
+
+
+
+</script>
+{% endblock %}

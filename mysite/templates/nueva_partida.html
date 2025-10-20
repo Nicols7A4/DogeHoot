@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    {{ super() }}
+    <style>
+        .config-container { max-width: 700px; margin: 3rem auto; }
+        .config-card { background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .config-header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .config-header p { color: #6c757d; margin-bottom: 2rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 0.75rem; }
+        .radio-options { display: flex; gap: 1rem; }
+        .radio-options label { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; cursor: pointer; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+        .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; }
+        .btn-secondary { background-color: #f0f0f0; color: #333; }
+        /* Lógica para ocultar el campo de grupos */
+        #grupo-cantidad-container.hidden { display: none; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="config-container">
+    <div class="config-card">
+        <div class="config-header">
+            <h1>Configurar Partida</h1>
+            <p>Estás a punto de lanzar el cuestionario: <strong>{{ cuestionario.titulo }}</strong></p>
+        </div>
+
+        <form method="POST" action="{{ url_for('lanzar_partida') }}">
+            <input type="hidden" name="id_cuestionario" value="{{ cuestionario.id_cuestionario }}">
+
+            <div class="form-group">
+                <label>Modalidad de Juego</label>
+                <div class="radio-options">
+                    <label>
+                        <input type="radio" name="modalidad" value="individual" checked> Individual
+                    </label>
+                    <label>
+                        <input type="radio" name="modalidad" value="grupal"> Grupal
+                    </label>
+                </div>
+            </div>
+
+            <div id="grupo-cantidad-container" class="form-group hidden">
+                <label for="cant_grupos">Cantidad de Grupos</label>
+                <input type="number" id="cant_grupos" name="cant_grupos" class="form-control" min="2" max="10" value="2">
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('cuestionarios') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Lanzar Partida</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalidadRadios = document.querySelectorAll('input[name="modalidad"]');
+        const grupoContainer = document.getElementById('grupo-cantidad-container');
+
+        modalidadRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'grupal') {
+                    grupoContainer.classList.remove('hidden');
+                } else {
+                    grupoContainer.classList.add('hidden');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

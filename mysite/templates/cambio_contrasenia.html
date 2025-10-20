@@ -1,0 +1,135 @@
+{% extends "layout_perfil.html" %}
+
+{% block title %}Cambiar Contraseña{% endblock %}
+
+{% block head %}
+    {{ super() }} <link rel="stylesheet" href="{{ url_for('static', filename='css/password.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="password-change-container">
+        <div class="password-image-section">
+            <img src="{{ url_for('static', filename='img/contrasenia.png') }}" alt="Ilustración de seguridad">
+        </div>
+        <div class="password-form-section">
+            <h1>Mi Contraseña</h1>
+            <p class="subtitulo">Para proteger tu cuenta, asegúrate de que tu nueva contraseña sea segura.</p>
+
+            <form class="password-form" method="POST">
+                <input type="hidden" id="user-id" value="{{ user.id_usuario }}">
+                <div class="form-group">
+                    <label for="contrasena-antigua">Contraseña Antigua</label>
+                    <input type="password" id="contrasena-antigua" name="contrasena_antigua" placeholder="Ingresa tu contraseña actual" required>
+                </div>
+                <div class="form-group">
+                    <label for="contrasena-nueva">Nueva Contraseña</label>
+                    <input type="password" id="contrasena-nueva" name="contrasena_nueva" placeholder="Ingresa tu nueva contraseña" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmar-contrasena">Confirmar Contraseña</label>
+                    <input type="password" id="confirmar-contrasena" name="confirmar_contrasena" placeholder="Confirma tu nueva contraseña" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-guardar">Confirmar Cambio</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="confirm-modal" class="modal hidden" aria-hidden="true">
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+              <h3 id="confirm-title">Confirmar acción</h3>
+              <p id="confirm-msg">¿Estás seguro de realizar esta modificación?</p>
+              <div class="modal-actions">
+                <button type="button" id="confirm-no"  class="btn-cerrar" style="background:#6b7280">Cancelar</button>
+                <button type="button" id="confirm-yes" class="btn-cerrar">Sí, continuar</button>
+              </div>
+            </div>
+          </div>
+
+          {# NUEVO: Modal simple para mensajes (errores/éxito) #}
+          <div id="message-modal" class="modal hidden" aria-hidden="true">
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="message-title">
+              <h3 id="message-title">Mensaje</h3>
+              <p id="message-msg"></p>
+              <div class="modal-actions">
+                <button type="button" id="message-close" class="btn-cerrar">Cerrar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+        {# --- LÓGICA JS ESPECÍFICA DE ESTA PÁGINA --- #}
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              const userId = document.getElementById('user-id').value;
+              const form = document.querySelector('.password-form');
+              const inputActual  = document.getElementById('contrasena-antigua');
+              const inputNueva   = document.getElementById('contrasena-nueva');
+              const inputConfirm = document.getElementById('confirmar-contrasena');
+
+              // --- modal mensajes ---
+              const msgModal   = document.getElementById('message-modal');
+              const msgTitleEl = document.getElementById('message-title');
+              const msgTextEl  = document.getElementById('message-msg');
+              const msgClose   = document.getElementById('message-close');
+              function showMessage(title, text){ msgTitleEl.textContent=title; msgTextEl.textContent=text;
+                msgModal.classList.remove('hidden'); msgModal.setAttribute('aria-hidden','false'); }
+              function hideMessage(){ msgModal.classList.add('hidden'); msgModal.setAttribute('aria-hidden','true'); }
+              msgClose.addEventListener('click', hideMessage);
+
+              // --- modal confirmación ---
+              const confirmModal = document.getElementById('confirm-modal');
+              const confirmMsgEl = document.getElementById('confirm-msg');
+              const btnNo  = document.getElementById('confirm-no');
+              const btnYes = document.getElementById('confirm-yes');
+              function openConfirm(message, onYes){
+                confirmMsgEl.textContent = message;
+                confirmModal.classList.remove('hidden'); confirmModal.setAttribute('aria-hidden','false');
+                const handler = () => { closeConfirm(); onYes?.(); btnYes.removeEventListener('click', handler); };
+                btnYes.addEventListener('click', handler, { once:true });
+              }
+              function closeConfirm(){ confirmModal.classList.add('hidden'); confirmModal.setAttribute('aria-hidden','true'); }
+              btnNo.addEventListener('click', closeConfirm);
+
+              // --- submit ---
+              form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                if (!inputActual.value || !inputNueva.value || !inputConfirm.value) {
+                  showMessage('Campos incompletos', 'Completa todos los campos para continuar.'); return;
+                }
+                if (inputNueva.value !== inputConfirm.value) {
+                  showMessage('Contraseña no coincide',
+                    'Tu nueva contraseña no coincide con lo que ingresaste en confirmar contraseña.'); return;
+                }
+
+                openConfirm('¿Estás seguro de que quieres actualizar tu contraseña?', async () => {
+                  try {
+                        const res = await fetch(`/api/usuarios/${userId}/cambiar_password`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        actual: inputActual.value.trim(),
+                        nueva:  inputNueva.value.trim()
+                      })
+                    });
+                    const data = await res.json();
+
+                    if (res.ok) {
+                      showMessage('¡Contraseña actualizada!', 'Listo, tu contraseña fue actualizada.');
+                      msgClose.addEventListener('click', () => {
+                        inputActual.value=''; inputNueva.value=''; inputConfirm.value='';
+                      }, { once:true });
+                    } else {
+                      showMessage('No se pudo actualizar', data?.error || 'Algo salió mal, vuelve a intentarlo');
+                    }
+                  } catch {
+                    showMessage('Error de Conexión', 'Algo salió mal, vuelve a intentarlo');
+                  }
+                });
+              });
+            });
+            </script>
+
+
+{% endblock %}

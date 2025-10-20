@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% block head %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_perfil.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/ico.png') }}">
+    <title>DogeHoot | {% block title %}Mi Perfil{% endblock %}</title>
+    {% endblock %}
+</head>
+
+<body>
+    <!-- Overlay para el menú móvil -->
+    <div id="menu-overlay" class="menu-overlay"></div>
+
+    <!-- Header móvil -->
+    <header class="app-header">
+        <a class="header-logo-link" href="{{ url_for('dashboard') | default('/') }}">
+            <img class="header-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo de la empresa">
+        </a>
+
+        <div class="header-actions">
+            <!-- Botón hamburguesa SOLO móvil -->
+            <button id="btn-menu-mobile" class="btn-menu-mobile" aria-label="Abrir menú" aria-expanded="false" aria-controls="contenedor-izquierda-nav">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+
+            <!-- Perfil móvil -->
+            <button id="btn-perfil-mobile" class="header-profile-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-perfil-mobile" aria-label="Menú de perfil">
+                {% set avatar = user.foto or 'img/usuario/avatar-default.png' %}
+                <img src="{{ url_for('static', filename=avatar) }}" class="avatar" alt="Avatar">
+                {% if user.skin_ruta %}
+                    <img src="{{ url_for('static', filename=user.skin_ruta) }}" class="marco-activo" alt="Skin">
+                {% endif %}
+            </button>
+
+            <div id="menu-perfil-mobile" class="menu-perfil" role="menu" aria-labelledby="btn-perfil-mobile" hidden>
+                <div class="menu-perfil__header">Conectado como<br><strong>{{ user.nombre_usuario }}</strong></div>
+                <button class="menu-item" role="menuitem" data-action="perfil">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5.006 5.006 0 0 0 5 5Zm0 2c-4.337 0-8 2.163-8 4.5V20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5C20 16.163 16.337 14 12 14Z" /></svg>
+                    Perfil
+                </button>
+                <div class="menu-sep" role="separator"></div>
+                <button class="menu-item danger" role="menuitem" data-action="salir">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16 13v-2H8V8l-5 4 5 4v-3zM20 3h-8v2h8v14h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z" /></svg>
+                    Cerrar sesión
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar (off-canvas en móvil / fijo en desktop) -->
+    <div class="contenedor-izquierda" id="contenedor-izquierda-nav">
+        <div class="aside-superior">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo de la empresa" id="imgLogo">
+        </div>
+
+        <aside class="aside">
+            <button id="btn-cerrar-menu" class="btn-cerrar-menu" aria-label="Cerrar menú">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            <div class="perfil-usuario">
+                <div class="img-perfil">
+                    {% set avatar = user.foto or 'img/usuario/avatar-default.png' %}
+                    <img src="{{ url_for('static', filename=avatar) }}" class="avatar" alt="Avatar de {{ user.nombre_completo|default('Usuario', true) }}">
+                    {% if user.skin_ruta %}
+                        <img src="{{ url_for('static', filename=user.skin_ruta) }}" class="marco-activo" alt="Skin">
+                    {% endif %}
+                </div>
+                <div class="info-usuario">
+                    <strong>{{ user.nombre_completo|default('Usuario', true) }}</strong>
+                    <i>{{ user.nombre_usuario|default('', true) }}</i>
+                </div>
+            </div>
+
+            <div class="botones-aside">
+                <button class="in-progress btn-lateral" data-url="{{ url_for('usuario_perfil') }}">
+                    <svg class="icon-inicio" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 21H4C4 17.134 7.13401 14 11 14C11.1681 14 11.3348 14.0059 11.5 14.0176M15 7C15 9.20914 13.2091 11 11 11C8.79086 11 7 9.20914 7 7C7 4.79086 8.79086 3 11 3C13.2091 3 15 4.79086 15 7ZM12.5898 21L14.6148 20.595C14.7914 20.5597 14.8797 20.542 14.962 20.5097C15.0351 20.4811 15.1045 20.4439 15.1689 20.399C15.2414 20.3484 15.3051 20.2848 15.4324 20.1574L19.5898 16C20.1421 15.4477 20.1421 14.5523 19.5898 14C19.0376 13.4477 18.1421 13.4477 17.5898 14L13.4324 18.1574C13.3051 18.2848 13.2414 18.3484 13.1908 18.421C13.1459 18.4853 13.1088 18.5548 13.0801 18.6279C13.0478 18.7102 13.0302 18.7985 12.9948 18.975L12.5898 21Z" /></svg>
+                    <span>Mi Perfil</span>
+                </button>
+                <button class="success btn-lateral" data-url="{{ url_for('pagina_cambiar_contrasena') }}">
+                    <svg class="icon-explorar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15.6807 14.5869C19.1708 14.5869 22 11.7692 22 8.29344C22 4.81767 19.1708 2 15.6807 2C12.1907 2 9.3615 4.81767 9.3615 8.29344C9.3615 9.90338 10.0963 11.0743 10.0963 11.0743L2.45441 18.6849C2.1115 19.0264 1.63143 19.9143 2.45441 20.7339L3.33616 21.6121C3.67905 21.9048 4.54119 22.3146 5.2466 21.6121L6.27531 20.5876C7.30403 21.6121 8.4797 21.0267 8.92058 20.4412C9.65538 19.4167 8.77362 18.3922 8.77362 18.3922L9.06754 18.0995C10.4783 19.5045 11.7128 18.6849 12.1537 18.0995C12.8885 17.075 12.1537 16.0505 12.1537 16.0505C11.8598 15.465 11.272 15.465 12.0067 14.7333L12.8885 13.8551C13.5939 14.4405 15.0439 14.5869 15.6807 14.5869Z" stroke-linejoin="round" /><path d="M17.8853 8.29353C17.8853 9.50601 16.8984 10.4889 15.681 10.4889C14.4635 10.4889 13.4766 9.50601 13.4766 8.29353C13.4766 7.08105 14.4635 6.09814 15.681 6.09814C16.8984 6.09814 17.8853 7.08105 17.8853 8.29353Z" /></svg>
+                    <span>Contraseña</span>
+                </button>
+                <button class="in-progress btn-lateral" data-url="{{ url_for('mis_skins') }}">
+                    <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 20L20 21M20 21H4M20 21L16.6866 12.7166C16.4301 12.0752 16.3018 11.7545 16.2116 11.4238C16.1314 11.13 16.0737 10.8305 16.039 10.5279C16 10.1873 16 9.84196 16 9.15121V8L18 7L21 10V5L16.5 2.5L11.2717 6.33406C10.4269 6.95359 10.0045 7.26336 9.64715 7.63427C9.32994 7.96352 9.0514 8.32794 8.81695 8.72045C8.55284 9.16262 8.36479 9.65154 7.98871 10.6293L4 21M4 21L3 20M5.73077 16.5H10.5M13.5 16.5H18.2M10.5 15H13.5V18H10.5V15Z" /></svg>
+                    <span>Mis Skins</span>
+                </button>
+                <button class="in-progress btn-lateral" data-url="{{ url_for('tienda_skins') }}">
+                    <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M1.588 3.227A3.125 3.125 0 0 1 4.58 1h14.84c1.38 0 2.597.905 2.993 2.227l.816 2.719a6.47 6.47 0 0 1 .272 1.854A5.183 5.183 0 0 1 22 11.455v4.615c0 1.355 0 2.471-.119 3.355-.125.928-.396 1.747-1.053 2.403-.656.657-1.475.928-2.403 1.053-.884.12-2 .119-3.354.119H8.929c-1.354 0-2.47 0-3.354-.119-.928-.125-1.747-.396-2.403-1.053-.657-.656-.929-1.475-1.053-2.403-.12-.884-.119-2-.119-3.354V11.5l.001-.045A5.184 5.184 0 0 1 .5 7.8c0-.628.092-1.252.272-1.854l.816-2.719zM10 21h4v-3.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5V21zm6-.002c.918-.005 1.608-.025 2.159-.099.706-.095 1.033-.262 1.255-.485.223-.222.39-.55.485-1.255.099-.735.101-1.716.101-3.159v-3.284a5.195 5.195 0 0 1-1.7.284 5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 12 13a5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 5.7 13a5.2 5.2 0 0 1-1.7-.284V16c0 1.442.002 2.424.1 3.159.096.706.263 1.033.486 1.255.222.223.55.39 1.255.485.551.074 1.24.094 2.159.1V17.5a2.5 2.5 0 0 1 2.5-2.5h3a2.5 2.5 0 0 1 2.5 2.5v3.498zM4.581 3c-.497 0-.935.326-1.078.802l-.815 2.72A4.45 4.45 0 0 0 2.5 7.8a3.2 3.2 0 0 0 5.6 2.117 1 1 0 0 1 1.5 0A3.19 3.19 0 0 0 12 11a3.19 3.19 0 0 0 2.4-1.083 1 1 0 0 1 1.5 0A3.2 3.2 0 0 0 21.5 7.8c0-.434-.063-.865-.188-1.28l-.816-2.72A1.125 1.125 0 0 0 19.42 3H4.58z" /></svg>
+                    <span>Tienda</span>
+                </button>
+                <button class="failed btn-lateral" data-url="{{ url_for('eliminar_cuenta') }}">
+                    <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.00011L14 8.00011L10 10.0001L13 13.0001M12 6.00011C10.2006 3.90309 7.19377 3.25515 4.93923 5.17539C2.68468 7.09563 2.36727 10.3062 4.13778 12.5772C5.60984 14.4655 10.0648 18.4479 11.5249 19.7369C11.6882 19.8811 11.7699 19.9532 11.8652 19.9816C11.9483 20.0063 12.0393 20.0063 12.1225 19.9816C12.2178 19.9532 12.2994 19.8811 12.4628 19.7369C13.9229 18.4479 18.3778 14.4655 19.8499 12.5772C21.6204 10.3062 21.3417 7.07543 19.0484 5.17539C16.7551 3.27535 13.7994 3.90309 12 6.00011Z" /></svg>
+                    <span>Eliminar Cuenta</span>
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="contenedor-derecha">
+        <!-- Nav superior (solo desktop) -->
+        <nav class="nav">
+
+            <div class="nav-buscar">
+                <input placeholder="Buscar..." maxlength="100">
+                <button aria-label="Buscar">
+                    <svg class="icon-buscar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.7955 15.8111L21 21M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z" /></svg>
+                </button>
+            </div>
+            <div class="nav-grupo-derecha">
+                <button id="btn-nuevo" aria-label="Nueva partida">
+                    <svg class="icon-nuevo" xmlns="http://www.w3.org/2000/svg" viewBox="100 150 320 220" width="22" height="22" fill="none" aria-hidden="true"><path d="M254,183.7h0c-72.82-1.22-101.38,22.29-111.25,39-14.72,24.92-27,81.37,7.64,102.23,10.92,6.57,25.37,3.09,37.4-5.82,19-14.09,41.81-22.21,65.49-22.21h5.46c23.68,0,46.47,8.12,65.49,22.21,12,8.91,26.48,12.39,37.4,5.82,34.67-20.86,22.36-77.31,7.64-102.23-9.87-16.72-38.43-40.23-111.25-39h-4Z" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" /><path d="M201.9,233.93V222.36a2.3,2.3,0,0,0-2.3-2.31H188a2.3,2.3,0,0,0-2.3,2.31v11.57a2.31,2.31,0,0,1-2.31,2.31H171.83a2.3,2.3,0,0,0-2.3,2.3v11.58a2.3,2.3,0,0,0,2.3,2.3h11.58a2.31,2.31,0,0,1,2.31,2.3V266.3a2.3,2.3,0,0,0,2.3,2.3H199.6a2.3,2.3,0,0,0,2.3-2.3V254.72a2.3,2.3,0,0,1,2.3-2.3h11.58a2.3,2.3,0,0,0,2.3-2.3V238.54a2.3,2.3,0,0,0-2.3-2.3H204.2A2.3,2.3,0,0,1,201.9,233.93Z" fill="currentColor" /><circle cx="328.06" cy="228.14" r="8.09" fill="currentColor" /> <circle cx="328.06" cy="260.51" r="8.09" fill="currentColor" /><circle cx="344.24" cy="244.33" r="8.09" fill="currentColor" /> <circle cx="311.87" cy="244.33" r="8.09" fill="currentColor" /></svg>
+                    <span>Nueva partida</span>
+                </button>
+                <button class="btn-notificaciones" aria-label="Notificaciones">
+                    <svg class="icon-notificaciones" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.33497 4.72727V5.25342C6.64516 6.35644 4.76592 9.97935 4.83412 13.1192L4.83409 14.8631C3.45713 16.6333 3.53815 19.2727 6.9735 19.2727H9.33497C9.33497 19.996 9.61684 20.6897 10.1186 21.2012C10.6203 21.7127 11.3008 22 12.0104 22C12.72 22 13.4005 21.7127 13.9022 21.2012C14.404 20.6897 14.6858 19.996 14.6858 19.2727H17.0538C20.4826 19.2727 20.5323 16.6278 19.1555 14.8576L19.1938 13.1216C19.2631 9.97811 17.3803 6.35194 14.6858 5.25049V4.72727C14.6858 4.00396 14.404 3.31026 13.9022 2.7988C13.4005 2.28734 12.72 2 12.0104 2C11.3008 2 10.6203 2.28734 10.1186 2.7988C9.61684 3.31026 9.33497 4.00395 9.33497 4.72727ZM12.9022 4.72727C12.9022 4.74573 12.9017 4.76414 12.9006 4.78246C12.6101 4.74603 12.3142 4.72727 12.014 4.72727C11.7113 4.72727 11.413 4.74634 11.1203 4.78335C11.1192 4.76474 11.1186 4.74603 11.1186 4.72727C11.1186 4.48617 11.2126 4.25494 11.3798 4.08445C11.547 3.91396 11.7739 3.81818 12.0104 3.81818C12.2469 3.81818 12.4738 3.91396 12.641 4.08445C12.8083 4.25494 12.9022 4.48617 12.9022 4.72727ZM11.1186 19.2727C11.1186 19.5138 11.2126 19.7451 11.3798 19.9156C11.547 20.086 11.7739 20.1818 12.0104 20.1818C12.2469 20.1818 12.4738 20.086 12.641 19.9156C12.8083 19.7451 12.9022 19.5138 12.9022 19.2727H11.1186ZM17.0538 17.4545C17.8157 17.4545 18.2267 16.5435 17.7309 15.9538C17.49 15.6673 17.3616 15.3028 17.3699 14.9286L17.4106 13.0808C17.4787 9.99416 15.0427 6.54545 12.014 6.54545C8.98598 6.54545 6.55028 9.99301 6.61731 13.0789L6.65748 14.9289C6.66561 15.303 6.53726 15.6674 6.29639 15.9538C5.80054 16.5435 6.21158 17.4545 6.9735 17.4545H17.0538Z" fill="currentColor" /></svg>
+                </button>
+                <div class="nav-perfil">
+                    <p>Hola, <strong>{{ user.nombre_usuario }}</strong></p>
+                    <div class="perfil-wrap">
+                        <button id="btn-perfil" class="perfil-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-perfil" aria-label="Menú de perfil">
+                            {% set avatar = user.foto or 'img/usuario/avatar-default.png' %}
+                            <img src="{{ url_for('static', filename=avatar) }}" class="avatar" alt="Avatar">
+                            {% if user.skin_ruta %}
+                                <img src="{{ url_for('static', filename=user.skin_ruta) }}" class="marco-activo" alt="Skin">
+                            {% endif %}
+                        </button>
+                        <div id="menu-perfil" class="menu-perfil" role="menu" aria-labelledby="btn-perfil" hidden>
+                            <div class="menu-perfil__header">Conectado como<br><strong>{{ user.nombre_usuario }}</strong></div>
+                            <button class="menu-item" role="menuitem" data-action="perfil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5.006 5.006 0 0 0 5 5Zm0 2c-4.337 0-8 2.163-8 4.5V20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5C20 16.163 16.337 14 12 14Z" /></svg> Perfil</button>
+                            <div class="menu-sep" role="separator"></div>
+                            <button class="menu-item danger" role="menuitem" data-action="salir"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16 13v-2H8V8l-5 4 5 4v-3zM20 3h-8v2h8v14h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z" /></svg> Cerrar sesión</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="dashboard">
+            <div class="contenido">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Bottom nav móvil -->
+    <footer class="bottom-nav-mobile">
+        <a href="{{ url_for('dashboard') }}" class="bottom-nav-item" data-url-match="/dashboard">
+            <svg class="icon-inicio" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true"><path d="M2 12.2039C2 9.91549 2 8.77128 2.5192 7.82274C3.0384 6.87421 3.98695 6.28551 5.88403 5.10813L7.88403 3.86687C9.88939 2.62229 10.8921 2 12 2C13.1079 2 14.1106 2.62229 16.116 3.86687L18.116 5.10812C20.0131 6.28551 20.9616 6.87421 21.4808 7.82274C22 8.77128 22 9.91549 22 12.2039V13.725C22 17.6258 22 19.5763 20.8284 20.7881C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.7881C2 19.5763 2 17.6258 2 13.725V12.2039Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><path d="M15 18H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span>Inicio</span>
+        </a>
+        <a href="{{ url_for('cuestionarios_explorar') }}" class="bottom-nav-item" data-url-match="/cuestionarios/explorar">
+            <svg class="icon-explorar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M22.707 9.293a1 1 0 0 0-1.023-.242l-9 3a1.001 1.001 0 0 0-.632.633l-3 9a1 1 0 0 0 1.265 1.265l9-3a1.001 1.001 0 0 0 .632-.633l3-9a1 1 0 0 0-.242-1.023zM11.581 20.419l2.209-6.628 4.419 4.419-6.628 2.209z" /><path d="M16 30a14 14 0 1 1 0-28 14 14 0 0 1 0 28zm0-25.4A11.4 11.4 0 1 0 27.4 16 11.412 11.412 0 0 0 16 4.6z" /></svg>
+            <span>Explorar</span>
+        </a>
+        <a href="{{ url_for('tienda_skins') }}" class="bottom-nav-item" data-url-match="/tienda">
+             <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M1.588 3.227A3.125 3.125 0 0 1 4.58 1h14.84c1.38 0 2.597.905 2.993 2.227l.816 2.719a6.47 6.47 0 0 1 .272 1.854A5.183 5.183 0 0 1 22 11.455v4.615c0 1.355 0 2.471-.119 3.355-.125.928-.396 1.747-1.053 2.403-.656.657-1.475.928-2.403 1.053-.884.12-2 .119-3.354.119H8.929c-1.354 0-2.47 0-3.354-.119-.928-.125-1.747-.396-2.403-1.053-.657-.656-.929-1.475-1.053-2.403-.12-.884-.119-2-.119-3.354V11.5l.001-.045A5.184 5.184 0 0 1 .5 7.8c0-.628.092-1.252.272-1.854l.816-2.719zM10 21h4v-3.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5V21zm6-.002c.918-.005 1.608-.025 2.159-.099.706-.095 1.033-.262 1.255-.485.223-.222.39-.55.485-1.255.099-.735.101-1.716.101-3.159v-3.284a5.195 5.195 0 0 1-1.7.284 5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 12 13a5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 5.7 13a5.2 5.2 0 0 1-1.7-.284V16c0 1.442.002 2.424.1 3.159.096.706.263 1.033.486 1.255.222.223.55.39 1.255.485.551.074 1.24.094 2.159.1V17.5a2.5 2.5 0 0 1 2.5-2.5h3a2.5 2.5 0 0 1 2.5 2.5v3.498zM4.581 3c-.497 0-.935.326-1.078.802l-.815 2.72A4.45 4.45 0 0 0 2.5 7.8a3.2 3.2 0 0 0 5.6 2.117 1 1 0 0 1 1.5 0A3.19 3.19 0 0 0 12 11a3.19 3.19 0 0 0 2.4-1.083 1 1 0 0 1 1.5 0A3.2 3.2 0 0 0 21.5 7.8c0-.434-.063-.865-.188-1.28l-.816-2.72A1.125 1.125 0 0 0 19.42 3H4.58z" /></svg>
+            <span>Marketplace</span>
+        </a>
+        <a href="{{ url_for('usuario_perfil') }}" class="bottom-nav-item" data-url-match="/usuario/perfil">
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span>Perfil</span>
+        </a>
+    </footer>
+
+    <!-- Modales globales -->
+    <div id="app-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card">
+            <h3 id="modal-title"></h3>
+            <p id="modal-msg"></p>
+            <div class="modal-actions">
+                <button type="button" id="modal-close" class="btn-cerrar">Cerrar</button>
+            </div>
+        </div>
+    </div>
+    <div id="confirm-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+            <h3 id="confirm-title">Confirmar acción</h3>
+            <p id="confirm-msg">¿Estás segura?</p>
+            <div class="modal-actions">
+                <button type="button" id="confirm-no"  class="btn-cerrar" style="background:#6b7280">Cancelar</button>
+                <button type="button" id="confirm-yes" class="btn-cerrar">Sí, continuar</button>
+            </div>
+        </div>
+    </div>
+
+    {% block scripts %}
+    <script>
+    (function () {
+        // --- Lógica del Modal de Mensajes ---
+        const flashModal = document.getElementById('flash-modal');
+        const messagesContainer = document.getElementById('modal-messages-container');
+        const closeButton = flashModal?.querySelector('.close-button');
+        function closeModal() { if (flashModal) flashModal.style.display = 'none'; }
+        if (flashModal && flashModal.dataset.hasMessages === 'true') { flashModal.style.display = 'flex'; }
+        if (closeButton) closeButton.addEventListener('click', closeModal);
+        if (flashModal) flashModal.addEventListener('click', e => { if (e.target === flashModal) closeModal(); });
+
+        // --- Lógica de Dropdown de Perfil (para Desktop y Mobile) ---
+        const triggers = [document.getElementById('btn-perfil'), document.getElementById('btn-perfil-mobile')];
+        const menus = [document.getElementById('menu-perfil'), document.getElementById('menu-perfil-mobile')];
+
+        triggers.forEach((trigger, index) => {
+            const menu = menus[index];
+            if (!trigger || !menu) return;
+            function openMenu(){ menu.hidden=false; menu.classList.add('is-open'); trigger.setAttribute('aria-expanded','true'); }
+            function closeMenu(){ menu.classList.remove('is-open'); trigger.setAttribute('aria-expanded','false'); setTimeout(()=>{menu.hidden=true},160); }
+            trigger.addEventListener('click', e => { e.stopPropagation(); menu.classList.contains('is-open') ? closeMenu() : openMenu(); });
+            menu.addEventListener('click', (e) => {
+                const btn = e.target.closest('.menu-item'); if (!btn) return;
+                const action = btn.dataset.action;
+                if (action === 'salir')  window.location.href = "{{ url_for('logout') }}";
+                if (action === 'perfil') window.location.href = "{{ url_for('usuario_perfil') }}";
+                closeMenu();
+            });
+        });
+        document.addEventListener('click', e => {
+            menus.forEach((menu, index) => {
+                if (menu && menu.classList.contains('is-open') && !menu.contains(e.target) && triggers[index] && !triggers[index].contains(e.target)) {
+                    menu.classList.remove('is-open'); triggers[index].setAttribute('aria-expanded','false');
+                    setTimeout(()=>{menu.hidden=true},160);
+                }
+            });
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                menus.forEach((menu, index) => {
+                    if (menu && menu.classList.contains('is-open')) {
+                         menu.classList.remove('is-open'); triggers[index].setAttribute('aria-expanded','false');
+                         setTimeout(()=>{menu.hidden=true},160);
+                         if(triggers[index]) triggers[index].focus();
+                    }
+                });
+            }
+        });
+
+        // --- Lógica de Navegación (botones .btn-lateral de Desktop y Mobile) ---
+        document.querySelectorAll('.btn-lateral').forEach(b=>{
+            b.addEventListener('click', function(){
+                const url=this.dataset.url;
+                if(url) window.location.href=url;
+            });
+        });
+
+        // --- Lógica de Estado Activo (Nav Inferior) ---
+        const currentPath = window.location.pathname;
+        const navItems = document.querySelectorAll('.bottom-nav-item');
+        let itemActivo = false;
+        const inicioUrl = "{{ url_for('dashboard') | default('/') }}";
+
+        navItems.forEach(item => {
+            const urlMatch = item.getAttribute('data-url-match');
+            if (urlMatch) {
+                if (urlMatch === '/dashboard' && currentPath === inicioUrl) {
+                    item.classList.add('active');
+                    itemActivo = true;
+                } else if (urlMatch !== '/dashboard' && currentPath.startsWith(urlMatch)) {
+                    item.classList.add('active');
+                    itemActivo = true;
+                }
+            }
+        });
+        if (!itemActivo && currentPath.startsWith('/usuario/')) {
+            const perfilItem = document.querySelector('.bottom-nav-item[data-url-match="/usuario/perfil"]');
+            if (perfilItem) perfilItem.classList.add('active');
+            itemActivo = true;
+        }
+        if (!itemActivo) {
+             const inicioItem = document.querySelector('.bottom-nav-item[data-url-match="/dashboard"]');
+             if (inicioItem) inicioItem.classList.add('active');
+        }
+
+        // --- Logo Click ---
+        document.querySelector('#imgLogo')?.addEventListener('click', (e) => {
+            window.location.href = "{{ url_for('dashboard') | default('/') }}";
+        });
+
+        // --- Lógica de Modales (Global) ---
+        const modal=document.getElementById('app-modal');
+        if(modal){
+            const t=document.getElementById('modal-title');
+            const m=document.getElementById('modal-msg');
+            const c=document.getElementById('modal-close');
+            window.showModal=(title,msg)=>{ t.textContent=title||''; m.textContent=msg||''; modal.classList.remove('hidden'); modal.setAttribute('aria-hidden','false'); };
+            window.hideModal=()=>{ modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true'); };
+            c.addEventListener('click',hideModal);
+            modal.addEventListener('click',e=>{ if(e.target===modal) hideModal(); });
+        }
+        window.showConfirm=(title,msg)=>{
+            return new Promise(res=>{
+                const modal=document.getElementById('confirm-modal'); if(!modal) return res(false);
+                const t=document.getElementById('confirm-title'); const m=document.getElementById('confirm-msg');
+                const yes=document.getElementById('confirm-yes'); const no=document.getElementById('confirm-no');
+                t.textContent=title||'Confirmar'; m.textContent=msg||'¿Estás segura?';
+                modal.classList.remove('hidden'); modal.setAttribute('aria-hidden','false');
+                const done=v=>{ modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true');
+                yes.removeEventListener('click',onY); no.removeEventListener('click',onN); modal.removeEventListener('click',onB); res(v); };
+                const onY=()=>done(true), onN=()=>done(false), onB=e=>{ if(e.target===modal) done(false); };
+                yes.addEventListener('click',onY); no.addEventListener('click',onN); modal.addEventListener('click',onB);
+            });
+        };
+
+        // --- Lógica de Menú Hamburguesa (Aside Mobile) ---
+        const btnMenuMobile = document.getElementById('btn-menu-mobile');
+        const btnCerrarMenu = document.getElementById('btn-cerrar-menu');
+        const menuAside = document.getElementById('contenedor-izquierda-nav');
+        const menuOverlay = document.getElementById('menu-overlay');
+
+        if (btnMenuMobile && menuAside && btnCerrarMenu && menuOverlay) {
+            const openAsideMenu = () => {
+                menuAside.classList.add('is-open');
+                menuOverlay.classList.add('is-open');
+                document.body.classList.add('no-scroll'); // bloqueo scroll
+                btnMenuMobile.setAttribute('aria-expanded', 'true');
+            };
+
+            const closeAsideMenu = () => {
+                menuAside.classList.remove('is-open');
+                menuOverlay.classList.remove('is-open');
+                document.body.classList.remove('no-scroll'); // habilita scroll
+                btnMenuMobile.setAttribute('aria-expanded', 'false');
+            };
+
+            btnMenuMobile.addEventListener('click', e => {
+                e.stopPropagation();
+                menuAside.classList.contains('is-open') ? closeAsideMenu() : openAsideMenu();
+            });
+
+            btnCerrarMenu.addEventListener('click', closeAsideMenu);
+            menuOverlay.addEventListener('click', closeAsideMenu);
+
+            // Cerrar con tecla Escape
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape' && menuAside.classList.contains('is-open')) {
+                    closeAsideMenu();
+                }
+            });
+        }
+
+    })();
+    </script>
+    {% endblock %}
+</body>
+</html>

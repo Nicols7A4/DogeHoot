@@ -1,0 +1,522 @@
+{% extends "layout.html" %}
+{% block content %}
+
+
+<!--<div class="div-populares div-mis-cuestionarios">-->
+<!--    <h1>Mis cuestionarios</h1>-->
+
+    <!-- ESTO SE VA A REEMPLAZAR CON LA LOGICA DEL PYTHON, AVANCEN SUS APISSSSSSSS -->
+<!--   <div class="contenedor-cards">-->
+
+<!--    {% for c in cuestionarios %}-->
+<!--        <div class="card-quiz">-->
+<!--            <div class="card-quiz__media">-->
+<!--                <img src="{{ url_for('static', filename='img/registro-aside.png') }}" alt="Imagen del cuestionario">-->
+<!--            </div>-->
+
+<!--            <div class="card-quiz__body">-->
+<!--                <h2 class="card-quiz__title">{{ c.titulo }}</h2>-->
+<!--                <p class="card-quiz__desc">{{ c.descripcion }}</p>-->
+
+<!--                <div class="card-quiz__footer">-->
+<!--                    <div class="card-quiz__stat">-->
+<!--                        <svg ...>...</svg>-->
+<!--                        <span>-</span>-->
+<!--                    </div>-->
+<!--                    <div class="card-quiz__stat">-->
+<!--                        <svg ...>...</svg>-->
+<!--                        <span>-</span>-->
+<!--                    </div>-->
+
+<!--                    <a href="" class="card-quiz__cta">Jugar!</a>-->
+<!--                    <a href="" class="card-quiz__cta" style="background-color: #6c757d;">Editar</a>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    {% else %}-->
+<!--        <p class="sin-cuestionarios" style="text-align: center; width: 100%;">-->
+<!--            Aún no has creado ningún cuestionario. <a href="{{ url_for('cuestionarios_nuevo') }}">¡Crea tu primer cuestionario ahora!</a>-->
+<!--        </p>-->
+<!--    {% endfor %}-->
+
+<!--    </div>-->
+
+<!--</div>-->
+
+<!--UNIRSE A UNA SESIÓN POR CODIGO, FALTA MEJORAR AUN-->
+<div class="codigo-acceso-dashboard">
+    <div class="codigo-acceso-content">
+        <div class="codigo-acceso-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <div>
+                <h2>¿Tienes un código de sesión?</h2>
+                <p>Únete a un cuestionario ingresando el código de 6 dígitos</p>
+            </div>
+        </div>
+
+        <form class="codigo-form-dashboard" onsubmit="validarCodigoDashboard(event)">
+            <input
+                type="text"
+                id="codigoInputDashboard"
+                class="codigo-input-dashboard"
+                placeholder="ABC123"
+                maxlength="6"
+                pattern="[A-Za-z0-9]{6}"
+                required
+            >
+            <button type="submit" class="btn-codigo-dashboard" id="btnAccederDashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="m12 5 7 7-7 7"></path>
+                </svg>
+                Unirse Ahora
+            </button>
+        </form>
+
+        <div class="mensaje-error-dashboard" id="mensajeErrorDashboard"></div>
+    </div>
+</div>
+
+<style>
+/* ====== Estilos para código de acceso en Dashboard ====== */
+.codigo-acceso-dashboard {
+    background: linear-gradient(135deg, #E6F2FF 0%, #F0F7FF 100%);
+    border: 2px solid #1E88E5;
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 32px;
+    box-shadow: 0 4px 12px rgba(30, 136, 229, 0.12);
+    transition: all 0.3s ease;
+}
+
+.codigo-acceso-dashboard:hover {
+    box-shadow: 0 6px 16px rgba(30, 136, 229, 0.18);
+    transform: translateY(-2px);
+}
+
+.codigo-acceso-content {
+    max-width: 100%;
+}
+
+.codigo-acceso-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.codigo-acceso-header svg {
+    flex-shrink: 0;
+    color: #1E88E5;
+    margin-top: 4px;
+}
+
+.codigo-acceso-header h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1E88E5;
+    margin: 0 0 6px 0;
+}
+
+.codigo-acceso-header p {
+    font-size: 14px;
+    color: #616161;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.codigo-form-dashboard {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.codigo-input-dashboard {
+    flex: 1;
+    padding: 16px 20px;
+    border: 2px solid #E0E0E0;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-align: center;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    background: #FFFFFF;
+    font-family: 'Courier New', monospace;
+}
+
+.codigo-input-dashboard:focus {
+    outline: none;
+    border-color: #1E88E5;
+    box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.15);
+    transform: scale(1.02);
+}
+
+.codigo-input-dashboard.error {
+    border-color: #E53935;
+    background: #FFE6E6;
+    animation: shake 0.4s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+}
+
+.btn-codigo-dashboard {
+    padding: 16px 32px;
+    background: #1E88E5;
+    color: #FFFFFF;
+    border: 2px solid #1E88E5;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(30, 136, 229, 0.3);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-codigo-dashboard:hover {
+    background: #1976D2;
+    border-color: #1976D2;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(30, 136, 229, 0.4);
+}
+
+.btn-codigo-dashboard:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(30, 136, 229, 0.3);
+}
+
+.btn-codigo-dashboard:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    background: #90CAF9;
+    border-color: #90CAF9;
+}
+
+.mensaje-error-dashboard {
+    color: #E53935;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #FFEBEE;
+    border-left: 4px solid #E53935;
+    border-radius: 6px;
+    display: none;
+}
+
+.mensaje-error-dashboard.show {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .codigo-acceso-dashboard {
+        padding: 20px;
+    }
+
+    .codigo-acceso-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .codigo-form-dashboard {
+        flex-direction: column;
+    }
+
+    .codigo-input-dashboard {
+        width: 100%;
+    }
+
+    .btn-codigo-dashboard {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// ====== VALIDACIÓN DEL CÓDIGO EN DASHBOARD ======
+document.addEventListener('DOMContentLoaded', function() {
+    const codigoInput = document.getElementById('codigoInputDashboard');
+    const mensajeError = document.getElementById('mensajeErrorDashboard');
+    const btnAcceder = document.getElementById('btnAccederDashboard');
+
+    if (!codigoInput || !mensajeError || !btnAcceder) {
+        console.error('No se encontraron los elementos del formulario de código');
+        return;
+    }
+
+    // Formato automático: solo alfanuméricos y mayúsculas
+    codigoInput.addEventListener('input', function(e) {
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        this.classList.remove('error');
+        mensajeError.classList.remove('show');
+    });
+
+    // FUNCIÓN DE VALIDACIÓN - Ahora con acceso a las variables
+    window.validarCodigoDashboard = async function(event) {
+        event.preventDefault();
+
+        const codigo = codigoInput.value.trim();
+
+        if (codigo.length !== 6) {
+            mostrarErrorDashboard('El código debe tener exactamente 6 caracteres');
+            return;
+        }
+
+        btnAcceder.disabled = true;
+        const textoOriginal = btnAcceder.innerHTML;
+        btnAcceder.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 6v6l4 2"></path>
+            </svg>
+            Validando...
+        `;
+
+        try {
+            const response = await fetch('/api/validar-codigo-sesion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ codigo: codigo })
+            });
+
+            const data = await response.json();
+
+            console.log('Respuesta del servidor:', data);
+
+            if (response.ok) {
+                if (!data.id_cuestionario) {
+                    mostrarErrorDashboard('Error: No se recibió ID del cuestionario');
+                    btnAcceder.disabled = false;
+                    btnAcceder.innerHTML = textoOriginal;
+                    return;
+                }
+
+                // Éxito
+                btnAcceder.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    ¡Código válido!
+                `;
+                btnAcceder.style.background = '#2BB673';
+                btnAcceder.style.borderColor = '#2BB673';
+
+                let url = `/cuestionarios/${data.id_cuestionario}/visualizar?pin=${codigo}`;
+                if (data.estado) {
+                    url += `&estado=${data.estado}`;
+                }
+                if (data.estado_texto) {
+                    url += `&estado_texto=${encodeURIComponent(data.estado_texto)}`;
+                }
+
+                console.log('Redirigiendo a:', url);
+
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 500);
+            } else {
+                mostrarErrorDashboard(data.error || 'Código de sesión inválido o expirado');
+                btnAcceder.disabled = false;
+                btnAcceder.innerHTML = textoOriginal;
+            }
+        } catch (error) {
+            console.error('Error en la petición:', error);
+            mostrarErrorDashboard('Error de conexión. Intenta nuevamente.');
+            btnAcceder.disabled = false;
+            btnAcceder.innerHTML = textoOriginal;
+        }
+    }
+
+    function mostrarErrorDashboard(mensaje) {
+        mensajeError.textContent = mensaje;
+        mensajeError.classList.add('show');
+        codigoInput.classList.add('error');
+        codigoInput.focus();
+        codigoInput.select();
+    }
+});
+</script>
+
+<style>
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
+
+<div class="div-populares">
+    <h1>Populares</h1>
+
+    <!-- ESTO SE VA A REEMPLAZAR CON LA LOGICA DEL PYTHON, AVANCEN SUS APISSSSSSSS -->
+    <div class="contenedor-cards">
+        <div class="card-quiz">
+            <div class="card-quiz__media">
+                <img src="{{ url_for('static', filename='img/registro-aside.png') }}" alt="Imagen del cuestionario">
+            </div>
+
+            <div class="card-quiz__body">
+                <h2 class="card-quiz__title">Cuestionario 1</h2>
+                <p class="card-quiz__desc">Breve cuestionario para medir tus conocimientos de diseño y
+                    usabilidad.</p>
+
+                <div class="card-quiz__footer">
+                    <div class="card-quiz__stat">
+                        <?xml version="1.0" encoding="utf-8"?>
+
+                        <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+                        <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <g id="User / Users">
+                                <path id="Vector"
+                                    d="M21 19.9999C21 18.2583 19.3304 16.7767 17 16.2275M15 20C15 17.7909 12.3137 16 9 16C5.68629 16 3 17.7909 3 20M15 13C17.2091 13 19 11.2091 19 9C19 6.79086 17.2091 5 15 5M9 13C6.79086 13 5 11.2091 5 9C5 6.79086 6.79086 5 9 5C11.2091 5 13 6.79086 13 9C13 11.2091 11.2091 13 9 13Z"
+                                    stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </g>
+                        </svg>
+                        <span>250</span>
+                    </div>
+
+                    <div class="card-quiz__stat">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                d="M6 3h9a3 3 0 0 1 3 3v11a2 2 0 0 1-2 2H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10V6a1 1 0 0 0-1-1H6Zm3 4h5a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2Zm0 4h5a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2Z" />
+                        </svg>
+                        <span>35</span>
+                    </div>
+
+                    <button class="card-quiz__cta" type="button">
+                        Jugar!
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-quiz">
+            <div class="card-quiz__media">
+                <img src="{{ url_for('static', filename='img/registro-aside.png') }}" alt="Imagen del cuestionario">
+            </div>
+
+            <div class="card-quiz__body">
+                <h2 class="card-quiz__title">Cuestionario 1</h2>
+                <p class="card-quiz__desc">Breve cuestionario para medir tus conocimientos de diseño y
+                    usabilidad.</p>
+
+                <div class="card-quiz__footer">
+                    <div class="card-quiz__stat">
+                        <?xml version="1.0" encoding="utf-8"?>
+
+                        <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+                        <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <g id="User / Users">
+                                <path id="Vector"
+                                    d="M21 19.9999C21 18.2583 19.3304 16.7767 17 16.2275M15 20C15 17.7909 12.3137 16 9 16C5.68629 16 3 17.7909 3 20M15 13C17.2091 13 19 11.2091 19 9C19 6.79086 17.2091 5 15 5M9 13C6.79086 13 5 11.2091 5 9C5 6.79086 6.79086 5 9 5C11.2091 5 13 6.79086 13 9C13 11.2091 11.2091 13 9 13Z"
+                                    stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </g>
+                        </svg>
+                        <span>250</span>
+                    </div>
+
+                    <div class="card-quiz__stat">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                d="M6 3h9a3 3 0 0 1 3 3v11a2 2 0 0 1-2 2H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10V6a1 1 0 0 0-1-1H6Zm3 4h5a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2Zm0 4h5a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2Z" />
+                        </svg>
+                        <span>35</span>
+                    </div>
+
+                    <button class="card-quiz__cta" type="button">
+                        Jugar!
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-quiz">
+            <div class="card-quiz__media">
+                <img src="{{ url_for('static', filename='img/registro-aside.png') }}" alt="Imagen del cuestionario">
+            </div>
+
+            <div class="card-quiz__body">
+                <h2 class="card-quiz__title">Cuestionario 1</h2>
+                <p class="card-quiz__desc">Breve cuestionario para medir tus conocimientos de diseño y
+                    usabilidad.</p>
+
+                <div class="card-quiz__footer">
+                    <div class="card-quiz__stat">
+                        <?xml version="1.0" encoding="utf-8"?>
+
+                        <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+                        <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <g id="User / Users">
+                                <path id="Vector"
+                                    d="M21 19.9999C21 18.2583 19.3304 16.7767 17 16.2275M15 20C15 17.7909 12.3137 16 9 16C5.68629 16 3 17.7909 3 20M15 13C17.2091 13 19 11.2091 19 9C19 6.79086 17.2091 5 15 5M9 13C6.79086 13 5 11.2091 5 9C5 6.79086 6.79086 5 9 5C11.2091 5 13 6.79086 13 9C13 11.2091 11.2091 13 9 13Z"
+                                    stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </g>
+                        </svg>
+                        <span>250</span>
+                    </div>
+
+                    <div class="card-quiz__stat">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                d="M6 3h9a3 3 0 0 1 3 3v11a2 2 0 0 1-2 2H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10V6a1 1 0 0 0-1-1H6Zm3 4h5a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2Zm0 4h5a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2Z" />
+                        </svg>
+                        <span>35</span>
+                    </div>
+
+                    <button class="card-quiz__cta" type="button">
+                        Jugar!
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="div-categorias">
+    <h1>Categorías</h1>
+    <div class="categorias-container">
+        <div class="categorias-lista">
+            <div class="categoria expired">Todos</div>
+            <div class="categoria pending">Diseño</div>
+            <div class="categoria in-progress">UX / UI</div>
+            <div class="categoria submitted">Programación</div>
+            <div class="categoria in-review">Creatividad</div>
+            <div class="categoria success">Tecnología</div>
+            <div class="categoria failed">Historia</div>
+            <div class="categoria expired">Cultura General</div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

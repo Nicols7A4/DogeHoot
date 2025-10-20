@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Contraseña - DogeHoot!</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/ico.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+    <div id="flash-modal" class="modal-overlay" data-has-messages="{{ 'true' if get_flashed_messages() else 'false' }}">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alerta alerta-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+
+    <div class="general-container" style="max-width: 500px; height: auto; min-height: auto;">
+        <div style="padding: 2rem;">
+            <form class="formulario" method="post">
+                <img class="logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" style="width: 180px; margin-bottom: 1rem;">
+                <h3 style="color: var(--text-primary); margin-bottom: 1.5rem;">Crea tu Nueva Contraseña</h3>
+                <div class="body-form">
+                    <div class="input-group">
+                        <label for="password">Nueva Contraseña:</label>
+                        <input id="password" type="password" name="password" placeholder="Ingresa tu nueva contraseña" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="password2">Confirmar Contraseña:</label>
+                        <input id="password2" type="password" name="password2" placeholder="Vuelve a ingresar la contraseña" required>
+                    </div>
+                </div>
+                <button class="btn" type="submit" style="width: 100%; margin-top: 1rem;">Guardar Contraseña</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashModal = document.getElementById('flash-modal');
+            const closeButton = flashModal.querySelector('.close-button');
+            if (flashModal && flashModal.dataset.hasMessages === 'true') {
+                flashModal.style.display = 'flex';
+            }
+            function closeModal() { if (flashModal) flashModal.style.display = 'none'; }
+            if (closeButton) closeButton.addEventListener('click', closeModal);
+            if (flashModal) flashModal.addEventListener('click', function(event) {
+                if (event.target === flashModal) closeModal();
+            });
+        });
+    </script>
+</body>
+</html>

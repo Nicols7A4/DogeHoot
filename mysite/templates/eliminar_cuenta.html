@@ -1,0 +1,277 @@
+{% extends "layout_perfil.html" %}
+
+{% block title %}Eliminar Cuenta{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <style>
+    /* ======================================================= */
+    /* CSS Específico para la Página de Eliminar Cuenta        */
+    /* ======================================================= */
+
+    /* --- Estructura Base (Mobile-First) --- */
+    .delete-account-container {
+        display: grid;
+        grid-template-columns: 1fr; /* Una columna por defecto */
+        gap: 30px;
+        align-items: start;
+    }
+    .delete-info-column, .delete-action-column {
+        display: flex;
+        flex-direction: column;
+        gap: 20px; /* Gap reducido para móvil */
+    }
+    .image-placeholder {
+        width: 100%;
+        background-color: var(--panel-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 20px;
+    }
+    .image-placeholder img {
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+    }
+    .warning-box {
+        background-color: var(--btn-failed-bg);
+        color: var(--btn-failed-text);
+        border: 1px solid var(--btn-failed-text);
+        border-radius: var(--btn-radius);
+        padding: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .warning-icon {
+        flex-shrink: 0;
+        margin-top: 3px;
+    }
+    .warning-text strong {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+    .warning-text p {
+        margin: 5px 0 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    .consequences h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+    .consequences ul {
+        list-style-type: none;
+        padding-left: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .consequences ul li {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid var(--border-soft);
+    }
+    .confirmation-section {
+        background-color: var(--panel-bg);
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
+        padding: 20px; /* Padding reducido para móvil */
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .confirmation-section label {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-color);
+        line-height: 1.6;
+    }
+    .confirmation-section input {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 10px;
+        border: 1px solid var(--border-soft);
+        font-size: 1rem;
+        background: #fdfdfd;
+        transition: all 0.2s ease;
+    }
+    .confirmation-section input:focus {
+        outline: none;
+        border-color: var(--btn-failed-text);
+        background-color: var(--panel-bg);
+        box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.15);
+    }
+    .btn-delete-final {
+        width: 100%;
+        padding: 12px 25px;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: var(--btn-radius);
+        border: none;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        background-color: var(--btn-failed-bg);
+        color: var(--btn-failed-text);
+    }
+    .btn-delete-final:hover:not(:disabled) {
+        background-color: var(--btn-failed-text);
+        color: white;
+        box-shadow: var(--btn-hover-shadow);
+        transform: translateY(-2px);
+    }
+    .btn-delete-final:disabled {
+        background-color: #f5f5f5;
+        color: #bdbdbd;
+        cursor: not-allowed;
+    }
+
+    /* --- Media Query para Desktop --- */
+    @media (min-width: 1024px) {
+        .delete-account-container {
+            grid-template-columns: 1fr 1.2fr; /* Restaura dos columnas */
+            gap: 50px;
+        }
+        .delete-action-column {
+            gap: 30px;
+        }
+        .confirmation-section {
+            padding: 30px;
+        }
+    }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>Eliminar Cuenta</h1>
+    <p class="subtitulo">Esta acción no se puede deshacer. Por favor, lee las consecuencias cuidadosamente.</p>
+
+    <div class="delete-account-container">
+        <div class="delete-info-column">
+            <div class="image-placeholder">
+                <img src="{{ url_for('static', filename='img/eliminar-cuenta.png') }}" alt="Ilustración de advertencia">
+            </div>
+            <div class="warning-box">
+                <svg class="warning-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <div class="warning-text">
+                    <strong>Acción irreversible</strong>
+                    <p>Al continuar, toda tu información será eliminada permanentemente.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="delete-action-column">
+            <div class="consequences">
+                <h3>Esto es lo que sucederá:</h3>
+                <ul>
+                    <li>Tu perfil de usuario será eliminado.</li>
+                    <li>Perderás acceso a tus skins y puntos.</li>
+                    <li>No podrás recuperar tu cuenta.</li>
+                </ul>
+            </div>
+
+            <div class="confirmation-section">
+              <label for="confirmation-input">Para confirmar, escribe <strong>ELIMINAR MI CUENTA</strong> abajo.</label>
+              <input type="text" id="confirmation-input" placeholder="ELIMINAR MI CUENTA" autocomplete="off">
+              <input type="hidden" id="user-id" value="{{ user.id_usuario }}">
+              <button id="btn-delete-final" class="btn-delete-final" disabled >Eliminar mi cuenta permanentemente</button>
+            </div>
+        </div>
+    </div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const CONF_PHRASE = 'ELIMINAR MI CUENTA';
+      const input = document.getElementById('confirmation-input');
+      const btn   = document.getElementById('btn-delete-final');
+
+      if (!input || !btn) return; // Si no estamos en esta página, no ejecutar el script
+
+      input.addEventListener('input', () => {
+        btn.disabled = (input.value.trim() !== CONF_PHRASE);
+      });
+
+      // Las funciones showModal y showConfirm ya están en 'window'
+      // gracias al script del padre cargado por {{ super() }}
+
+      function getUserId() {
+        const raw = document.getElementById('user-id')?.value;
+        const uid = parseInt(raw, 10);
+        return Number.isFinite(uid) && uid > 0 ? uid : null;
+      }
+
+      async function deleteAccount(uid) {
+        const res  = await fetch(`/api/usuarios/${uid}`, {
+          method: 'DELETE',
+          headers: { 'Accept': 'application/json' },
+          credentials: 'same-origin'
+        });
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, data };
+      }
+
+      btn.addEventListener('click', async () => {
+        const userId = getUserId();
+        if (!userId) {
+          window.showModal('Sesión no encontrada', 'No se pudo identificar tu usuario. Por favor inicia sesión nuevamente.');
+          return;
+        }
+
+        const typed = input.value.trim();
+        if (typed !== CONF_PHRASE) {
+          window.showModal('Confirmación incorrecta', 'La confirmación para eliminar cuenta no fue correcta. Vuelve a intentarlo.');
+          input.focus();
+          return;
+        }
+
+        const confirmado = await window.showConfirm('¿Estás realmente seguro de que quieres eliminar tu cuenta?', 'Esta acción es permanente y no se puede deshacer.');
+        if (!confirmado) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Eliminando...';
+        try {
+          const result = await deleteAccount(userId);
+
+          if (result.ok && result.data && result.data.ok) {
+
+            // --- INICIO DE LA CORRECCIÓN ---
+            // 1. Muestra el modal de éxito
+            window.showModal('Cuenta eliminada', 'Tu cuenta ha sido dada de baja correctamente.');
+
+            // 2. Busca el botón de cerrar ESE modal
+            const modalCloseButton = document.getElementById('modal-close');
+
+            // 3. Añade un escuchador de clic al botón "Cerrar" para que redirija
+            if (modalCloseButton) {
+                modalCloseButton.addEventListener('click', () => {
+                    window.location.href = '/logout';
+                }, { once: true }); // {once: true} es importante para que este evento solo se ejecute una vez
+            }
+            // --- FIN DE LA CORRECCIÓN ---
+
+          } else {
+            const msg = (result.data && (result.data.error || result.data.message)) || 'No se pudo eliminar la cuenta.';
+            window.showModal('No se pudo eliminar', msg);
+          }
+        } catch(err) {
+          window.showModal('Error de conexión', 'Algo salió mal, vuelve a intentarlo.');
+        } finally {
+          // Solo re-habilita el botón si la eliminación falló
+          if (!btn.disabled || btn.textContent === 'Eliminando...') {
+             btn.disabled = false;
+             btn.textContent = 'Eliminar mi cuenta permanentemente';
+          }
+        }
+      });
+    });
+    </script>
+{% endblock %}

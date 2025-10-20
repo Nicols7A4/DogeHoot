@@ -1,0 +1,270 @@
+{% extends "layout_perfil.html" %}
+
+{% block title %}Mi Perfil{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <style>
+        /* --- Formulario de Perfil (Apilado en móvil por defecto) --- */
+        .perfil-form {
+            display: grid;
+            grid-template-columns: 1fr; /* Una columna en móvil */
+            gap: 20px; /* Gap reducido */
+            align-items: start;
+        }
+        .form-columna { display: flex; flex-direction: column; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group label, .stat-item label {
+            font-weight: 600; font-size: 14px; color: #555;
+        }
+        .form-group input {
+            width: 100%; padding: 12px 16px; border-radius: 10px;
+            border: 1px solid var(--border-soft); font-size: 1rem;
+            background: #fdfdfd; transition: all 0.2s ease;
+        }
+        .form-group input:focus {
+            outline: none; border-color: var(--btn-inprogress-text);
+            background-color: var(--panel-bg);
+            box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.15);
+        }
+        .form-group input[readonly] {
+            background-color: #f5f5f5; cursor: not-allowed;
+            color: var(--text-muted); border-color: #e9ecef;
+        }
+
+        /* --- Grupo de Foto de Perfil --- */
+        .foto-perfil-group .foto-container {
+            display: flex; flex-direction: column; align-items: center; gap: 15px;
+        }
+        /* CORRECCIÓN: Clase única para la foto de perfil en esta página */
+        .foto-container .foto-preview {
+            width: 150px; height: 150px;
+            border-radius: 50%; /* <-- HACE LA IMAGEN REDONDA */
+            object-fit: cover;
+            border: 3px solid var(--border-soft);
+        }
+
+        .foto-container .btn-cambiar-foto {
+            padding: 10px 20px; border-radius: var(--btn-radius); border: none;
+            background-color: var(--btn-inprogress-bg); color: var(--btn-inprogress-text);
+            font-weight: var(--btn-font-weight);
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .foto-container .btn-cambiar-foto:hover {
+            box-shadow: var(--btn-hover-shadow); transform: translateY(-1px);
+        }
+
+        /* --- Botones de Acción del Formulario --- */
+        .form-actions {
+            grid-column: 1 / -1; display: flex; justify-content: flex-end;
+            gap: 15px; margin-top: 20px; padding-top: 25px;
+            border-top: 1px solid var(--border-soft);
+        }
+
+        /* --- Items de Estadísticas --- */
+        .stat-item { display: flex; flex-direction: column; gap: 10px; }
+        .progress-bar-container {
+            width: 100%; height: 12px; background-color: #e9ecef;
+            border-radius: 50px; overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%; background-color: var(--btn-success-text);
+            border-radius: 50px; transition: width 0.4s ease-in-out;
+        }
+        .progress-bar-text { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+        .stat-value-icon {
+            display: flex; align-items: center; gap: 10px;
+            background-color: #fdfdfd; padding: 10px 16px;
+            border: 1px solid var(--border-soft); border-radius: 10px;
+        }
+        .stat-value-icon svg { color: #f7b731; flex-shrink: 0; }
+        .stat-value-icon span { font-size: 1.1rem; font-weight: 600; color: var(--text-color); }
+        .form-control-static {
+            font-size: 1rem; font-weight: 500; padding: 12px 16px;
+            background-color: #f8f9fa; border: 1px solid #f8f9fa;
+            border-radius: 10px; min-height: 48px;
+        }
+
+        /* --- Lógica de Edición --- */
+        .perfil-form .form-group input,
+        .perfil-form .btn-cambiar-foto,
+        .perfil-form .edit-actions { display: none; }
+        .perfil-form.is-editing .form-control-static,
+        .perfil-form.is-editing .btn-editar { display: none; }
+        .perfil-form.is-editing .form-group input,
+        .perfil-form.is-editing .btn-cambiar-foto,
+        .perfil-form.is-editing .edit-actions { display: flex; }
+        .perfil-form.is-editing .form-group input { display: block; }
+        .edit-actions { display: flex; gap: 15px; }
+
+        /* --- Media Query para Desktop --- */
+        @media (min-width: 1024px) {
+            .perfil-form {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 30px 50px;
+            }
+            .form-columna { gap: 30px; }
+            .form-group label, .stat-item label { font-size: 15px; }
+            .foto-perfil-group .foto-container {
+                flex-direction: row;
+                align-items: center;
+                gap: 20px;
+            }
+            .foto-container .foto-preview,
+            .foto-container .avatar {
+                width: 200px;
+                height: 200px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>Mi perfil</h1>
+    <p class="subtitulo">Actualiza tu foto y detalles personales aquí.</p>
+
+    <form class="perfil-form">
+        <div class="form-columna">
+            <div class="form-group foto-perfil-group">
+                <label>Foto de perfil</label>
+                <div class="foto-container">
+                    {% set avatar = user.foto or 'img/usuario/avatar-default.png' %}
+                    <img src="{{ url_for('static', filename=avatar) }}" alt="Vista previa de avatar" class="foto-preview">
+                    <button type="button" class="btn-cambiar-foto">Cambiar</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="nombre-completo">Nombre Completo</label>
+                <p class="form-control-static" id="txt-nombre">{{ user.nombre_completo }}</p>
+                <input type="text" id="nombre-completo" value="{{ user.nombre_completo }}">
+            </div>
+            <div class="form-group">
+                <label for="nombre-usuario">Nombre Usuario</label>
+                <p class="form-control-static" id="txt-usuario">{{ user.nombre_usuario }}</p>
+                <input type="text" id="nombre-usuario" value="{{ user.nombre_usuario }}">
+            </div>
+        </div>
+
+        <div class="form-columna">
+            <div class="form-group">
+                <label for="tipo-usuario">Tipo de usuario</label>
+                <p class="form-control-static">
+                    {% set tipos = {'E':'Estudiante','P':'Profesor'} %}
+                    {{ tipos.get(user.tipo, user.tipo) }}
+                </p>
+                <input type="text" id="tipo-usuario" value="{{ tipos.get(user.tipo, user.tipo) }}" readonly>
+            </div>
+
+            {% set objetivo_puntos = objetivo_puntos|default(1000, true) %}
+            {% set pct_puntos = (user.puntos * 100 / objetivo_puntos) if objetivo_puntos > 0 else 0 %}
+            <div class="stat-item">
+                <label>Puntos Acumulados</label>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: {{ [pct_puntos, 100]|min|round(0, 'floor') }}%;"></div>
+                </div>
+                <span class="progress-bar-text"> {{ "{:,}".format(user.puntos|default(0)) }} / {{ "{:,}".format(objetivo_puntos) }} Puntos</span>
+            </div>
+
+            {% set objetivo_monedas = objetivo_monedas|default(100, true) %}
+            <div class="stat-item">
+                <label>Monedas Acumuladas</label>
+                <div class="stat-value-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="8"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="8"></line>
+                    </svg>
+                    <span>{{ "{:,}".format(user.monedas|default(0)) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn-editar">Editar Perfil</button>
+            <div class="edit-actions">
+                <button type="submit" class="btn-guardar">Guardar Cambios</button>
+                <button type="button" class="btn-cancelar">Cancelar</button>
+            </div>
+        </div>
+    </form>
+
+    <form id="form-foto"
+          action="{{ url_for('perfil.actualizar_foto_perfil') }}"
+          method="post"
+          enctype="multipart/form-data"
+          style="display:none;">
+        <input id="input-foto" name="foto" type="file" accept="image/*">
+    </form>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ super() }} <script>
+    (function () {
+        // Busca el formulario de perfil en esta página
+        const form = document.querySelector('.perfil-form');
+        if (!form) return; // Si no está, no hace nada
+
+        // Obtiene los elementos del DOM
+        const editButton = form.querySelector('.btn-editar');
+        const cancelButton = form.querySelector('.btn-cancelar');
+        const btnCambiar = document.querySelector('.btn-cambiar-foto');
+        const formFoto = document.getElementById('form-foto');
+        const inputFoto = document.getElementById('input-foto');
+        const $ = (id) => document.getElementById(id);
+        const USER_ID = {{ user.id_usuario|tojson }};
+
+        // --- Modo edición ---
+        const toggleEditMode = (isEditing) => form.classList.toggle('is-editing', isEditing);
+        editButton?.addEventListener('click', () => toggleEditMode(true));
+        cancelButton?.addEventListener('click', () => toggleEditMode(false));
+
+        // --- Guardar datos ---
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Usa la función de confirmación global heredada
+            const confirmado = await window.showConfirm("Guardar Cambios", "¿Estás seguro de que quieres guardar los cambios en tu perfil?");
+            if (!confirmado) return;
+
+            const payload = {
+              nombre_completo: document.getElementById('nombre-completo').value,
+              nombre_usuario:  document.getElementById('nombre-usuario').value
+            };
+
+            try {
+              const res = await fetch("{{ url_for('perfil_update') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+              const data = await res.json();
+              if (res.ok) {
+                // Usa la función de modal global heredada
+                window.showModal('¡Perfil Actualizado!', 'Tus cambios se guardaron correctamente.');
+                document.getElementById('modal-close').addEventListener('click', () => location.reload(), { once: true });
+              } else {
+                window.showModal('Error al Guardar', data.error || 'No se pudieron guardar los cambios.');
+              }
+            } catch(err) {
+              window.showModal('Error de Conexión', 'No se pudo conectar con el servidor.');
+            }
+        });
+
+        // --- Cambiar foto ---
+        btnCambiar?.addEventListener('click', () => {
+            if (!form.classList.contains('is-editing')) {
+                window.showModal('Activa edición', 'Primero haz clic en "Editar Perfil" para cambiar tu foto.');
+                return;
+            }
+            inputFoto.click();
+        });
+
+        inputFoto?.addEventListener('change', () => {
+            if (inputFoto.files && inputFoto.files[0]) {
+                window.showModal('Subiendo...', 'Tu nueva foto de perfil se está subiendo.');
+                formFoto.submit();
+            }
+        });
+    })();
+    </script>
+{% endblock %}

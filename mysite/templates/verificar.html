@@ -1,0 +1,87 @@
+<style>
+    .alerta {
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    /* Estilo para mensajes de error (rojo) */
+    .alerta-danger {
+        background-color: #FFE6E6; /* Fondo rojo claro */
+        color: #E53935;            /* Texto rojo oscuro */
+        border-color: #E53935;     /* Borde rojo oscuro */
+    }
+
+    /* Estilo para mensajes de éxito (verde) */
+    .alerta-success {
+        background-color: #d4edda; /* Fondo verde claro */
+        color: #155724;            /* Texto verde oscuro */
+        border-color: #c3e6cb;     /* Borde verde oscuro */
+    }
+
+    /* Estilo para mensajes de información (azul) */
+    .alerta-info {
+        background-color: #d1ecf1; /* Fondo azul claro */
+        color: #0c5460;            /* Texto azul oscuro */
+        border-color: #bee5eb;     /* Borde azul oscuro */
+    }
+    .btn-reenviar{
+        color: #1E88E5;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .btn-reenviar:hover{
+        color: green;
+    }
+</style>
+<div class="contenedor-formulario" style="max-width: 500px; margin: 5rem auto; padding: 40px; background-color: #FFFFFF; border: 1px solid #E0E0E0; border-radius: 24px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05); text-align: center; font-family: 'Poppins', sans-serif;">
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo de DogeHoot!" style="max-width: 180px; margin-bottom: 30px;">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alerta alerta-{{ category }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    {% if valido %}
+    <div class="cabecera">
+        <h1 style="font-size: 1.8rem; font-weight: 700; color: #333333; margin-bottom: 10px;">Verifica tu Cuenta</h1>
+        <p style="font-size: 1rem; color: #6c757d; line-height: 1.6; margin-bottom: 30px;">Hemos enviado un código de 6 dígitos al correo:<br><strong>{{ email }}</strong></p>
+    </div>
+    <form class="formulario" method="POST" action="{{ url_for('verificar') }}">
+        <input type="hidden" name="email" value="{{ email }}">
+        <div class="f-fila" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
+            <label for="codigo" style="font-size: 1rem; font-weight: 600; color: #333333;">Código de Verificación</label>
+            <input type="text" name="codigo" required maxlength="6" pattern="\d{6}"
+                   placeholder="------"
+                   autocomplete="off"
+                   style="max-width: 320px; margin: 0 auto; padding: 10px; border-radius: 10px; border: 1px solid #E0E0E0; font-size: 2.5rem; font-weight: 600; text-align: center; letter-spacing: 1rem; background: #fdfdfd;">
+        </div>
+        <button type="submit" class="btn" style="width: 100%; padding: 12px 25px; font-size: 15px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; background-color: #2BB673; color: white; transition: all 0.2s ease;">Verificar Cuenta</button>
+    </form>
+    <form class="formulario" method="POST" action="{{ url_for('reenviar_codigo') }}" style="margin-top: 20px;">
+        <input type="hidden" name="email" value="{{ email }}">
+        <p style="font-size: 0.9em; color: #6c757d;">¿No recibiste el código o ha expirado?</p>
+        <button type="submit" class="btn btn-reenviar" style="background-color: transparent; border: none; padding: 0; text-decoration: underline; font-size: 0.9em;">
+            Reenviar código
+        </button>
+    </form>
+    {% endif %}
+    <a href='https://dmailproject.pythonanywhere.com/'>Ir a DogeHoot</a>
+</div>
+
+<script>
+    // Este script auto-rellena el campo del código si viene en la URL
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const codigoDesdeUrl = urlParams.get('codigo');
+        if (codigoDesdeUrl) {
+            document.getElementById('codigo').value = codigoDesdeUrl;
+        }
+    });
+</script>

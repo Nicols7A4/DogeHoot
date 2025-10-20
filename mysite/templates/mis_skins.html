@@ -1,0 +1,215 @@
+{% extends "layout_perfil.html" %}
+
+{% block title %}Mis Skins{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    /* ======================================================= */
+    /* CSS Detallado y Consistente para la página "Mis Skins"  */
+    /* ======================================================= */
+
+    /* --- Contenedor Principal --- */
+    .my-skins-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    /* --- Cabecera: Título y Monedas --- */
+    .skins-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-soft);
+    }
+
+    .skins-header h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .skins-header h1 svg {
+        width: 28px;
+        height: 28px;
+        color: var(--btn-success-text); /* Reutilizamos el color verde para "Mis Cosas" */
+    }
+
+    /* --- Indicador de Monedas (Consistente con la Tienda) --- */
+    .currency-display {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background-color: var(--btn-pending-bg);
+        color: var(--btn-pending-text);
+        padding: 10px 18px;
+        border-radius: var(--btn-radius);
+        font-weight: 600;
+        font-size: 1.1rem;
+        border: 1px solid rgba(247, 127, 0, 0.2);
+    }
+
+    .currency-display svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+    }
+
+    /* --- Cuadrícula de Skins --- */
+    .skins-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 25px;
+    }
+
+    /* --- Tarjeta de Skin (Estilo Premium) --- */
+    .skin-card {
+        background: var(--panel-bg);
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
+        box-shadow: var(--panel-shadow);
+        overflow: hidden;
+        transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .skin-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .skin-card__image {
+        height: 180px;
+        background-color: var(--btn-expired-bg);
+        overflow: hidden;
+    }
+
+    .skin-card__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .skin-card__body {
+        padding: 1rem;
+        margin-top: auto;
+    }
+
+    /* --- Botón "Obtenida" (Estado visual, no accionable) --- */
+    .btn-owned {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 10px 16px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border-radius: var(--btn-radius);
+        background-color: var(--btn-success-bg);
+        color: var(--btn-success-text);
+        border: 2px solid transparent;
+        cursor: default; /* No es un botón real */
+    }
+
+    .btn-owned svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* --- Estado Vacío (Cuando no hay skins) --- */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 4rem 2rem;
+        background-color: var(--panel-bg);
+        border: 2px dashed var(--border-soft);
+        border-radius: 16px;
+        margin-top: 2rem;
+    }
+
+    .empty-state__icon svg {
+        width: 80px;
+        height: 80px;
+        color: var(--text-muted);
+        opacity: 0.5;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        font-size: 1rem;
+        color: var(--text-muted);
+        margin-bottom: 2rem;
+        max-width: 400px;
+    }
+
+    /* Reutilizamos el estilo de botón primario para el CTA */
+    .empty-state .btn {
+        padding: 12px 24px;
+        font-size: 1rem;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="my-skins-container">
+    <div class="skins-header">
+        <h1>
+            Mis Skins
+        </h1>
+        <div class="currency-display">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20ZM12,9a3,3,0,1,0,3,3A3,3,0,0,0,12,9Zm0,4a1,1,0,1,1,1-1A1,1,0,0,1,12,13Z"/></svg>
+            <span>{{ user.monedas|default(0, true) }}</span>
+        </div>
+    </div>
+
+    {% if skins %}
+        <div class="skins-grid">
+            {% for skin in skins %}
+                <div class="skin-card">
+                    <div class="skin-card__image">
+                        <img src="{{ url_for('static', filename=skin.ruta) }}" alt="Skin {{ skin.id_skin }}">
+                    </div>
+                    <div class="skin-card__body">
+                        <div class="btn-owned">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"></path></svg>
+                            <span>Obtenida</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            </div>
+            <h2>Aún no tienes skins</h2>
+            <p>Visita la tienda para explorar y adquirir nuevos diseños para personalizar tu experiencia de juego.</p>
+            <a href="{{ url_for('tienda_skins') }}" class="btn btn-primary">
+                Ir a la Tienda
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

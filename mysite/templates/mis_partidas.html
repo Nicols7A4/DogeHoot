@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    {{ super() }}
+    <style>
+        .partidas-container { max-width: 1000px; margin: 2rem auto; }
+        .partidas-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .partidas-table th, .partidas-table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        .partidas-table th { background-color: #f8f9fa; font-weight: 600; }
+        .badge-estado { padding: 5px 10px; border-radius: 99px; font-size: 0.8rem; font-weight: 700; }
+        .estado-e { background-color: #E6F2FF; color: #1E88E5; } /* Espera (Azul) */
+        .estado-p { background-color: #FFF5C2; color: #E3B505; } /* Proceso (Amarillo) */
+        .estado-f { background-color: #F5F5F5; color: #6c757d; } /* Finalizado (Gris) */
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="partidas-container">
+    <h1>Mis Partidas</h1>
+    <p>Aquí puedes ver el historial de todas las partidas que has lanzado.</p>
+
+    <table class="partidas-table">
+        <thead>
+            <tr>
+                <th>Cuestionario</th>
+                <th>Fecha de Inicio</th>
+                <th>Estado</th>
+                <th>PIN / Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for partida in partidas %}
+                <tr>
+                    <td>{{ partida.cuestionario_titulo }}</td>
+                    <td>{{ partida.fecha_hora_inicio.strftime('%d/%m/%Y a las %H:%M') }}</td>
+                    <td>
+                        {% if partida.estado == 'E' %}
+                            <span class="badge-estado estado-e">En Espera</span>
+                        {% elif partida.estado == 'P' %}
+                            <span class="badge-estado estado-p">En Proceso</span>
+                        {% else %}
+                            <span class="badge-estado estado-f">Finalizada</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if partida.estado != 'F' %}
+                            <strong>{{ partida.pin }}</strong>
+                            <a href="{{ url_for('partida_panel', pin = partida.pin) }}">Ver panel</a>
+                        {% else %}
+                            <a href="#">Ver Reporte</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 2rem;">Aún no has lanzado ninguna partida.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
