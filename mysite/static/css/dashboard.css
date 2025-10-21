@@ -458,18 +458,29 @@ body {
     .btn-notificaciones:hover { transform: translateY(-2px); box-shadow: var(--btn-hover-shadow); border-color: var(--btn-pending-text); }
     .icon-notificaciones { width: 22px; height: 22px; }
     .nav-perfil {
-        display: flex; align-items: center; gap: 10px; height: 75%;
+        display: flex; align-items: center; gap: 10px; height: 48px;
         background-color: var(--panel-bg); border: 1px solid var(--border-soft);
         border-radius: 50px; padding: 0 8px 0 15px;
     }
-    .nav-perfil p { display: block; } /* Muestra el texto del nombre */
+    .nav-perfil p { margin: 0; line-height: 1; display: flex; align-items: center; } /* Alinea verticalmente el texto */
+    .nav-perfil .perfil-trigger { margin-top: 2px; margin-bottom: -2px; } /* Centrado fino del contenedor */
     .perfil-trigger {
-        border: 2px solid var(--btn-inprogress-text); border-radius: 50%;
-        width: 38px; height: 38px; padding: 0;
+        position: relative; border: none; border-radius: 50%;
+        width: 38px; height: 38px; padding: 0; flex-shrink: 0;
         display: inline-flex; align-items: center; justify-content: center;
         background: var(--panel-bg); cursor: pointer; transition: all 0.2s ease;
     }
-    .perfil-trigger img { width: calc(100% - 6px); height: calc(100% - 6px); border-radius: 50%; object-fit: cover; }
+    /* Avatar y Marco correctamente superpuestos */
+    .perfil-trigger .avatar {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%; border-radius: 50%;
+        object-fit: cover; z-index: 1;
+    }
+    .perfil-trigger .marco-activo {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 112%; height: 112%; border-radius: 50%;
+        object-fit: contain; pointer-events: none; z-index: 2;
+    }
     .perfil-trigger:hover { transform: scale(1.1); box-shadow: 0 0 10px rgba(30, 136, 229, 0.3); }
 
     /* --- Estilos del Contenido (Dashboard) en Desktop --- */
