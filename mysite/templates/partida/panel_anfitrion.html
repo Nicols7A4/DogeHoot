@@ -35,54 +35,109 @@
     <div id="ranking"></div>
     <div id="extra"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
-        const socket = io();
         const pin = "{{ pin }}";
+        let pollLobbyInterval = null;
+        let pollGameInterval = null;
 
-        function comenzarJuego() {
-            socket.emit('iniciar_juego', { pin: pin });
-            document.getElementById('btn-comenzar').style.display = 'none'; // Oculta el botón
+        async function comenzarJuego() {
+            try {
+                const res = await fetch('/api/game/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin })
+                });
+                const data = await res.json();
+                if (data.started) {
+                    document.getElementById('btn-comenzar').style.display = 'none';
+                    if (pollLobbyInterval) clearInterval(pollLobbyInterval);
+                    startGamePolling();
+                }
+            } catch (e) {
+                console.error('Error al iniciar juego', e);
+            }
         }
 
-        socket.on('connect', () => socket.emit('iniciar_panel_anfitrion', { pin: pin }));
-
-        socket.on('actualizar_estado_lobby', (data) => {
+        function renderLobby(lobby) {
             const lista = document.getElementById('lista-jugadores');
             lista.innerHTML = '';
-            let jugadores = data.participantes_sin_grupo;
-            data.grupos.forEach(g => jugadores = jugadores.concat(g.miembros));
-            jugadores.forEach(j => lista.innerHTML += `<li>${j}</li>`);
-        });
+            let jugadores = Array.isArray(lobby.participantes_sin_grupo) ? lobby.participantes_sin_grupo.slice() : [];
+            (lobby.grupos || []).forEach(g => { jugadores = jugadores.concat(g.miembros || []); });
+            jugadores.forEach(j => { lista.innerHTML += `<li>${j}</li>`; });
+        }
 
-        socket.on('nueva_pregunta', (data) => {
-            document.getElementById('estado-juego').textContent = `Pregunta ${data.index + 1}: ${data.texto}`;
-            document.getElementById('ranking').innerHTML = ''; // Limpia ranking anterior
-        });
+        async function initHost() {
+            try {
+                const res = await fetch('/api/game/host/init', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    document.getElementById('estado-juego').textContent = 'PIN inválido';
+                    return;
+                }
+                renderLobby(data.lobby);
+                if (data.estado === 'E') {
+                    pollLobbyInterval = setInterval(async () => {
+                        const r = await fetch(`/api/lobby/state?pin=${encodeURIComponent(pin)}`);
+                        const l = await r.json();
+                        renderLobby(l);
+                    }, 1500);
+                } else {
+                    document.getElementById('btn-comenzar').style.display = 'none';
+                    startGamePolling();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
 
-        socket.on('mostrar_resultados', (data) => {
-            document.getElementById('estado-juego').textContent = `Mostrando resultados...`;
+        function renderQuestion(q) {
+            document.getElementById('estado-juego').textContent = `Pregunta ${q.index + 1}: ${q.texto}`;
+            document.getElementById('ranking').innerHTML = '';
+        }
+
+        function renderResults(r) {
+            document.getElementById('estado-juego').textContent = 'Mostrando resultados...';
             const rankingDiv = document.getElementById('ranking');
             rankingDiv.innerHTML = '<h4>Ranking Actual:</h4><ol>';
-            data.ranking.forEach(item => {
+            (r.ranking || []).forEach(item => {
                 rankingDiv.innerHTML += `<li>${item.nombre}: ${item.puntaje} puntos</li>`;
             });
             rankingDiv.innerHTML += '</ol>';
-        });
+        }
 
-        socket.on('juego_finalizado', (data) => {
-            document.getElementById('estado-juego').textContent = `¡Juego Finalizado!`;
+        function renderFinal(r) {
+            document.getElementById('estado-juego').textContent = '¡Juego Finalizado!';
             const rankingDiv = document.getElementById('ranking');
             const extraDiv = document.getElementById('extra');
             rankingDiv.innerHTML = '<h2>Ranking Final:</h2><ol>';
-            data.ranking.forEach(item => {
+            (r || []).forEach(item => {
                 rankingDiv.innerHTML += `<li>${item.nombre}: ${item.puntaje} puntos</li>`;
             });
             rankingDiv.innerHTML += '</ol>';
-            // Aquí podrías añadir un botón para descargar el reporte
-            extraDiv.innerHTML = `<a href="{{ url_for('cuestionarios') }}">Volver al mis cuestionarios</a>`;
+            extraDiv.innerHTML = `<a href="{{ url_for('cuestionarios') }}">Volver a mis cuestionarios</a>`;
+        }
 
-        });
+        function startGamePolling() {
+            pollGameInterval = setInterval(async () => {
+                const res = await fetch(`/api/game/current?pin=${encodeURIComponent(pin)}`);
+                const data = await res.json();
+                if (!res.ok || !data.existe) return;
+                if (data.estado === 'F' || data.fase === 'final') {
+                    clearInterval(pollGameInterval);
+                    renderFinal(data.data);
+                    return;
+                }
+                if (data.fase === 'question') renderQuestion(data.data);
+                if (data.fase === 'results') renderResults(data.data);
+            }, 1000);
+        }
+
+        // init
+        initHost();
     </script>
 </body>
 

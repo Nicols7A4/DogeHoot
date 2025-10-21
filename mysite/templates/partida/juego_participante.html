@@ -31,22 +31,29 @@
 
     <div id="extra"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
-        const socket = io();
         const pin = "{{ pin }}";
         let tiempoRestante = 0;
         let timerInterval;
+        let lastQuestionIndex = -2;
 
         function enviarRespuesta(idOpcion) {
             clearInterval(timerInterval);
-            socket.emit('enviar_respuesta', { pin: pin, id_opcion: idOpcion, tiempo_restante: tiempoRestante });
+            fetch('/api/game/answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin, id_opcion: idOpcion, tiempo_restante: tiempoRestante })
+            }).catch(console.error);
             document.getElementById('pregunta-container').style.display = 'none';
             document.getElementById('estado').textContent = 'Respuesta enviada. Esperando resultados...';
         }
 
-        function iniciarTimer(duracion) {
-            tiempoRestante = duracion;
+        function iniciarTimer(duracion, started_at, server_time) {
+            const now = Date.now() / 1000.0;
+            const serverNow = server_time || now;
+            const diff = now - serverNow; // client-server offset approx
+            const elapsed = Math.max(0, (now - diff) - started_at);
+            tiempoRestante = Math.max(0, Math.floor(duracion - elapsed));
             const tiempoDisplay = document.getElementById('tiempo');
             tiempoDisplay.textContent = tiempoRestante;
             timerInterval = setInterval(() => {
@@ -58,22 +65,18 @@
             }, 1000);
         }
 
-        socket.on('connect', () => {
-            socket.emit('unirse_como_jugador', { pin: pin })
-        });
-
-        socket.on('nueva_pregunta', (data) => {
+        function renderQuestion(data) {
             document.getElementById('estado').textContent = `Pregunta ${data.index + 1}`;
             document.getElementById('pregunta-texto').textContent = data.texto;
             const opcionesLista = document.getElementById('opciones-lista');
             opcionesLista.innerHTML = '';
-            data.opciones.forEach(op => {
+            (data.opciones || []).forEach(op => {
                 opcionesLista.innerHTML += `<button onclick="enviarRespuesta(${op.id})">${op.texto}</button><br>`;
             });
 
             const imgEl = document.getElementById('pregunta-imagen');
             if (data.adjunto) {
-                imgEl.src = "/static/" + data.adjunto; // Asumiendo que está en /static/
+                imgEl.src = "/static/" + data.adjunto;
                 imgEl.style.display = 'block';
             } else {
                 imgEl.src = "";
@@ -82,44 +85,71 @@
 
             document.getElementById('resultados-container').style.display = 'none';
             document.getElementById('pregunta-container').style.display = 'block';
-            iniciarTimer(data.tiempo);
-        });
+            iniciarTimer(data.tiempo, data.started_at, data.server_time);
+        }
 
-        socket.on('mostrar_resultados', (data) => {
+        function renderResults(data) {
             clearInterval(timerInterval);
             document.getElementById('pregunta-container').style.display = 'none';
             document.getElementById('final-container').style.display = 'none';
-
-            // ESTA LÍNEA ES LA QUE DABA ERROR (aprox. línea 71)
-            document.getElementById('respuesta-correcta-texto').textContent = data.texto_opcion_correcta;
-
+            document.getElementById('respuesta-correcta-texto').textContent = data.texto_opcion_correcta || '---';
             const rankingLista = document.getElementById('ranking-lista');
             rankingLista.innerHTML = '';
-            data.ranking.forEach(item => {
+            (data.ranking || []).forEach(item => {
                 rankingLista.innerHTML += `<li>${item.nombre}: ${item.puntaje}</li>`;
             });
-
             document.getElementById('resultados-container').style.display = 'block';
             document.getElementById('estado').textContent = 'Esperando siguiente pregunta...';
-        });
+        }
 
-        socket.on('juego_finalizado', (data) => {
+        function renderFinal(data) {
             clearInterval(timerInterval);
             document.getElementById('pregunta-container').style.display = 'none';
             document.getElementById('resultados-container').style.display = 'none';
-
             const rankingFinalLista = document.getElementById('ranking-final-lista');
             const extraDiv = document.getElementById('extra');
             rankingFinalLista.innerHTML = '';
-            data.ranking.forEach(item => {
+            (data || []).forEach(item => {
                 rankingFinalLista.innerHTML += `<li>${item.nombre}: ${item.puntaje}</li>`;
             });
-
             document.getElementById('final-container').style.display = 'block';
             document.getElementById('estado').textContent = 'Fin del juego.';
-
             extraDiv.innerHTML = `<a href="{{ url_for('dashboard') }}">Volver a la página</a>`;
-        });
+        }
+
+        async function pollCurrent() {
+            try {
+                const res = await fetch(`/api/game/current?pin=${encodeURIComponent(pin)}`);
+                if (!res.ok) return;
+                const cur = await res.json();
+                if (cur.estado === 'F' || cur.fase === 'final') {
+                    renderFinal(cur.data);
+                    return;
+                }
+                if (cur.fase === 'question') {
+                    if (cur.data && cur.data.index !== lastQuestionIndex) {
+                        lastQuestionIndex = cur.data.index;
+                        clearInterval(timerInterval);
+                        renderQuestion(cur.data);
+                    }
+                } else if (cur.fase === 'results') {
+                    renderResults(cur.data || {});
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function joinGame() {
+            try {
+                await fetch('/api/player/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin })
+                });
+            } catch (e) { }
+        }
+
+        joinGame();
+        setInterval(pollCurrent, 1000);
     </script>
 </body>
 

@@ -141,51 +141,78 @@
     <div id="lobby-container">
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
-        const socket = io();
         const pin = "{{ pin }}";
+        let pollLobbyInterval = null;
+        let pollStatusInterval = null;
 
-        function unirseAGrupo(nombreGrupo) {
-            socket.emit('seleccionar_grupo', { pin: pin, nombre_grupo: nombreGrupo });
+        async function unirseAGrupo(nombre_grupo) {
+            try {
+                await fetch('/api/player/select-group', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin, nombre_grupo })
+                });
+            } catch (e) { console.error(e); }
         }
 
-        function actualizarLobby(data) {
+        function renderLobby(data) {
             const container = document.getElementById('lobby-container');
-
-            if (data.modalidad_grupal) { // Modo Grupal
+            if (data.modalidad_grupal) {
                 container.innerHTML = '<h3>Elige tu grupo:</h3>';
                 const gruposContainer = document.createElement('div');
                 gruposContainer.className = 'grupos-container';
-                data.grupos.forEach(grupo => {
+                (data.grupos || []).forEach(grupo => {
                     const grupoCard = document.createElement('div');
                     grupoCard.className = 'grupo-card';
+                    const miembros = (grupo.miembros || []).map(m => `<li>${m}</li>`).join('');
                     grupoCard.innerHTML = `
                         <h4>${grupo.nombre}</h4>
-                        <ul>${grupo.miembros.map(m => `<li>${m}</li>`).join('')}</ul>
+                        <ul>${miembros}</ul>
                         <button onclick="unirseAGrupo('${grupo.nombre}')">Unirse</button>
                     `;
                     gruposContainer.appendChild(grupoCard);
                 });
                 container.appendChild(gruposContainer);
-            } else { // Modo Individual
+            } else {
                 container.innerHTML = '<h3>Jugadores en la sala:</h3>';
                 const lista = document.createElement('ul');
-                data.participantes_sin_grupo.forEach(jugador => {
-                    lista.innerHTML += `<li>${jugador}</li>`;
-                });
+                (data.participantes_sin_grupo || []).forEach(j => { lista.innerHTML += `<li>${j}</li>`; });
                 container.appendChild(lista);
             }
         }
 
-        socket.on('connect', () => socket.emit('unirse_como_jugador', { pin: pin }));
-        socket.on('actualizar_estado_lobby', actualizarLobby);
+        async function joinLobby() {
+            try {
+                const res = await fetch('/api/player/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin })
+                });
+                const data = await res.json();
+                if (!res.ok) return;
+                renderLobby(data.lobby);
+                pollLobbyInterval = setInterval(async () => {
+                    const r = await fetch(`/api/lobby/state?pin=${encodeURIComponent(pin)}`);
+                    if (!r.ok) return;
+                    const l = await r.json();
+                    renderLobby(l);
+                }, 1500);
 
-        socket.on('redirigir_a_juego', (data) => {
-            console.log('Recibida orden de redirección:', data.url);
-            window.location.href = data.url; // Redirige el navegador
-        });
+                pollStatusInterval = setInterval(async () => {
+                    const sres = await fetch(`/api/game/status?pin=${encodeURIComponent(pin)}`);
+                    if (!sres.ok) return;
+                    const st = await sres.json();
+                    if (st.estado === 'J' && st.url) {
+                        clearInterval(pollLobbyInterval);
+                        clearInterval(pollStatusInterval);
+                        window.location.href = st.url;
+                    }
+                }, 1200);
+            } catch (e) { console.error(e); }
+        }
 
+        joinLobby();
     </script>
 </body>
 

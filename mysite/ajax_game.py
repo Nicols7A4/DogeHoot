@@ -1,0 +1,343 @@
+import time
+from flask import session
+
+from controladores import controlador_partidas as ctrl_partidas
+from controladores import preguntas_opciones as cpo
+from controladores import usuarios as ctrl_usuarios
+
+
+# Estado de partidas en memoria (similar a game_events)
+partidas_en_juego = {}
+
+RESULTS_DELAY_SECONDS = 2
+
+
+def _calcular_puntos(tiempo_restante, tiempo_total):
+    if tiempo_restante is None or tiempo_total is None:
+        return 0
+    if tiempo_restante <= 0:
+        return 0
+    base = 1000
+    bonus = int(1000 * (tiempo_restante / float(tiempo_total)))
+    return base + bonus
+
+
+def _ensure_loaded(pin):
+    if pin in partidas_en_juego:
+        return partidas_en_juego[pin]
+
+    partida_db = ctrl_partidas.obtener_partida_por_pin(pin)
+    if not partida_db:
+        return None
+
+    grupos = []
+    if partida_db['modalidad']:
+        for i in range(partida_db.get('cant_grupos', 2)):
+            grupos.append({
+                'nombre': f"Grupo {i+1}",
+                'miembros': [],
+                'puntaje': 0,
+                'respondio_pregunta': False,
+            })
+
+    partidas_en_juego[pin] = {
+        'id_partida': partida_db['id_partida'],
+        'id_cuestionario': partida_db['id_cuestionario'],
+        'modalidad_grupal': partida_db['modalidad'],
+        'estado': 'E',  # E=espera, J=jugando, F=finalizado
+        'fase': 'lobby',  # lobby | question | results | final
+        'pregunta_actual_index': -1,
+        'preguntas_data': cpo.obtener_preguntas_por_cuestionario(partida_db['id_cuestionario']),
+        'participantes': {},  # nombre_usuario -> {grupo, puntaje, id_usuario}
+        'grupos': grupos,
+        'participantes_sin_grupo': [],
+        # tiempos
+        'question_started_at': None,
+        'question_duration': None,
+        'results_started_at': None,
+        'ultimo_resultado': None,
+    }
+
+    return partidas_en_juego[pin]
+
+
+def get_lobby_state(pin):
+    partida = partidas_en_juego.get(pin)
+    if not partida:
+        return {'participantes_sin_grupo': [], 'grupos': [], 'modalidad_grupal': False}
+    return {
+        'modalidad_grupal': partida['modalidad_grupal'],
+        'participantes_sin_grupo': list(partida['participantes_sin_grupo']),
+        'grupos': [
+            {
+                'nombre': g['nombre'],
+                'miembros': list(g['miembros']),
+                'puntaje': g['puntaje'],
+            } for g in partida.get('grupos', [])
+        ],
+    }
+
+
+def join_player(pin):
+    partida = _ensure_loaded(pin)
+    if not partida:
+        return None
+
+    nombre_usuario = session.get('nombre_usuario')
+    if not nombre_usuario:
+        # fallback invitado si no hubiera nombre en sesión
+        import random
+        nombre_usuario = f"Invitado_{random.randint(100,999)}"
+    id_usuario = session.get('user_id')
+
+    if nombre_usuario not in partida['participantes']:
+        partida['participantes'][nombre_usuario] = {'grupo': None, 'puntaje': 0, 'id_usuario': id_usuario}
+        if partida['modalidad_grupal']:
+            partida['participantes_sin_grupo'].append(nombre_usuario)
+        else:
+            if not partida['grupos']:
+                partida['grupos'].append({'nombre': 'Individual', 'miembros': [], 'puntaje': 0, 'respondio_pregunta': False})
+            partida['grupos'][0]['miembros'].append(nombre_usuario)
+
+    return partida
+
+
+def select_group(pin, nombre_grupo):
+    partida = partidas_en_juego.get(pin)
+    if not partida or not partida['modalidad_grupal']:
+        return False
+
+    nombre_usuario = session.get('nombre_usuario')
+    if not nombre_usuario:
+        return False
+
+    if nombre_usuario in partida['participantes_sin_grupo']:
+        partida['participantes_sin_grupo'].remove(nombre_usuario)
+    for g in partida['grupos']:
+        if nombre_usuario in g['miembros']:
+            g['miembros'].remove(nombre_usuario)
+
+    for g in partida['grupos']:
+        if g['nombre'] == nombre_grupo:
+            g['miembros'].append(nombre_usuario)
+            partida['participantes'][nombre_usuario]['grupo'] = nombre_grupo
+            return True
+    return False
+
+
+def start_game(pin):
+    partida = partidas_en_juego.get(pin)
+    if not partida or partida['estado'] != 'E':
+        return False
+
+    partida['estado'] = 'J'
+    # arrancar en primera pregunta
+    return _start_next_question(pin)
+
+
+def _start_next_question(pin):
+    partida = partidas_en_juego.get(pin)
+    if not partida or partida['estado'] != 'J':
+        return False
+
+    # siguiente índice
+    partida['pregunta_actual_index'] += 1
+
+    if partida['pregunta_actual_index'] >= len(partida['preguntas_data']):
+        finalize_game(pin)
+        return False
+
+    # resetear flags grupales
+    for g in partida.get('grupos', []):
+        g['respondio_pregunta'] = False
+
+    pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
+    partida['fase'] = 'question'
+    partida['question_started_at'] = time.time()
+    partida['question_duration'] = pregunta['tiempo']
+    partida['results_started_at'] = None
+    partida['ultimo_resultado'] = None
+    return True
+
+
+def _compute_question_payload(partida):
+    pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
+    opciones = cpo.obtener_opciones_por_pregunta(pregunta['id_pregunta'])
+    return {
+        'index': partida['pregunta_actual_index'],
+        'texto': pregunta['pregunta'],
+        'tiempo': pregunta['tiempo'],
+        'opciones': [{'id': o['id_opcion'], 'texto': o['opcion']} for o in opciones],
+        'adjunto': pregunta.get('adjunto'),
+        'started_at': partida['question_started_at'],
+        'server_time': time.time(),
+    }
+
+
+def _compute_results(partida):
+    # obtener texto de la opción correcta
+    pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
+    opciones = cpo.obtener_opciones_por_pregunta(pregunta['id_pregunta'])
+    id_correcta = next((o['id_opcion'] for o in opciones if o['es_correcta_bool']), None)
+    texto_correcta = 'N/A'
+    if id_correcta:
+        for o in opciones:
+            if o['id_opcion'] == id_correcta:
+                texto_correcta = o['opcion']
+                break
+
+    if partida['modalidad_grupal']:
+        ranking = sorted(partida['grupos'], key=lambda g: g['puntaje'], reverse=True)
+        ranking_data = [{'nombre': g['nombre'], 'puntaje': g['puntaje']} for g in ranking]
+    else:
+        ranking_ordenado = sorted(partida['participantes'].values(), key=lambda p: p['puntaje'], reverse=True)
+        ranking_data, usados = [], set()
+        for p_data in ranking_ordenado:
+            for nombre, data in partida['participantes'].items():
+                if data == p_data and nombre not in usados:
+                    ranking_data.append({'nombre': nombre, 'puntaje': data['puntaje']})
+                    usados.add(nombre)
+                    break
+
+    return {
+        'texto_opcion_correcta': texto_correcta,
+        'ranking': ranking_data,
+    }
+
+
+def advance_state_if_needed(pin):
+    partida = partidas_en_juego.get(pin)
+    if not partida:
+        return None
+
+    now = time.time()
+    if partida['estado'] == 'J' and partida['fase'] == 'question':
+        if partida['question_started_at'] is not None and partida['question_duration'] is not None:
+            if now >= partida['question_started_at'] + float(partida['question_duration']):
+                # pasar a resultados
+                partida['fase'] = 'results'
+                partida['results_started_at'] = now
+                partida['ultimo_resultado'] = _compute_results(partida)
+
+    if partida['estado'] == 'J' and partida['fase'] == 'results':
+        if partida['results_started_at'] is not None:
+            if now >= partida['results_started_at'] + RESULTS_DELAY_SECONDS:
+                # siguiente pregunta o final
+                _start_next_question(pin)
+
+    return partida
+
+
+def get_status(pin):
+    partida = advance_state_if_needed(pin)
+    if not partida:
+        return {'existe': False}
+    return {
+        'existe': True,
+        'estado': partida['estado'],
+        'fase': partida['fase'],
+    }
+
+
+def get_current(pin):
+    partida = advance_state_if_needed(pin)
+    if not partida:
+        return {'existe': False}
+
+    if partida['estado'] == 'F' or partida['fase'] == 'final':
+        return {'existe': True, 'estado': 'F', 'fase': 'final', 'data': _final_ranking(partida)}
+
+    if partida['estado'] == 'J' and partida['fase'] == 'question':
+        return {'existe': True, 'estado': 'J', 'fase': 'question', 'data': _compute_question_payload(partida)}
+
+    if partida['estado'] == 'J' and partida['fase'] == 'results':
+        return {'existe': True, 'estado': 'J', 'fase': 'results', 'data': partida.get('ultimo_resultado')}
+
+    # lobby
+    return {'existe': True, 'estado': partida['estado'], 'fase': partida['fase']}
+
+
+def submit_answer(pin, id_opcion, tiempo_restante):
+    partida = partidas_en_juego.get(pin)
+    if not partida or partida['estado'] != 'J' or partida['fase'] != 'question':
+        return False
+
+    nombre_usuario = session.get('nombre_usuario')
+    if not nombre_usuario:
+        return False
+
+    participante = partida['participantes'].get(nombre_usuario)
+    if not participante:
+        return False
+
+    opcion_db = cpo.obtener_opcion_por_id(id_opcion)
+    if not opcion_db:
+        return False
+
+    pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
+    tiempo_total = pregunta['tiempo']
+
+    puntos = _calcular_puntos(tiempo_restante, tiempo_total) if opcion_db['es_correcta_bool'] else 0
+
+    if partida['modalidad_grupal']:
+        nombre_grupo = participante.get('grupo')
+        if not nombre_grupo:
+            return False
+        grupo = next((g for g in partida['grupos'] if g['nombre'] == nombre_grupo), None)
+        if not grupo or grupo.get('respondio_pregunta'):
+            return False
+        grupo['puntaje'] += puntos
+        grupo['respondio_pregunta'] = True
+        return True
+
+    # individual
+    participante['puntaje'] += puntos
+    return True
+
+
+def _final_ranking(partida):
+    if partida['modalidad_grupal']:
+        ranking_final = sorted(partida['grupos'], key=lambda g: g['puntaje'], reverse=True)
+        return [{'nombre': g['nombre'], 'puntaje': g['puntaje']} for g in ranking_final]
+    else:
+        ranking_ordenado = sorted(partida['participantes'].values(), key=lambda p: p['puntaje'], reverse=True)
+        ranking_data, usados = [], set()
+        for p_data in ranking_ordenado:
+            for nombre, data in partida['participantes'].items():
+                if data == p_data and nombre not in usados:
+                    ranking_data.append({'nombre': nombre, 'puntaje': data['puntaje']})
+                    usados.add(nombre)
+                    break
+        return ranking_data
+
+
+def finalize_game(pin):
+    partida = partidas_en_juego.get(pin)
+    if not partida or partida['estado'] == 'F':
+        return False
+
+    partida['estado'] = 'F'
+    partida['fase'] = 'final'
+
+    # guardar puntos en DB
+    if partida['modalidad_grupal']:
+        ranking_final = sorted(partida['grupos'], key=lambda g: g['puntaje'], reverse=True)
+        for grupo in ranking_final:
+            for miembro_nombre in grupo['miembros']:
+                participante_data = partida['participantes'].get(miembro_nombre)
+                if participante_data and participante_data.get('id_usuario'):
+                    ctrl_usuarios.sumar_puntos(participante_data['id_usuario'], grupo['puntaje'])
+    else:
+        ranking_final = sorted(partida['participantes'].values(), key=lambda p: p['puntaje'], reverse=True)
+        usados = set()
+        for p_data in ranking_final:
+            for nombre, data in partida['participantes'].items():
+                if data == p_data and nombre not in usados:
+                    if data.get('id_usuario'):
+                        ctrl_usuarios.sumar_puntos(data['id_usuario'], data['puntaje'])
+                    usados.add(nombre)
+                    break
+
+    # marcar finalizado en BD
+    ctrl_partidas.finalizar_partida(partida['id_partida'])
+    return True

@@ -5,7 +5,6 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 from flask import Flask, render_template, request, redirect, flash, jsonify
 from flask_mail import Mail, Message
-from flask_socketio import SocketIO
 sys.modules.setdefault('main', sys.modules.get('__main__'))
 
 from controladores.controlador_recompensas import otorgar_recompensas
@@ -18,7 +17,6 @@ app = Flask(__name__)
 app.register_blueprint(perfil_bp) #agregado por pame. NOTA: Se puede borrar
 # app.secret_key = 'Tralalero Tralala'
 app.config['SECRET_KEY'] = 'Tralalero Tralala'
-socketio = SocketIO(app, async_mode='eventlet')
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
@@ -30,7 +28,6 @@ mail = Mail(app)
 
 import routes_web
 import routes_api
-import game_events
 
 #Para que el usuario suba una foto para su perfil
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB
@@ -50,9 +47,8 @@ def _unique_name(user_id, ext):
 
 # Iniciar el servidor
 if __name__ == "__main__":
-    # app.run(host='0.0.0.0', port=8000, debug=True)
-    # socketio.run(app, host='0.0.0.0', port=8000, debug=True)
-    socketio.run(app, debug=True)
+    # Ejecutar sin Socket.IO (solo HTTP)
+    app.run(debug=True, port=5001)
     
 
     #---------------------------prueba recompensa

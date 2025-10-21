@@ -12,6 +12,19 @@ from controladores import controlador_partidas as c_part
 from controladores import controlador_recompensas as c_rec
 from controladores import usuarios as ctrl
 from controladores import email_sender
+from ajax_game import (
+    partidas_en_juego,
+    _ensure_loaded,
+    get_lobby_state,
+    join_player,
+    select_group,
+    start_game,
+    get_status,
+    get_current,
+    submit_answer,
+    advance_state_if_needed,
+    finalize_game,
+)
 
 
 # --- Auxiliares --------
@@ -526,6 +539,108 @@ def api_finalizar_partida(id_partida):
             "detalle": str(e),
             "traza": traceback.format_exc()
         }), 500
+
+
+# ---------------------------
+# AJAX GAME (sin sockets)
+
+@app.post('/api/game/host/init')
+def api_game_host_init():
+    data = request.get_json(force=True) or {}
+    pin = (data.get('pin') or '').strip().upper()
+    partida = _ensure_loaded(pin)
+    if not partida:
+        return jsonify({'error': 'PIN inválido o no disponible'}), 404
+    return jsonify({'ok': True, 'lobby': get_lobby_state(pin), 'estado': partida['estado'], 'fase': partida['fase']})
+
+
+@app.get('/api/lobby/state')
+def api_lobby_state():
+    pin = (request.args.get('pin') or '').strip().upper()
+    if not pin:
+        return jsonify({'error': 'pin requerido'}), 400
+    if not _ensure_loaded(pin):
+        return jsonify({'error': 'PIN inválido'}), 404
+    return jsonify(get_lobby_state(pin))
+
+
+@app.post('/api/player/join')
+def api_player_join():
+    data = request.get_json(force=True) or {}
+    pin = (data.get('pin') or '').strip().upper()
+    if not pin:
+        return jsonify({'error': 'pin requerido'}), 400
+    if not _ensure_loaded(pin):
+        return jsonify({'error': 'PIN inválido'}), 404
+    partida = join_player(pin)
+    if not partida:
+        return jsonify({'error': 'no se pudo unir'}), 400
+    st = get_status(pin)
+    return jsonify({'ok': True, 'estado': st.get('estado'), 'fase': st.get('fase'), 'lobby': get_lobby_state(pin)})
+
+
+@app.post('/api/player/select-group')
+def api_player_select_group():
+    data = request.get_json(force=True) or {}
+    pin = (data.get('pin') or '').strip().upper()
+    nombre_grupo = (data.get('nombre_grupo') or '').strip()
+    if not pin or not nombre_grupo:
+        return jsonify({'error': 'pin y nombre_grupo requeridos'}), 400
+    if not _ensure_loaded(pin):
+        return jsonify({'error': 'PIN inválido'}), 404
+    ok = select_group(pin, nombre_grupo)
+    if not ok:
+        return jsonify({'error': 'no se pudo seleccionar grupo'}), 400
+    return jsonify({'ok': True, 'lobby': get_lobby_state(pin)})
+
+
+@app.post('/api/game/start')
+def api_game_start():
+    data = request.get_json(force=True) or {}
+    pin = (data.get('pin') or '').strip().upper()
+    if not pin:
+        return jsonify({'error': 'pin requerido'}), 400
+    if not _ensure_loaded(pin):
+        return jsonify({'error': 'PIN inválido'}), 404
+    started = start_game(pin)
+    return jsonify({'started': bool(started)})
+
+
+@app.get('/api/game/status')
+def api_game_status():
+    pin = (request.args.get('pin') or '').strip().upper()
+    if not pin:
+        return jsonify({'error': 'pin requerido'}), 400
+    st = get_status(pin)
+    if not st.get('existe'):
+        return jsonify({'error': 'PIN inválido'}), 404
+    resp = {'estado': st['estado'], 'fase': st['fase']}
+    if st['estado'] == 'J':
+        resp['url'] = url_for('pagina_juego', pin=pin)
+    return jsonify(resp)
+
+
+@app.get('/api/game/current')
+def api_game_current():
+    pin = (request.args.get('pin') or '').strip().upper()
+    if not pin:
+        return jsonify({'error': 'pin requerido'}), 400
+    cur = get_current(pin)
+    if not cur.get('existe'):
+        return jsonify({'error': 'PIN inválido'}), 404
+    return jsonify(cur)
+
+
+@app.post('/api/game/answer')
+def api_game_answer():
+    data = request.get_json(force=True) or {}
+    pin = (data.get('pin') or '').strip().upper()
+    id_opcion = data.get('id_opcion')
+    tiempo_restante = data.get('tiempo_restante', 0)
+    if not pin or id_opcion is None:
+        return jsonify({'error': 'pin e id_opcion requeridos'}), 400
+    ok = submit_answer(pin, id_opcion, tiempo_restante)
+    return jsonify({'ok': bool(ok)})
 
 #------------------CODIGO PARA ACCEDER AL CUESTIONARIO EN MODO VISUALIZACION------
 
