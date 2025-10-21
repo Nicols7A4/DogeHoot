@@ -443,3 +443,37 @@ def correo_activo(correo: str, require_verificado: bool = False) -> bool:
     finally:
         if conexion:
             conexion.close()
+
+
+
+
+
+
+
+
+def sumar_puntos(id_usuario, puntos_a_sumar):
+    """
+    Suma una cantidad de puntos al total de un usuario.
+    """
+    if not id_usuario or puntos_a_sumar == 0:
+        return False # No hacemos nada si no hay usuario o puntos
+        
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            # Usamos UPDATE ... SET puntos = puntos + %s para sumar de forma segura
+            sql = "UPDATE USUARIO SET puntos = puntos + %s WHERE id_usuario = %s"
+            cursor.execute(sql, (puntos_a_sumar, id_usuario))
+        
+        conexion.commit()
+        print(f"Se sumaron {puntos_a_sumar} puntos al usuario {id_usuario}")
+        return True
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        print(f"Error al sumar puntos al usuario {id_usuario}: {e}")
+        return False
+    finally:
+        if conexion:
+            conexion.close()
