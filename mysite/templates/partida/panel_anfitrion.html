@@ -3,42 +3,342 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Panel de Anfitrión - {{ pin }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Anfitrion - {{ pin }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <style>
-        /* Estilos simples para la demo */
         body {
-            font-family: sans-serif;
+            background-color: var(--main-bg);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .screen {
+            display: none;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: var(--panel-shadow);
+            border: 1px solid var(--border-soft);
+            padding: 30px;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .host-header {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-color);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .host-subheader {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .host-body {
+            min-height: 300px;
+        }
+
+        .player-pool-box {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-soft);
+            min-height: 250px;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .player-avatar-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+
+        .avatar-container img.avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .avatar-container img.marco-activo {
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            width: calc(100% + 4px);
+            height: calc(100% + 4px);
+            border-radius: 50%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .player-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-color);
+            text-align: center;
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .host-footer {
+            margin-top: 30px;
             text-align: center;
         }
 
-        .grupos-container {
-            display: flex;
+        .btn {
+            display: inline-flex;
+            align-items: center;
             justify-content: center;
-            gap: 2rem;
-            margin-top: 2rem;
+            gap: 8px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
         }
 
-        .grupo-card {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 1rem;
-            min-width: 200px;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--btn-hover-shadow);
+        }
+
+        .btn-success {
+            background: var(--btn-success-bg);
+            color: var(--btn-success-text);
+        }
+
+        .btn-success:hover {
+            border-color: var(--btn-success-text);
+        }
+
+        .btn-primary {
+            background: var(--btn-inprogress-bg);
+            color: var(--btn-inprogress-text);
+        }
+
+        .btn-secondary {
+            background: var(--btn-pending-bg);
+            color: var(--btn-pending-text);
+        }
+
+        /* PANTALLA DE PREGUNTA */
+        .host-q-header {
+            background: var(--btn-submitted-bg);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-soft);
+        }
+
+        .host-q-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .host-q-timer-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-soft);
+        }
+
+        .host-q-timer-box span {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        #host-q-timer {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--btn-failed-text);
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-grid .btn {
+            padding: 18px;
+            font-size: 0.95rem;
+            min-height: 70px;
+        }
+
+        #host-q-feedback {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 12px;
+            background: var(--btn-expired-bg);
+            border-radius: 12px;
+        }
+
+        /* PANTALLA DE RESULTADOS Y FINAL */
+        .podium-header {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            color: var(--text-color);
+            margin-bottom: 25px;
+        }
+
+        .podium-places {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .podium-place {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-soft);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s;
+        }
+
+        .podium-place:hover {
+            transform: translateX(5px);
+        }
+
+        .podium-rank {
+            font-size: 1.5rem;
+            font-weight: 700;
+            min-width: 50px;
+        }
+
+        .podium-name {
+            flex: 1;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .podium-score {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--btn-success-text);
         }
     </style>
 </head>
 
 <body>
-    <h1>PIN: {{ pin }}</h1>
-    <div id="estado-juego">Esperando jugadores...</div>
-    <ul id="lista-jugadores"></ul>
-    <button id="btn-comenzar" onclick="comenzarJuego()">Comenzar Juego</button>
-    <div id="ranking"></div>
-    <div id="extra"></div>
+    <div class="container">
+        <!-- PANTALLA DE LOBBY DEL HOST -->
+        <div id="host-lobby-screen" class="screen active">
+            <div class="host-header">Panel de Anfitrion</div>
+            <div class="host-subheader">PIN: <span style="font-weight:700; color:var(--btn-inprogress-text);">{{ pin }}</span></div>
+            <div class="host-body">
+                <div class="player-pool-box">
+                    <p id="estado-juego" style="color:var(--text-muted); font-weight:600;">Esperando jugadores...</p>
+                    <div id="lista-jugadores" class="players-grid"></div>
+                </div>
+            </div>
+            <div class="host-footer">
+                <button id="btn-comenzar" class="btn btn-success" onclick="comenzarJuego()">Comenzar Juego</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA DE PREGUNTA DEL HOST -->
+        <div id="host-question-screen" class="screen">
+            <div class="host-q-header">
+                <h2 id="host-q-text">Pregunta...</h2>
+                <div class="host-q-timer-box">
+                    <span>TIEMPO</span>
+                    <div id="host-q-timer">10</div>
+                </div>
+            </div>
+            <div id="host-q-answer-grid" class="btn-grid"></div>
+            <div id="host-q-feedback">Esperando respuestas...</div>
+        </div>
+
+        <!-- PANTALLA DE RESULTADOS DEL HOST -->
+        <div id="host-results-screen" class="screen">
+            <div class="results-container">
+                <div class="podium-header">RESULTADOS DE LA PREGUNTA</div>
+                
+                <div class="correct-answer-box" style="background: var(--btn-success-bg); border: 3px solid var(--btn-success-text); border-radius: 16px; padding: 25px; margin: 25px 0; text-align: center;">
+                    <div style="font-size: 1rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Respuesta Correcta</div>
+                    <div id="host-correct-answer" style="font-size: 1.8rem; font-weight: 700; color: var(--btn-success-text);"></div>
+                </div>
+                
+                <div class="podium-header" style="font-size: 1.8rem; margin-top: 30px;">RANKING ACTUAL</div>
+                <div id="ranking" style="padding:20px;"></div>
+                
+                <div style="text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 1.1rem; font-weight: 600;">
+                    Siguiente pregunta en breve...
+                </div>
+            </div>
+        </div>
+
+        <!-- PANTALLA FINAL DEL HOST -->
+        <div id="host-final-screen" class="screen">
+            <div class="podium-header">¡JUEGO FINALIZADO!</div>
+            <div class="podium-header" style="margin-top:20px;">RANKING FINAL</div>
+            <div id="ranking-final" style="padding:20px;"></div>
+            <div id="extra" style="margin-top:30px;"></div>
+        </div>
+    </div>
 
     <script>
         const pin = "{{ pin }}";
         let pollLobbyInterval = null;
         let pollGameInterval = null;
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
 
         async function comenzarJuego() {
             try {
@@ -49,7 +349,6 @@
                 });
                 const data = await res.json();
                 if (data.started) {
-                    document.getElementById('btn-comenzar').style.display = 'none';
                     if (pollLobbyInterval) clearInterval(pollLobbyInterval);
                     startGamePolling();
                 }
@@ -61,9 +360,39 @@
         function renderLobby(lobby) {
             const lista = document.getElementById('lista-jugadores');
             lista.innerHTML = '';
-            let jugadores = Array.isArray(lobby.participantes_sin_grupo) ? lobby.participantes_sin_grupo.slice() : [];
-            (lobby.grupos || []).forEach(g => { jugadores = jugadores.concat(g.miembros || []); });
-            jugadores.forEach(j => { lista.innerHTML += `<li>${j}</li>`; });
+            let jugadores = [];
+            
+            // Recopilar todos los jugadores con su info
+            if (Array.isArray(lobby.participantes_sin_grupo)) {
+                jugadores = jugadores.concat(lobby.participantes_sin_grupo);
+            }
+            (lobby.grupos || []).forEach(g => { 
+                if (Array.isArray(g.miembros)) {
+                    jugadores = jugadores.concat(g.miembros); 
+                }
+            });
+            
+            if (jugadores.length === 0) {
+                lista.innerHTML = '<p style="color:var(--text-muted);text-align:center;">Ningun jugador conectado aun</p>';
+                return;
+            }
+            
+            jugadores.forEach(j => {
+                const nombre = typeof j === 'string' ? j : j.nombre;
+                const foto = typeof j === 'object' ? j.foto : 'img/ico.png';
+                const skin = typeof j === 'object' ? j.skin : null;
+                
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'player-avatar-wrap';
+                playerDiv.innerHTML = `
+                    <div class="avatar-container">
+                        <img src="/static/${foto}" class="avatar" alt="${nombre}">
+                        ${skin ? `<img src="/static/${skin}" class="marco-activo" alt="Skin">` : ''}
+                    </div>
+                    <span class="player-name">${nombre}</span>
+                `;
+                lista.appendChild(playerDiv);
+            });
         }
 
         async function initHost() {
@@ -86,7 +415,6 @@
                         renderLobby(l);
                     }, 1500);
                 } else {
-                    document.getElementById('btn-comenzar').style.display = 'none';
                     startGamePolling();
                 }
             } catch (e) {
@@ -94,46 +422,146 @@
             }
         }
 
+        let hostTimerInterval = null;
+        let lastQuestionIndexHost = -1;
+
         function renderQuestion(q) {
-            document.getElementById('estado-juego').textContent = `Pregunta ${q.index + 1}: ${q.texto}`;
-            document.getElementById('ranking').innerHTML = '';
+            // Solo reiniciar si es una nueva pregunta
+            if (q.index !== lastQuestionIndexHost) {
+                lastQuestionIndexHost = q.index;
+                clearInterval(hostTimerInterval);
+                
+                switchScreen('host-question-screen');
+                document.getElementById('host-q-text').textContent = q.texto;
+                
+                // Mostrar imagen si existe
+                const questionSection = document.querySelector('#host-question-screen .question-section');
+                const existingImg = questionSection ? questionSection.querySelector('.question-image') : null;
+                if (existingImg) existingImg.remove();
+                
+                if (q.adjunto && questionSection) {
+                    const img = document.createElement('img');
+                    img.src = `/static/${q.adjunto}`;
+                    img.className = 'question-image';
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = '300px';
+                    img.style.borderRadius = '12px';
+                    img.style.marginTop = '15px';
+                    img.style.marginBottom = '15px';
+                    img.style.display = 'block';
+                    img.style.marginLeft = 'auto';
+                    img.style.marginRight = 'auto';
+                    img.style.objectFit = 'contain';
+                    questionSection.appendChild(img);
+                }
+                
+                const grid = document.getElementById('host-q-answer-grid');
+                grid.innerHTML = '';
+                (q.opciones || []).forEach(op => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-secondary';
+                    btn.textContent = op.texto;
+                    btn.style.pointerEvents = 'none';
+                    grid.appendChild(btn);
+                });
+
+                // Iniciar timer sincronizado con el servidor
+                const now = Date.now() / 1000.0;
+                const serverNow = q.server_time || now;
+                const diff = now - serverNow;
+                const elapsed = Math.max(0, (now - diff) - q.started_at);
+                let tiempoRestante = Math.max(0, Math.ceil(q.tiempo - elapsed));
+                
+                document.getElementById('host-q-timer').textContent = tiempoRestante;
+                
+                hostTimerInterval = setInterval(() => {
+                    tiempoRestante--;
+                    document.getElementById('host-q-timer').textContent = Math.max(0, tiempoRestante);
+                    if (tiempoRestante <= 0) {
+                        clearInterval(hostTimerInterval);
+                    }
+                }, 1000);
+            }
         }
 
         function renderResults(r) {
-            document.getElementById('estado-juego').textContent = 'Mostrando resultados...';
+            clearInterval(hostTimerInterval);
+            switchScreen('host-results-screen');
+            
+            console.log('[HOST] Mostrando resultados:', r);
+            
+            // Mostrar respuesta correcta
+            const correctAnswerDiv = document.getElementById('host-correct-answer');
+            if (r && r.texto_opcion_correcta) {
+                correctAnswerDiv.textContent = r.texto_opcion_correcta;
+            } else {
+                correctAnswerDiv.textContent = 'N/A';
+            }
+            
+            // Mostrar ranking
             const rankingDiv = document.getElementById('ranking');
-            rankingDiv.innerHTML = '<h4>Ranking Actual:</h4><ol>';
-            (r.ranking || []).forEach(item => {
-                rankingDiv.innerHTML += `<li>${item.nombre}: ${item.puntaje} puntos</li>`;
-            });
-            rankingDiv.innerHTML += '</ol>';
+            rankingDiv.innerHTML = '<div class="podium-places">';
+            
+            if (r && r.ranking && Array.isArray(r.ranking)) {
+                r.ranking.forEach((item, idx) => {
+                    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '';
+                    rankingDiv.innerHTML += `
+                        <div class="podium-place">
+                            <div class="podium-rank">${medal || (idx + 1)}</div>
+                            <div class="podium-name">${item.nombre}</div>
+                            <div class="podium-score">${item.puntaje} pts</div>
+                        </div>
+                    `;
+                });
+            } else {
+                rankingDiv.innerHTML += '<p style="text-align: center; color: var(--text-muted);">No hay datos de ranking</p>';
+            }
+            
+            rankingDiv.innerHTML += '</div>';
         }
 
         function renderFinal(r) {
-            document.getElementById('estado-juego').textContent = '¡Juego Finalizado!';
-            const rankingDiv = document.getElementById('ranking');
+            switchScreen('host-final-screen');
+            const rankingDiv = document.getElementById('ranking-final');
             const extraDiv = document.getElementById('extra');
-            rankingDiv.innerHTML = '<h2>Ranking Final:</h2><ol>';
-            (r || []).forEach(item => {
-                rankingDiv.innerHTML += `<li>${item.nombre}: ${item.puntaje} puntos</li>`;
+            rankingDiv.innerHTML = '<div class="podium-places">';
+            (r || []).forEach((item, idx) => {
+                const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '';
+                rankingDiv.innerHTML += `
+                    <div class="podium-place">
+                        <div class="podium-rank">${medal || (idx + 1)}</div>
+                        <div class="podium-name">${item.nombre}</div>
+                        <div class="podium-score">${item.puntaje} pts</div>
+                    </div>
+                `;
             });
-            rankingDiv.innerHTML += '</ol>';
-            extraDiv.innerHTML = `<a href="{{ url_for('cuestionarios') }}">Volver a mis cuestionarios</a>`;
+            rankingDiv.innerHTML += '</div>';
+            extraDiv.innerHTML = `<a href="{{ url_for('cuestionarios') }}" class="btn btn-primary">Volver a mis cuestionarios</a>`;
         }
 
         function startGamePolling() {
             pollGameInterval = setInterval(async () => {
                 const res = await fetch(`/api/game/current?pin=${encodeURIComponent(pin)}`);
                 const data = await res.json();
+                
                 if (!res.ok || !data.existe) return;
+                
+                // Final del juego
                 if (data.estado === 'F' || data.fase === 'final') {
                     clearInterval(pollGameInterval);
                     renderFinal(data.data);
                     return;
                 }
-                if (data.fase === 'question') renderQuestion(data.data);
-                if (data.fase === 'results') renderResults(data.data);
-            }, 1000);
+                
+                // Pregunta activa - solo renderizar si cambió el índice
+                if (data.fase === 'question' && data.data && data.data.index !== lastQuestionIndexHost) {
+                    renderQuestion(data.data);
+                }
+                // Resultados
+                else if (data.fase === 'results' && data.data) {
+                    renderResults(data.data);
+                }
+            }, 500);
         }
 
         // init

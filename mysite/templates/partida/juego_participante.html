@@ -1,64 +1,398 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
-    <title>Jugando - {{ pin }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego en Curso</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--main-bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .screen {
+            display: none;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: var(--panel-shadow);
+            border: 2px solid var(--border-soft);
+            padding: 40px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .screen.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* PANTALLA DE PREGUNTA */
+        .question-header {
+            background: var(--btn-submitted-bg);
+            border-radius: 16px;
+            padding: 40px 35px;
+            margin-bottom: 30px;
+            border: 3px solid var(--btn-submitted-text);
+            box-shadow: 0 6px 20px rgba(142, 92, 246, 0.2);
+        }
+
+        .question-header h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--btn-submitted-text);
+            margin-bottom: 25px;
+            text-align: center;
+            line-height: 1.5;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .player-timer-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            border-radius: 12px;
+            padding: 15px 25px;
+            border: 2px solid var(--border-soft);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            max-width: 150px;
+            margin: 0 auto;
+        }
+
+        .player-timer-box span {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .player-timer {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--btn-failed-text);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: 3px solid transparent;
+            border-radius: 14px;
+            padding: 28px 20px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            min-height: 100px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--btn-hover-shadow);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--btn-inprogress-bg);
+            color: var(--btn-inprogress-text);
+            border-color: var(--btn-inprogress-text);
+        }
+
+        .btn-primary:hover {
+            background: #D0E7FF;
+        }
+
+        /* PANTALLA DE ESPERA/RESULTADOS */
+        .waiting-box {
+            text-align: center;
+            padding: 50px 30px;
+        }
+
+        #waiting-title {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--btn-submitted-text);
+        }
+
+        #waiting-message {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 45px;
+            line-height: 1.6;
+        }
+
+        .waiting-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 30px;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .stat-item {
+            background: var(--btn-success-bg);
+            border-radius: 16px;
+            padding: 30px;
+            border: 3px solid var(--btn-success-text);
+            box-shadow: 0 4px 15px rgba(43, 182, 115, 0.15);
+            transition: transform 0.2s;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(43, 182, 115, 0.25);
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--btn-success-text);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* PANTALLA DE PODIO */
+        .podium-header {
+            font-size: 2.8rem;
+            font-weight: 700;
+            text-align: center;
+            color: var(--btn-submitted-text);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .podium-subheader {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .podium-places {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin-bottom: 35px;
+        }
+
+        .podium-place {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 25px 30px;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            border: 2px solid var(--border-soft);
+            box-shadow: var(--panel-shadow);
+            transition: all 0.3s;
+        }
+
+        .podium-place:hover {
+            transform: translateX(8px) scale(1.02);
+            box-shadow: var(--btn-hover-shadow);
+        }
+
+        .podium-place:nth-child(1) {
+            background: #FFF9C4;
+            border-color: #FFD700;
+            border-width: 4px;
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .podium-place:nth-child(2) {
+            background: #F5F5F5;
+            border-color: #C0C0C0;
+            border-width: 4px;
+            box-shadow: 0 4px 15px rgba(192, 192, 192, 0.3);
+        }
+
+        .podium-place:nth-child(3) {
+            background: #FFE4C4;
+            border-color: #CD7F32;
+            border-width: 4px;
+            box-shadow: 0 4px 15px rgba(205, 127, 50, 0.3);
+        }
+
+        .podium-rank {
+            font-size: 1.8rem;
+            font-weight: 700;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .podium-name {
+            flex: 1;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-color);
+            padding: 0 20px;
+        }
+
+        .podium-score {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--btn-success-text);
+            min-width: 80px;
+            text-align: right;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Partida: {{ pin }}</h1>
-    <div id="estado">Cargando pregunta...</div>
+    <div class="container">
+        <!-- PANTALLA DE PREGUNTA -->
+        <div id="question-screen" class="screen active">
+            <div class="question-header">
+                <h2 id="question-text">Cargando...</h2>
+                <div class="player-timer-box">
+                    <span>TIEMPO</span>
+                    <div id="player-timer" class="player-timer">10</div>
+                </div>
+            </div>
+            <div id="answer-grid" class="btn-grid"></div>
+        </div>
 
-    <div id="pregunta-container" style="display: none;">
-        <h2 id="pregunta-texto"></h2>
-        <img id="pregunta-imagen" src="" style="display:none; max-width: 400px; margin-top: 10px;">
-        <div id="opciones-lista"></div>
-        <p>Tiempo: <span id="tiempo"></span>s</p>
+        <!-- PANTALLA DE ESPERA (RESULTADOS) -->
+        <div id="waiting-screen" class="screen">
+            <div class="waiting-box">
+                <h2 id="waiting-title">¡Respuesta enviada!</h2>
+                <p id="waiting-message">Esperando a los demás...</p>
+                <div class="waiting-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">TU PUNTUACIÓN</span>
+                        <span id="waiting-score" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">RESPUESTA CORRECTA</span>
+                        <span id="correct-answer" class="stat-value">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANTALLA DE RANKING FINAL -->
+        <div id="podium-screen" class="screen">
+            <div class="podium-header">¡JUEGO TERMINADO!</div>
+            <div class="podium-subheader">RANKING FINAL</div>
+            <div id="podium-places" class="podium-places"></div>
+            <div style="margin-top:30px;">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Volver al Dashboard</a>
+            </div>
+        </div>
     </div>
-
-    <div id="resultados-container" style="display: none;">
-        <h3>Resultados de la Pregunta</h3>
-        <p>La respuesta correcta era: <strong id="respuesta-correcta-texto">---</strong></p>
-        <h4>Ranking Actual:</h4>
-        <ol id="ranking-lista"></ol>
-    </div>
-
-    <div id="final-container" style="display: none;">
-        <h2>¡Juego Terminado!</h2>
-        <h4>Ranking Final:</h4>
-        <ol id="ranking-final-lista"></ol>
-    </div>
-
-    <div id="extra"></div>
 
     <script>
         const pin = "{{ pin }}";
         let tiempoRestante = 0;
         let timerInterval;
-        let lastQuestionIndex = -2;
+        let lastQuestionIndex = -1;
+        let respondido = false;
 
-        function enviarRespuesta(idOpcion) {
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        async function enviarRespuesta(idOpcion) {
+            if (respondido) return;
+            respondido = true;
             clearInterval(timerInterval);
-            fetch('/api/game/answer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pin, id_opcion: idOpcion, tiempo_restante: tiempoRestante })
-            }).catch(console.error);
-            document.getElementById('pregunta-container').style.display = 'none';
-            document.getElementById('estado').textContent = 'Respuesta enviada. Esperando resultados...';
+            
+            try {
+                const res = await fetch('/api/game/answer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin, id_opcion: idOpcion, tiempo_restante: tiempoRestante })
+                });
+                const data = await res.json();
+                
+                // Mostrar resultado inmediatamente
+                switchScreen('waiting-screen');
+                if (data.es_correcta) {
+                    document.getElementById('waiting-title').textContent = '¡CORRECTO! ✅';
+                    document.getElementById('waiting-title').style.color = '#28a745';
+                } else {
+                    document.getElementById('waiting-title').textContent = '❌ Incorrecto';
+                    document.getElementById('waiting-title').style.color = '#dc3545';
+                }
+                document.getElementById('waiting-message').textContent = 'Esperando a los demás jugadores...';
+                document.getElementById('correct-answer').textContent = data.respuesta_correcta || '-';
+                document.getElementById('waiting-score').textContent = data.mi_puntaje || 0;
+            } catch (e) {
+                console.error('Error al enviar respuesta', e);
+                switchScreen('waiting-screen');
+                document.getElementById('waiting-title').textContent = '¡Respuesta enviada!';
+                document.getElementById('waiting-message').textContent = 'Esperando a los demás jugadores...';
+            }
         }
 
         function iniciarTimer(duracion, started_at, server_time) {
             const now = Date.now() / 1000.0;
             const serverNow = server_time || now;
-            const diff = now - serverNow; // client-server offset approx
+            const diff = now - serverNow;
             const elapsed = Math.max(0, (now - diff) - started_at);
             tiempoRestante = Math.max(0, Math.floor(duracion - elapsed));
-            const tiempoDisplay = document.getElementById('tiempo');
+            const tiempoDisplay = document.getElementById('player-timer');
             tiempoDisplay.textContent = tiempoRestante;
             timerInterval = setInterval(() => {
                 tiempoRestante--;
-                tiempoDisplay.textContent = tiempoRestante;
+                tiempoDisplay.textContent = Math.max(0, tiempoRestante);
                 if (tiempoRestante <= 0) {
                     clearInterval(timerInterval);
                 }
@@ -66,55 +400,84 @@
         }
 
         function renderQuestion(data) {
-            document.getElementById('estado').textContent = `Pregunta ${data.index + 1}`;
-            document.getElementById('pregunta-texto').textContent = data.texto;
-            const opcionesLista = document.getElementById('opciones-lista');
-            opcionesLista.innerHTML = '';
+            // Resetear estado de respuesta para la nueva pregunta
+            respondido = false;
+            clearInterval(timerInterval);
+            
+            switchScreen('question-screen');
+            document.getElementById('question-text').textContent = data.texto;
+            
+            // Mostrar imagen si existe
+            const questionHeader = document.querySelector('.question-header');
+            const existingImg = questionHeader.querySelector('.question-image');
+            if (existingImg) existingImg.remove();
+            
+            if (data.adjunto) {
+                const img = document.createElement('img');
+                img.src = `/static/${data.adjunto}`;
+                img.className = 'question-image';
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '300px';
+                img.style.borderRadius = '12px';
+                img.style.marginTop = '15px';
+                img.style.marginBottom = '10px';
+                img.style.display = 'block';
+                img.style.marginLeft = 'auto';
+                img.style.marginRight = 'auto';
+                img.style.objectFit = 'contain';
+                questionHeader.appendChild(img);
+            }
+            
+            const answerGrid = document.getElementById('answer-grid');
+            answerGrid.innerHTML = '';
             (data.opciones || []).forEach(op => {
-                opcionesLista.innerHTML += `<button onclick="enviarRespuesta(${op.id})">${op.texto}</button><br>`;
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-primary';
+                btn.textContent = op.texto;
+                btn.onclick = () => enviarRespuesta(op.id);
+                answerGrid.appendChild(btn);
             });
 
-            const imgEl = document.getElementById('pregunta-imagen');
-            if (data.adjunto) {
-                imgEl.src = "/static/" + data.adjunto;
-                imgEl.style.display = 'block';
-            } else {
-                imgEl.src = "";
-                imgEl.style.display = 'none';
-            }
-
-            document.getElementById('resultados-container').style.display = 'none';
-            document.getElementById('pregunta-container').style.display = 'block';
             iniciarTimer(data.tiempo, data.started_at, data.server_time);
         }
 
         function renderResults(data) {
             clearInterval(timerInterval);
-            document.getElementById('pregunta-container').style.display = 'none';
-            document.getElementById('final-container').style.display = 'none';
-            document.getElementById('respuesta-correcta-texto').textContent = data.texto_opcion_correcta || '---';
-            const rankingLista = document.getElementById('ranking-lista');
-            rankingLista.innerHTML = '';
-            (data.ranking || []).forEach(item => {
-                rankingLista.innerHTML += `<li>${item.nombre}: ${item.puntaje}</li>`;
-            });
-            document.getElementById('resultados-container').style.display = 'block';
-            document.getElementById('estado').textContent = 'Esperando siguiente pregunta...';
+            switchScreen('waiting-screen');
+            // Mostrar respuesta correcta
+            if (data && data.texto_opcion_correcta) {
+                document.getElementById('correct-answer').textContent = data.texto_opcion_correcta;
+            }
+            
+            // Buscar mi puntuación en el ranking
+            const miNombre = "{{ session.get('nombre_usuario', 'Invitado') }}";
+            let miPuntaje = 0;
+            if (data && data.ranking) {
+                const miEntry = data.ranking.find(r => r.nombre === miNombre);
+                if (miEntry) {
+                    miPuntaje = miEntry.puntaje;
+                }
+            }
+            document.getElementById('waiting-score').textContent = miPuntaje;
+            document.getElementById('waiting-message').textContent = 'Siguiente pregunta en breve...';
         }
 
         function renderFinal(data) {
             clearInterval(timerInterval);
-            document.getElementById('pregunta-container').style.display = 'none';
-            document.getElementById('resultados-container').style.display = 'none';
-            const rankingFinalLista = document.getElementById('ranking-final-lista');
-            const extraDiv = document.getElementById('extra');
-            rankingFinalLista.innerHTML = '';
-            (data || []).forEach(item => {
-                rankingFinalLista.innerHTML += `<li>${item.nombre}: ${item.puntaje}</li>`;
+            switchScreen('podium-screen');
+            const podiumPlaces = document.getElementById('podium-places');
+            podiumPlaces.innerHTML = '';
+            
+            (data || []).forEach((item, idx) => {
+                const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '';
+                podiumPlaces.innerHTML += `
+                    <div class="podium-place">
+                        <div class="podium-rank">${medal || (idx + 1)}</div>
+                        <div class="podium-name">${item.nombre}</div>
+                        <div class="podium-score">${item.puntaje} pts</div>
+                    </div>
+                `;
             });
-            document.getElementById('final-container').style.display = 'block';
-            document.getElementById('estado').textContent = 'Fin del juego.';
-            extraDiv.innerHTML = `<a href="{{ url_for('dashboard') }}">Volver a la página</a>`;
         }
 
         async function pollCurrent() {
@@ -122,20 +485,25 @@
                 const res = await fetch(`/api/game/current?pin=${encodeURIComponent(pin)}`);
                 if (!res.ok) return;
                 const cur = await res.json();
+                
+                // Final del juego
                 if (cur.estado === 'F' || cur.fase === 'final') {
                     renderFinal(cur.data);
                     return;
                 }
-                if (cur.fase === 'question') {
-                    if (cur.data && cur.data.index !== lastQuestionIndex) {
-                        lastQuestionIndex = cur.data.index;
-                        clearInterval(timerInterval);
-                        renderQuestion(cur.data);
-                    }
-                } else if (cur.fase === 'results') {
-                    renderResults(cur.data || {});
+                
+                // Nueva pregunta - solo renderizar si cambió el índice
+                if (cur.fase === 'question' && cur.data && cur.data.index !== lastQuestionIndex) {
+                    lastQuestionIndex = cur.data.index;
+                    renderQuestion(cur.data);
                 }
-            } catch (e) { console.error(e); }
+                // Resultados
+                else if (cur.fase === 'results' && cur.data) {
+                    renderResults(cur.data);
+                }
+            } catch (e) { 
+                console.error('Error en pollCurrent', e); 
+            }
         }
 
         async function joinGame() {
@@ -145,11 +513,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ pin })
                 });
-            } catch (e) { }
+            } catch (e) {
+                console.error('Error al unirse al juego', e);
+            }
         }
 
         joinGame();
-        setInterval(pollCurrent, 1000);
+        setInterval(pollCurrent, 500); // Polling más rápido para mejor experiencia
     </script>
 </body>
 

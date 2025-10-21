@@ -1,4 +1,4 @@
-from flask import jsonify, request, url_for
+from flask import jsonify, request, url_for, session
 import traceback
 import os
 import time
@@ -639,8 +639,53 @@ def api_game_answer():
     tiempo_restante = data.get('tiempo_restante', 0)
     if not pin or id_opcion is None:
         return jsonify({'error': 'pin e id_opcion requeridos'}), 400
+    
+    # Obtener info de la pregunta actual
+    partida = partidas_en_juego.get(pin)
+    respuesta_correcta = None
+    es_correcta = False
+    mi_puntaje = 0
+    
+    if not partida or partida['fase'] != 'question':
+        return jsonify({'error': 'No hay pregunta activa'}), 400
+    
+    pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
+    opciones = cpo.obtener_opciones_por_pregunta(pregunta['id_pregunta'])
+    
+    # Verificar si la opción seleccionada es correcta
+    opcion_seleccionada = next((o for o in opciones if o['id_opcion'] == id_opcion), None)
+    if opcion_seleccionada:
+        es_correcta = opcion_seleccionada.get('es_correcta_bool', False)
+    
+    # Encontrar texto de la opción correcta
+    for o in opciones:
+        if o.get('es_correcta_bool'):
+            respuesta_correcta = o['opcion']
+            break
+    
+    # ENVIAR LA RESPUESTA (esto calcula y suma los puntos)
     ok = submit_answer(pin, id_opcion, tiempo_restante)
-    return jsonify({'ok': bool(ok)})
+    
+    # AHORA obtener el puntaje ACTUALIZADO
+    if ok:
+        nombre_usuario = session.get('nombre_usuario')
+        if nombre_usuario and nombre_usuario in partida['participantes']:
+            participante = partida['participantes'][nombre_usuario]
+            if partida['modalidad_grupal']:
+                nombre_grupo = participante.get('grupo')
+                if nombre_grupo:
+                    grupo = next((g for g in partida['grupos'] if g['nombre'] == nombre_grupo), None)
+                    if grupo:
+                        mi_puntaje = grupo['puntaje']
+            else:
+                mi_puntaje = participante['puntaje']
+    
+    return jsonify({
+        'ok': bool(ok),
+        'respuesta_correcta': respuesta_correcta,
+        'es_correcta': es_correcta,
+        'mi_puntaje': mi_puntaje
+    })
 
 #------------------CODIGO PARA ACCEDER AL CUESTIONARIO EN MODO VISUALIZACION------
 
