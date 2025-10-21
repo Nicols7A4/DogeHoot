@@ -90,7 +90,8 @@ body.no-scroll { overflow: hidden; }
 }
 .header-profile-btn .marco-activo {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 100%; height: 100%; border-radius: 50%; object-fit: contain; pointer-events: none; z-index: 2;
+    width: 120%; height: 120%; border-radius: 50%;
+    object-fit: contain; pointer-events: none; z-index: 2;
 }
 
 /* --- Sidebar off-canvas (Móvil) --- */
@@ -220,6 +221,29 @@ button.failed:hover { border-color: var(--btn-failed-text); }
 .menu-item:hover { background-color: #f5f5f5; }
 .menu-item.danger:hover { background-color: var(--btn-failed-bg); color: var(--btn-failed-text); }
 .menu-item.danger:hover svg { color: var(--btn-failed-text); }
+
+/* Avatar + Marco (base, móvil y desktop) */
+/* Asegura que el marco se centre y superponga perfectamente al avatar */
+.perfil-usuario { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--border-soft); }
+.info-usuario { display: flex; flex-direction: column; align-items: center; }
+
+.img-perfil {
+    position: relative;
+    width: 120px;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    background-color: var(--panel-bg);
+}
+    .img-perfil .avatar {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 84%; height: 84%;
+        object-fit: cover; border-radius: 50%; display: block; z-index: 1;
+    }
+    .img-perfil .marco-activo {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        border-radius: 50%; object-fit: contain; pointer-events: none; z-index: 2;
+    }
 
 /* Modales compartidos */
 .modal.hidden { display: none; }
@@ -381,25 +405,21 @@ button.failed:hover { border-color: var(--btn-failed-text); }
     }
     .img-perfil {
         position: relative;
-        width: 80%;
+        width: 120px; /* tamaño consistente */
         max-width: 120px;
         aspect-ratio: 1 / 1;
         border-radius: 50%;
         background-color: var(--panel-bg);
-        padding: 4px;
-        outline: 4px solid var(--btn-inprogress-text);
-        outline-offset: 4px;
         box-shadow: var(--panel-shadow);
     }
     .img-perfil .avatar {
-        width: 100%; height: 100%;
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 86%; height: 86%;
         border-radius: 50%;
-        object-fit: cover;
-        position: relative; z-index: 1;
+        object-fit: cover; z-index: 1;
     }
     .img-perfil .marco-activo {
-        position: absolute; top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
+        position: absolute; inset: 0;
         width: 100%; height: 100%; border-radius: 50%;
         object-fit: contain; pointer-events: none; z-index: 2;
     }
@@ -451,20 +471,24 @@ button.failed:hover { border-color: var(--btn-failed-text); }
     .icon-notificaciones { width: 22px; height: 22px; }
 
     .nav-perfil {
-        display: flex; align-items: center; gap: 10px; height: 75%;
+        display: flex; align-items: center; gap: 10px; height: 48px;
         background-color: var(--panel-bg); border: 1px solid var(--border-soft);
         border-radius: 50px; padding: 0 8px 0 15px;
     }
+    .nav-perfil p { margin: 0; line-height: 1; display: flex; align-items: center; }
+    /* Centrado del contenedor del avatar en la píldora */
+    .nav-perfil .perfil-trigger { margin-top: 2px; margin-bottom: -2px; }
 
     .perfil-trigger {
-        border-radius: 50%; width: 38px; height: 38px;
+        border-radius: 50%; width: 38px; height: 38px; flex-shrink: 0;
         padding: 0; display: inline-flex; align-items: center; justify-content: center;
         background: var(--panel-bg); cursor: pointer; transition: all 0.2s ease; position: relative; border: none;
+        /* sin desplazamiento para centrar exactamente */
     }
-    .perfil-trigger .avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; z-index: 1; border: 2px solid var(--btn-inprogress-text); }
+    .perfil-trigger .avatar { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: center center; z-index: 1; border: 0; }
     .perfil-trigger .marco-activo {
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 100%; height: 100%; border-radius: 50%; object-fit: contain; pointer-events: none; z-index: 2;
+        width: 104%; height: 104%; border-radius: 50%; object-fit: contain; pointer-events: none; z-index: 2;
     }
     .perfil-trigger:hover { transform: scale(1.1); }
 
@@ -489,42 +513,4 @@ button.failed:hover { border-color: var(--btn-failed-text); }
 
     .delete-account-container { grid-template-columns: 1fr 1.2fr; }
 }
-/* Avatar circular en el aside (MÓVIL y DESKTOP) */
-.perfil-usuario {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--border-soft);
-}
-.info-usuario{
-    display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.img-perfil {
-  position: relative;
-  width: 120px;           /* puedes ajustar */
-  aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  overflow: hidden;        /* asegura el recorte circular */
-  background-color: var(--panel-bg);
-}
-
-.img-perfil .avatar {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;      /* hace circular la imagen */
-  display: block;
-}
-
-.img-perfil .marco-activo {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  object-fit: contain;
-  pointer-events: none;
-}
+/* (Reglas duplicadas removidas para evitar conflicto) */
