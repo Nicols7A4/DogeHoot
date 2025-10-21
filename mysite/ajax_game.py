@@ -9,7 +9,7 @@ from controladores import usuarios as ctrl_usuarios
 # Estado de partidas en memoria (similar a game_events)
 partidas_en_juego = {}
 
-RESULTS_DELAY_SECONDS = 2
+RESULTS_DELAY_SECONDS = 2  # Igual que en el código que funcionaba
 
 
 def _calcular_puntos(tiempo_restante, tiempo_total):
@@ -65,16 +65,38 @@ def get_lobby_state(pin):
     partida = partidas_en_juego.get(pin)
     if not partida:
         return {'participantes_sin_grupo': [], 'grupos': [], 'modalidad_grupal': False}
+    
+    # Incluir info de participantes sin grupo con foto y skin
+    participantes_sin_grupo_info = []
+    for nombre in partida['participantes_sin_grupo']:
+        p_data = partida['participantes'].get(nombre, {})
+        participantes_sin_grupo_info.append({
+            'nombre': nombre,
+            'foto': p_data.get('foto', 'img/ico.png'),
+            'skin': p_data.get('skin')
+        })
+    
+    # Incluir info de grupos con miembros y sus fotos/skins
+    grupos_info = []
+    for g in partida.get('grupos', []):
+        miembros_info = []
+        for nombre in g['miembros']:
+            p_data = partida['participantes'].get(nombre, {})
+            miembros_info.append({
+                'nombre': nombre,
+                'foto': p_data.get('foto', 'img/ico.png'),
+                'skin': p_data.get('skin')
+            })
+        grupos_info.append({
+            'nombre': g['nombre'],
+            'miembros': miembros_info,
+            'puntaje': g['puntaje'],
+        })
+    
     return {
         'modalidad_grupal': partida['modalidad_grupal'],
-        'participantes_sin_grupo': list(partida['participantes_sin_grupo']),
-        'grupos': [
-            {
-                'nombre': g['nombre'],
-                'miembros': list(g['miembros']),
-                'puntaje': g['puntaje'],
-            } for g in partida.get('grupos', [])
-        ],
+        'participantes_sin_grupo': participantes_sin_grupo_info,
+        'grupos': grupos_info,
     }
 
 
@@ -89,9 +111,24 @@ def join_player(pin):
         import random
         nombre_usuario = f"Invitado_{random.randint(100,999)}"
     id_usuario = session.get('user_id')
+    
+    # Obtener foto y skin del usuario
+    foto = 'img/ico.png'
+    skin = None
+    if id_usuario:
+        user_data = ctrl_usuarios.obtener_por_id(id_usuario)
+        if user_data:
+            foto = user_data.get('foto') or 'img/ico.png'
+            skin = user_data.get('skin_ruta')
 
     if nombre_usuario not in partida['participantes']:
-        partida['participantes'][nombre_usuario] = {'grupo': None, 'puntaje': 0, 'id_usuario': id_usuario}
+        partida['participantes'][nombre_usuario] = {
+            'grupo': None, 
+            'puntaje': 0, 
+            'id_usuario': id_usuario,
+            'foto': foto,
+            'skin': skin
+        }
         if partida['modalidad_grupal']:
             partida['participantes_sin_grupo'].append(nombre_usuario)
         else:
@@ -147,9 +184,13 @@ def _start_next_question(pin):
         finalize_game(pin)
         return False
 
-    # resetear flags grupales
+    # resetear flags grupales Y de respuesta por pregunta
     for g in partida.get('grupos', []):
         g['respondio_pregunta'] = False
+    
+    # Resetear flags de respuesta para modo individual
+    for nombre, participante in partida['participantes'].items():
+        participante['respondio_esta_pregunta'] = False
 
     pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
     partida['fase'] = 'question'
@@ -211,6 +252,8 @@ def advance_state_if_needed(pin):
         return None
 
     now = time.time()
+    
+    # Avanzar de pregunta a resultados cuando se acaba el tiempo
     if partida['estado'] == 'J' and partida['fase'] == 'question':
         if partida['question_started_at'] is not None and partida['question_duration'] is not None:
             if now >= partida['question_started_at'] + float(partida['question_duration']):
@@ -218,11 +261,13 @@ def advance_state_if_needed(pin):
                 partida['fase'] = 'results'
                 partida['results_started_at'] = now
                 partida['ultimo_resultado'] = _compute_results(partida)
+                print(f"[DEBUG] PIN {pin}: Pasando a RESULTS en pregunta {partida['pregunta_actual_index']}")
 
+    # Avanzar de resultados a la siguiente pregunta
     if partida['estado'] == 'J' and partida['fase'] == 'results':
         if partida['results_started_at'] is not None:
             if now >= partida['results_started_at'] + RESULTS_DELAY_SECONDS:
-                # siguiente pregunta o final
+                print(f"[DEBUG] PIN {pin}: Intentando avanzar a siguiente pregunta desde índice {partida['pregunta_actual_index']}")
                 _start_next_question(pin)
 
     return partida
@@ -269,6 +314,10 @@ def submit_answer(pin, id_opcion, tiempo_restante):
     participante = partida['participantes'].get(nombre_usuario)
     if not participante:
         return False
+    
+    # Verificar si ya respondió esta pregunta (flag simple por pregunta)
+    if participante.get('respondio_esta_pregunta', False):
+        return False  # Ya respondió esta pregunta
 
     opcion_db = cpo.obtener_opcion_por_id(id_opcion)
     if not opcion_db:
@@ -288,10 +337,13 @@ def submit_answer(pin, id_opcion, tiempo_restante):
             return False
         grupo['puntaje'] += puntos
         grupo['respondio_pregunta'] = True
+        # Marcar que este participante ya respondió
+        participante['respondio_esta_pregunta'] = True
         return True
 
     # individual
     participante['puntaje'] += puntos
+    participante['respondio_esta_pregunta'] = True
     return True
 
 

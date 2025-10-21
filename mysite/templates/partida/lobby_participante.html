@@ -1,144 +1,227 @@
-<!-- <!DOCTYPE html>
-<html>
-
-<head>
-    <title>Jugando - {{ pin }}</title>
-</head>
-
-<body>
-    <h1>Partida: {{ pin }}</h1>
-    <div id="estado">Esperando inicio...</div>
-    <div id="pregunta-container" style="display: none;">
-        <h2 id="pregunta-texto"></h2>
-        <div id="opciones-lista"></div>
-        <p>Tiempo restante: <span id="tiempo"></span>s</p>
-    </div>
-    <div id="resultados-container" style="display: none;">
-        <h3>Resultados de la Pregunta</h3>
-        <p>La respuesta correcta era: <span id="respuesta-correcta-texto"></span></p>
-        <h4>Ranking Actual:</h4>
-        <ol id="ranking-lista"></ol>
-    </div>
-    <div id="final-container" style="display: none;">
-        <h2>¡Juego Terminado!</h2>
-        <h4>Ranking Final:</h4>
-        <ol id="ranking-final-lista"></ol>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const pin = "{{ pin }}";
-        let tiempoRestante = 0;
-        let timerInterval;
-
-        function enviarRespuesta(idOpcion) {
-            clearInterval(timerInterval); // Detiene el timer al responder
-            socket.emit('enviar_respuesta', { pin: pin, id_opcion: idOpcion, tiempo_restante: tiempoRestante });
-            document.getElementById('pregunta-container').style.display = 'none'; // Oculta pregunta
-            document.getElementById('estado').textContent = 'Respuesta enviada. Esperando resultados...';
-        }
-
-        function iniciarTimer(duracion) {
-            tiempoRestante = duracion;
-            const tiempoDisplay = document.getElementById('tiempo');
-            tiempoDisplay.textContent = tiempoRestante;
-            timerInterval = setInterval(() => {
-                tiempoRestante--;
-                tiempoDisplay.textContent = tiempoRestante;
-                if (tiempoRestante <= 0) {
-                    clearInterval(timerInterval);
-                    // Opcional: enviar respuesta vacía o simplemente esperar resultados
-                }
-            }, 1000);
-        }
-
-        socket.on('connect', () => socket.emit('unirse_como_jugador', { pin: pin }));
-
-        socket.on('nueva_pregunta', (data) => {
-            document.getElementById('estado').textContent = `Pregunta ${data.index + 1}`;
-            document.getElementById('pregunta-texto').textContent = data.texto;
-            const opcionesLista = document.getElementById('opciones-lista');
-            opcionesLista.innerHTML = '';
-            data.opciones.forEach(op => {
-                opcionesLista.innerHTML += `<button onclick="enviarRespuesta(${op.id})">${op.texto}</button><br>`;
-            });
-            document.getElementById('resultados-container').style.display = 'none';
-            document.getElementById('pregunta-container').style.display = 'block';
-            iniciarTimer(data.tiempo);
-        });
-
-        socket.on('mostrar_resultados', (data) => {
-            clearInterval(timerInterval); // Asegura que el timer se detenga
-            document.getElementById('pregunta-container').style.display = 'none';
-            document.getElementById('final-container').style.display = 'none';
-
-            // Necesitaríamos saber el texto de la opción correcta, no solo el ID.
-            // Por ahora, solo mostramos el ranking.
-            document.getElementById('respuesta-correcta-texto').textContent = data.texto_opcion_correcta;
-
-            const rankingLista = document.getElementById('ranking-lista');
-            rankingLista.innerHTML = '';
-            data.ranking.forEach(item => {
-                rankingLista.innerHTML += `<li>${item.nombre}: ${item.puntaje}</li>`;
-            });
-
-            document.getElementById('resultados-container').style.display = 'block';
-            document.getElementById('estado').textContent = 'Esperando siguiente pregunta...';
-        });
-
-        socket.on('juego_finalizado', (data) => {
-            clearInterval(timerInterval);
-            document.getElementById('pregunta-container').style.display = 'none';
-            document.getElementById('resultados-container').style.display = 'none';
-
-            const rankingFinalLista = document.getElementById('ranking-final-lista');
-            rankingFinalLista.innerHTML = '';
-            data.ranking.forEach(item => {
-                rankingFinalLista.innerHTML += `<li>${item.nombre}: ${item.puntaje}</li>`;
-            });
-
-            document.getElementById('final-container').style.display = 'block';
-            document.getElementById('estado').textContent = 'Fin del juego.';
-        });
-    </script>
-</body>
-
-</html> -->
-
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
-    <title>Sala de Espera - {{ pin }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sala de Espera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <style>
         body {
-            font-family: sans-serif;
+            background-color: var(--main-bg);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .screen {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: var(--panel-shadow);
+            border: 1px solid var(--border-soft);
+            padding: 30px;
+        }
+
+        .lobby-header {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: var(--btn-submitted-text);
             text-align: center;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .grupos-container {
+        .lobby-subheader {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 35px;
+            line-height: 1.5;
+        }
+
+        .lobby-body {
+            min-height: 350px;
+        }
+
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+
+        .player-lobby-group-box {
+            background: var(--btn-submitted-bg);
+            border-radius: 18px;
+            padding: 25px;
+            border: 2px solid var(--btn-submitted-text);
+            box-shadow: 0 4px 12px rgba(142, 92, 246, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .player-lobby-group-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(142, 92, 246, 0.25);
+        }
+
+        .player-lobby-group-header {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--btn-submitted-text);
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .player-lobby-group-members {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 15px;
+            min-height: 100px;
+            align-items: start;
+            margin-bottom: 18px;
+            padding: 5px;
+        }
+
+        .player-avatar-wrap {
             display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 2rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
         }
 
-        .grupo-card {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 1rem;
-            min-width: 200px;
+        .avatar-container {
+            position: relative;
+            width: 65px;
+            height: 65px;
+        }
+
+        .avatar-container img.avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .avatar-container img.marco-activo {
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            width: calc(100% + 4px);
+            height: calc(100% + 4px);
+            border-radius: 50%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .player-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-color);
+            text-align: center;
+            max-width: 75px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 2px solid transparent;
+            border-radius: 14px;
+            padding: 14px 24px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--btn-hover-shadow);
+        }
+
+        .btn-secondary {
+            background: var(--btn-pending-bg);
+            color: var(--btn-pending-text);
+            border-color: var(--btn-pending-text);
+        }
+        
+        .btn-secondary:hover {
+            background: #FFE0B8;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--btn-pending-text);
+        }
+
+        .player-pool-box {
+            background: var(--btn-success-bg);
+            border-radius: 18px;
+            padding: 25px;
+            border: 2px solid var(--btn-success-text);
+            box-shadow: 0 4px 12px rgba(43, 182, 115, 0.15);
+        }
+
+        .player-pool-box h3 {
+            color: var(--btn-success-text);
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 15px;
+        }
+
+        #mensaje-espera {
+            margin-top: 30px;
+            padding: 20px;
+            background: var(--btn-inprogress-bg);
+            border-radius: 14px;
+            border: 2px solid var(--btn-inprogress-text);
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.15rem;
+            color: var(--btn-inprogress-text);
+            box-shadow: 0 3px 10px rgba(30, 136, 229, 0.15);
         }
     </style>
 </head>
 
 <body>
-    <h1>¡Te has unido a la partida!</h1>
-    <p>Esperando a que el anfitrión comience el juego...</p>
-
-    <div id="lobby-container">
+    <div class="container">
+        <div class="screen active">
+            <div class="lobby-header">SALA DE ESPERA</div>
+            <div class="lobby-subheader">PIN: <span style="font-weight:700; color:#0069ff; letter-spacing:2px;">{{ pin }}</span></div>
+            <div class="lobby-body">
+                <div id="grupos-container" class="groups-grid"></div>
+                            <div id="sin-grupo-container" style="display:none;">
+                <h3 style="color: var(--btn-inprogress-text); margin-bottom: 1rem;">Sin grupo</h3>
+                <div id="sin-grupo-list" class="players-grid"></div>
+            </div>
+            </div>
+            <div id="mensaje-espera" style="margin-top:30px; color:#6c757d; font-weight:600;">Esperando al anfitrión...</div>
+        </div>
     </div>
 
     <script>
@@ -146,40 +229,128 @@
         let pollLobbyInterval = null;
         let pollStatusInterval = null;
 
-        async function unirseAGrupo(nombre_grupo) {
+        async function unirseAGrupo(nombreGrupo) {
             try {
-                await fetch('/api/player/select-group', {
+                const res = await fetch('/api/player/select-group', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pin, nombre_grupo })
+                    body: JSON.stringify({ pin, nombre_grupo: nombreGrupo })
                 });
-            } catch (e) { console.error(e); }
+                const data = await res.json();
+                if (res.ok) renderLobby(data.lobby);
+            } catch (e) {
+                console.error('Error al unirse a grupo', e);
+            }
         }
 
-        function renderLobby(data) {
-            const container = document.getElementById('lobby-container');
-            if (data.modalidad_grupal) {
-                container.innerHTML = '<h3>Elige tu grupo:</h3>';
-                const gruposContainer = document.createElement('div');
-                gruposContainer.className = 'grupos-container';
-                (data.grupos || []).forEach(grupo => {
-                    const grupoCard = document.createElement('div');
-                    grupoCard.className = 'grupo-card';
-                    const miembros = (grupo.miembros || []).map(m => `<li>${m}</li>`).join('');
-                    grupoCard.innerHTML = `
-                        <h4>${grupo.nombre}</h4>
-                        <ul>${miembros}</ul>
-                        <button onclick="unirseAGrupo('${grupo.nombre}')">Unirse</button>
-                    `;
-                    gruposContainer.appendChild(grupoCard);
-                });
-                container.appendChild(gruposContainer);
+        function renderLobby(lobby) {
+            const gruposContainer = document.getElementById('grupos-container');
+            const sinGrupoContainer = document.getElementById('sin-grupo-container');
+            const sinGrupoList = document.getElementById('sin-grupo-list');
+
+            gruposContainer.innerHTML = '';
+            
+            // Contar total de participantes
+            let totalParticipantes = 0;
+            if (lobby.modalidad_grupal) {
+                if (Array.isArray(lobby.grupos) && lobby.grupos.length > 0) {
+                    lobby.grupos.forEach(g => {
+                        const card = document.createElement('div');
+                        card.className = 'player-lobby-group-box';
+                        
+                        let membersHTML = '';
+                        if (Array.isArray(g.miembros) && g.miembros.length > 0) {
+                            membersHTML = g.miembros.map(m => {
+                                const nombre = typeof m === 'string' ? m : m.nombre;
+                                const foto = typeof m === 'object' ? m.foto : 'img/ico.png';
+                                const skin = typeof m === 'object' ? m.skin : null;
+                                return `
+                                    <div class="player-avatar-wrap">
+                                        <div class="avatar-container">
+                                            <img src="/static/${foto}" class="avatar" alt="${nombre}">
+                                            ${skin ? `<img src="/static/${skin}" class="marco-activo" alt="Skin">` : ''}
+                                        </div>
+                                        <span class="player-name">${nombre}</span>
+                                    </div>
+                                `;
+                            }).join('');
+                            totalParticipantes += g.miembros.length;
+                        } else {
+                            membersHTML = '<p style="color:var(--text-muted); font-size:0.9rem;text-align:center;">Ningun miembro</p>';
+                        }
+                        
+                        card.innerHTML = `
+                            <div class="player-lobby-group-header">${g.nombre}</div>
+                            <div class="player-lobby-group-members">${membersHTML}</div>
+                            <button class="btn btn-secondary" onclick="unirseAGrupo('${g.nombre}')">Unirse</button>
+                        `;
+                        gruposContainer.appendChild(card);
+                    });
+                }
+                totalParticipantes += (lobby.participantes_sin_grupo || []).length;
             } else {
-                container.innerHTML = '<h3>Jugadores en la sala:</h3>';
-                const lista = document.createElement('ul');
-                (data.participantes_sin_grupo || []).forEach(j => { lista.innerHTML += `<li>${j}</li>`; });
-                container.appendChild(lista);
+                // Modo individual: mostrar todos los participantes con fotos
+                if (Array.isArray(lobby.grupos) && lobby.grupos.length > 0 && lobby.grupos[0].miembros) {
+                    totalParticipantes = lobby.grupos[0].miembros.length;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'player-lobby-group-box';
+                    
+                    let membersHTML = '';
+                    if (totalParticipantes > 0) {
+                        membersHTML = lobby.grupos[0].miembros.map(m => {
+                            const nombre = typeof m === 'string' ? m : m.nombre;
+                            const foto = typeof m === 'object' ? m.foto : 'img/ico.png';
+                            const skin = typeof m === 'object' ? m.skin : null;
+                            return `
+                                <div class="player-avatar-wrap">
+                                    <div class="avatar-container">
+                                        <img src="/static/${foto}" class="avatar" alt="${nombre}">
+                                        ${skin ? `<img src="/static/${skin}" class="marco-activo" alt="Skin">` : ''}
+                                    </div>
+                                    <span class="player-name">${nombre}</span>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        membersHTML = '<p style="color:var(--text-muted); font-size:0.9rem;text-align:center;">Esperando jugadores...</p>';
+                    }
+                    
+                    card.innerHTML = `
+                        <div class="player-lobby-group-header">Participantes</div>
+                        <div class="player-lobby-group-members">${membersHTML}</div>
+                    `;
+                    gruposContainer.appendChild(card);
+                }
             }
+
+            // Mostrar participantes sin grupo si hay
+            if (Array.isArray(lobby.participantes_sin_grupo) && lobby.participantes_sin_grupo.length > 0) {
+                sinGrupoContainer.style.display = 'block';
+                sinGrupoList.innerHTML = '';
+                lobby.participantes_sin_grupo.forEach(p => {
+                    const nombre = typeof p === 'string' ? p : p.nombre;
+                    const foto = typeof p === 'object' ? p.foto : 'img/ico.png';
+                    const skin = typeof p === 'object' ? p.skin : null;
+                    
+                    const playerDiv = document.createElement('div');
+                    playerDiv.className = 'player-avatar-wrap';
+                    playerDiv.innerHTML = `
+                        <div class="avatar-container">
+                            <img src="/static/${foto}" class="avatar" alt="${nombre}">
+                            ${skin ? `<img src="/static/${skin}" class="marco-activo" alt="Skin">` : ''}
+                        </div>
+                        <span class="player-name">${nombre}</span>
+                    `;
+                    sinGrupoList.appendChild(playerDiv);
+                });
+            } else {
+                sinGrupoContainer.style.display = 'none';
+            }
+
+            // Actualizar mensaje de espera con contador de participantes
+            document.getElementById('mensaje-espera').textContent = 
+                `${totalParticipantes} jugador${totalParticipantes !== 1 ? 'es' : ''} conectado${totalParticipantes !== 1 ? 's' : ''}. Esperando al anfitrion...`;
         }
 
         async function joinLobby() {
@@ -190,28 +361,37 @@
                     body: JSON.stringify({ pin })
                 });
                 const data = await res.json();
-                if (!res.ok) return;
+                if (!res.ok) {
+                    document.getElementById('mensaje-espera').textContent = 'Error: PIN inválido';
+                    return;
+                }
                 renderLobby(data.lobby);
+
                 pollLobbyInterval = setInterval(async () => {
                     const r = await fetch(`/api/lobby/state?pin=${encodeURIComponent(pin)}`);
-                    if (!r.ok) return;
-                    const l = await r.json();
-                    renderLobby(l);
-                }, 1500);
+                    if (r.ok) {
+                        const l = await r.json();
+                        renderLobby(l);
+                    }
+                }, 800); // Más rápido para ver cambios de otros jugadores
 
                 pollStatusInterval = setInterval(async () => {
-                    const sres = await fetch(`/api/game/status?pin=${encodeURIComponent(pin)}`);
-                    if (!sres.ok) return;
-                    const st = await sres.json();
-                    if (st.estado === 'J' && st.url) {
-                        clearInterval(pollLobbyInterval);
-                        clearInterval(pollStatusInterval);
-                        window.location.href = st.url;
+                    const r = await fetch(`/api/game/status?pin=${encodeURIComponent(pin)}`);
+                    if (r.ok) {
+                        const s = await r.json();
+                        if (s.estado === 'J' && s.url) {
+                            clearInterval(pollLobbyInterval);
+                            clearInterval(pollStatusInterval);
+                            window.location.href = s.url;
+                        }
                     }
-                }, 1200);
-            } catch (e) { console.error(e); }
+                }, 600); // Más rápido para detectar inicio del juego
+            } catch (e) {
+                console.error('Error al unirse', e);
+            }
         }
 
+        // init
         joinLobby();
     </script>
 </body>
