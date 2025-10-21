@@ -239,35 +239,79 @@ def actualizar(id_usuario, nombre_completo, nombre_usuario, correo, tipo, puntos
             conexion.close()
 
 
+# def actualizar_perfil(id_usuario, nombre_completo, nombre_usuario):
+#     """
+#     Actualiza únicamente el nombre completo y el nombre de usuario del perfil.
+#     """
+#     conexion = obtener_conexion()
+#     try:
+#         with conexion.cursor() as cursor:
+#             # Validar que el nuevo nombre de usuario no esté ya en uso por OTRA persona
+#             sql_check = "SELECT id_usuario FROM USUARIO WHERE nombre_usuario = %s AND id_usuario != %s AND vigente = 1"
+#             cursor.execute(sql_check, (nombre_usuario, id_usuario))
+#             if cursor.fetchone():
+#                 return False, "Ese nombre de usuario ya está en uso."
+
+#             # Si está libre, actualizamos
+#             sql_update = """
+#                 UPDATE USUARIO SET
+#                     nombre_completo = %s,
+#                     nombre_usuario = %s
+#                 WHERE id_usuario = %s
+#             """
+#             cursor.execute(sql_update, (nombre_completo, nombre_usuario, id_usuario))
+#         conexion.commit()
+#         return True, "Perfil actualizado."
+#     except Exception as e:
+#         conexion.rollback()
+#         return False, str(e)
+#     finally:
+#         if conexion:
+#             conexion.close()
+
 def actualizar_perfil(id_usuario, nombre_completo, nombre_usuario):
     """
-    Actualiza únicamente el nombre completo y el nombre de usuario del perfil.
+    Actualiza únicamente el nombre completo y el nombre de usuario del perfil,
+    solo si el usuario está vigente.
     """
     conexion = obtener_conexion()
     try:
         with conexion.cursor() as cursor:
             # Validar que el nuevo nombre de usuario no esté ya en uso por OTRA persona
-            sql_check = "SELECT id_usuario FROM USUARIO WHERE nombre_usuario = %s AND id_usuario != %s"
+            sql_check = """
+                SELECT id_usuario 
+                FROM USUARIO 
+                WHERE nombre_usuario = %s AND id_usuario != %s
+            """
             cursor.execute(sql_check, (nombre_usuario, id_usuario))
             if cursor.fetchone():
                 return False, "Ese nombre de usuario ya está en uso."
 
-            # Si está libre, actualizamos
+            # Actualizar solo si el usuario está vigente
             sql_update = """
-                UPDATE USUARIO SET
-                    nombre_completo = %s,
-                    nombre_usuario = %s
+                UPDATE USUARIO
+                SET nombre_completo = %s,
+                    nombre_usuario  = %s
                 WHERE id_usuario = %s
+                AND vigente = 1
             """
             cursor.execute(sql_update, (nombre_completo, nombre_usuario, id_usuario))
+
         conexion.commit()
+
+        if cursor.rowcount == 0:
+            # No se actualizó: o no existe el usuario o no está vigente
+            return False, "No se pudo actualizar: usuario no encontrado o no vigente."
+
         return True, "Perfil actualizado."
     except Exception as e:
-        conexion.rollback()
+        if conexion:
+            conexion.rollback()
         return False, str(e)
     finally:
         if conexion:
             conexion.close()
+
 
 def actualizar_contrasena(id_usuario: int, antigua: str, nueva: str):
     """
