@@ -339,7 +339,7 @@ def mostrar_resultados_pregunta(pin):
     
     socketio.emit('mostrar_resultados', resultados, room=pin, namespace='/')
     
-    eventlet.spawn(esperar_y_siguiente, pin, 5)
+    eventlet.spawn(esperar_y_siguiente, pin, 2)
 
 
 def esperar_y_siguiente(pin, segundos):

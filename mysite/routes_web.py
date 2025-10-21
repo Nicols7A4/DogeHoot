@@ -575,7 +575,7 @@ def configurar_partida(id_cuestionario):
         flash('El cuestionario no existe.', 'danger')
         return redirect(url_for('cuestionarios'))
 
-    return render_template('nueva_partida.html',
+    return render_template('partida/nueva_partida.html',
                             nombre_usuario=session.get('nombre_usuario'),
                             tipo_usuario=session['tipo_usuario'],
                             cuestionario=cuestionario
@@ -599,7 +599,7 @@ def lanzar_partida():
 
     if exito:
         pin_de_juego = resultado
-        flash(f"¡Partida lanzada con éxito! PIN: {pin_de_juego}", 'success')
+        # flash(f"¡Partida lanzada con éxito! PIN: {pin_de_juego}", 'success')
         # Redirigimos al panel del anfitrión con el PIN generado
         return redirect(url_for('partida_panel', pin=pin_de_juego))
     else:
@@ -613,7 +613,7 @@ def partida_panel(pin):
     if 'user_id' not in session:
         return redirect(url_for('auth'))
     # return f"panel {pin}"
-    return render_template('panel_anfitrion.html', pin=pin)
+    return render_template('partida/panel_anfitrion.html', pin=pin)
 
 # -----------
 
@@ -623,7 +623,7 @@ def lobby(pin):
         # Podrías permitir invitados, pero por ahora requerimos sesión
         return redirect(url_for('auth'))
 
-    return render_template('lobby_participante.html', pin=pin)
+    return render_template('partida/lobby_participante.html', pin=pin)
     # return render_template('juego_participante.html', pin=pin)
     # return render_template('lobby_seleccion.html', pin=pin)
 
@@ -634,7 +634,7 @@ def lobby(pin):
 def pagina_juego(pin):
     if 'user_id' not in session:
         return redirect(url_for('auth'))
-    return render_template('juego_participante.html', pin=pin)
+    return render_template('partida/juego_participante.html', pin=pin)
 
 @app.route("/partida/<int:id_partida>/juego")
 def partida_juego(pin):

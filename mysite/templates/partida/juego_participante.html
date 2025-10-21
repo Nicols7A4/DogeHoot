@@ -29,6 +29,8 @@
         <ol id="ranking-final-lista"></ol>
     </div>
 
+    <div id="extra"></div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
         const socket = io();
@@ -107,6 +109,7 @@
             document.getElementById('resultados-container').style.display = 'none';
 
             const rankingFinalLista = document.getElementById('ranking-final-lista');
+            const extraDiv = document.getElementById('extra');
             rankingFinalLista.innerHTML = '';
             data.ranking.forEach(item => {
                 rankingFinalLista.innerHTML += `<li>${item.nombre}: ${item.puntaje}</li>`;
@@ -114,6 +117,8 @@
 
             document.getElementById('final-container').style.display = 'block';
             document.getElementById('estado').textContent = 'Fin del juego.';
+
+            extraDiv.innerHTML = `<a href="{{ url_for('dashboard') }}">Volver a la página</a>`;
         });
     </script>
 </body>

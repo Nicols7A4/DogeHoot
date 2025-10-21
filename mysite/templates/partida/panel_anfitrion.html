@@ -33,6 +33,7 @@
     <ul id="lista-jugadores"></ul>
     <button id="btn-comenzar" onclick="comenzarJuego()">Comenzar Juego</button>
     <div id="ranking"></div>
+    <div id="extra"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
@@ -72,12 +73,15 @@
         socket.on('juego_finalizado', (data) => {
             document.getElementById('estado-juego').textContent = `¡Juego Finalizado!`;
             const rankingDiv = document.getElementById('ranking');
+            const extraDiv = document.getElementById('extra');
             rankingDiv.innerHTML = '<h2>Ranking Final:</h2><ol>';
             data.ranking.forEach(item => {
                 rankingDiv.innerHTML += `<li>${item.nombre}: ${item.puntaje} puntos</li>`;
             });
             rankingDiv.innerHTML += '</ol>';
             // Aquí podrías añadir un botón para descargar el reporte
+            extraDiv.innerHTML = `<a href="{{ url_for('cuestionarios') }}">Volver al mis cuestionarios</a>`;
+
         });
     </script>
 </body>

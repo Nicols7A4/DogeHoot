@@ -21,39 +21,58 @@
         </div>
         <div class="botones-aside">
             <button class="in-progress btn-lateral" id="btnInicial" data-url="{{ url_for('dashboard') }}">
-                <svg class="icon-inicio" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
-                    <path d="M2 12.2039C2 9.91549 2 8.77128 2.5192 7.82274C3.0384 6.87421 3.98695 6.28551 5.88403 5.10813L7.88403 3.86687C9.88939 2.62229 10.8921 2 12 2C13.1079 2 14.1106 2.62229 16.116 3.86687L18.116 5.10812C20.0131 6.28551 20.9616 6.87421 21.4808 7.82274C22 8.77128 22 9.91549 22 12.2039V13.725C22 17.6258 22 19.5763 20.8284 20.7881C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.7881C2 19.5763 2 17.6258 2 13.725V12.2039Z" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M15 18H9" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+                <svg class="icon-inicio" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20"
+                    fill="none" aria-hidden="true">
+                    <path
+                        d="M2 12.2039C2 9.91549 2 8.77128 2.5192 7.82274C3.0384 6.87421 3.98695 6.28551 5.88403 5.10813L7.88403 3.86687C9.88939 2.62229 10.8921 2 12 2C13.1079 2 14.1106 2.62229 16.116 3.86687L18.116 5.10812C20.0131 6.28551 20.9616 6.87421 21.4808 7.82274C22 8.77128 22 9.91549 22 12.2039V13.725C22 17.6258 22 19.5763 20.8284 20.7881C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.7881C2 19.5763 2 17.6258 2 13.725V12.2039Z"
+                        stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M15 18H9" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"
+                        stroke-linejoin="round" />
                 </svg>
                 <span>Inicio</span>
             </button>
             <button class="success btn-lateral" data-url="{{ url_for('cuestionarios_explorar') }}">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="20" height="20" fill="currentColor" aria-hidden="true" class="icon-explorar">
-                    <path d="M22.707 9.293a1 1 0 0 0-1.023-.242l-9 3a1.001 1.001 0 0 0-.632.633l-3 9a1 1 0 0 0 1.265 1.265l9-3a1.001 1.001 0 0 0 .632-.633l3-9a1 1 0 0 0-.242-1.023zM11.581 20.419l2.209-6.628 4.419 4.419-6.628 2.209z" />
-                    <path d="M16 30a14 14 0 1 1 0-28 14 14 0 0 1 0 28zm0-25.4A11.4 11.4 0 1 0 27.4 16 11.412 11.412 0 0 0 16 4.6z" />
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="20" height="20" fill="currentColor"
+                    aria-hidden="true" class="icon-explorar">
+                    <path
+                        d="M22.707 9.293a1 1 0 0 0-1.023-.242l-9 3a1.001 1.001 0 0 0-.632.633l-3 9a1 1 0 0 0 1.265 1.265l9-3a1.001 1.001 0 0 0 .632-.633l3-9a1 1 0 0 0-.242-1.023zM11.581 20.419l2.209-6.628 4.419 4.419-6.628 2.209z" />
+                    <path
+                        d="M16 30a14 14 0 1 1 0-28 14 14 0 0 1 0 28zm0-25.4A11.4 11.4 0 1 0 27.4 16 11.412 11.412 0 0 0 16 4.6z" />
                 </svg>
                 <span>Explorar</span>
             </button>
             <button class="in-progress btn-lateral" data-url="{{ url_for('tienda_skins') }}">
-                <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-                    <path d="M1.588 3.227A3.125 3.125 0 0 1 4.58 1h14.84c1.38 0 2.597.905 2.993 2.227l.816 2.719a6.47 6.47 0 0 1 .272 1.854A5.183 5.183 0 0 1 22 11.455v4.615c0 1.355 0 2.471-.119 3.355-.125.928-.396 1.747-1.053 2.403-.656.657-1.475.928-2.403 1.053-.884.12-2 .119-3.354.119H8.929c-1.354 0-2.47 0-3.354-.119-.928-.125-1.747-.396-2.403-1.053-.657-.656-.929-1.475-1.053-2.403-.12-.884-.119-2-.119-3.354V11.5l.001-.045A5.184 5.184 0 0 1 .5 7.8c0-.628.092-1.252.272-1.854l.816-2.719zM10 21h4v-3.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5V21zm6-.002c.918-.005 1.608-.025 2.159-.099.706-.095 1.033-.262 1.255-.485.223-.222.39-.55.485-1.255.099-.735.101-1.716.101-3.159v-3.284a5.195 5.195 0 0 1-1.7.284 5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 12 13a5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 5.7 13a5.2 5.2 0 0 1-1.7-.284V16c0 1.442.002 2.424.1 3.159.096.706.263 1.033.486 1.255.222.223.55.39 1.255.485.551.074 1.24.094 2.159.1V17.5a2.5 2.5 0 0 1 2.5-2.5h3a2.5 2.5 0 0 1 2.5 2.5v3.498zM4.581 3c-.497 0-.935.326-1.078.802l-.815 2.72A4.45 4.45 0 0 0 2.5 7.8a3.2 3.2 0 0 0 5.6 2.117 1 1 0 0 1 1.5 0A3.19 3.19 0 0 0 12 11a3.19 3.19 0 0 0 2.4-1.083 1 1 0 0 1 1.5 0A3.2 3.2 0 0 0 21.5 7.8c0-.434-.063-.865-.188-1.28l-.816-2.72A1.125 1.125 0 0 0 19.42 3H4.58z" />
+                <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20"
+                    height="20" fill="currentColor" aria-hidden="true">
+                    <path
+                        d="M1.588 3.227A3.125 3.125 0 0 1 4.58 1h14.84c1.38 0 2.597.905 2.993 2.227l.816 2.719a6.47 6.47 0 0 1 .272 1.854A5.183 5.183 0 0 1 22 11.455v4.615c0 1.355 0 2.471-.119 3.355-.125.928-.396 1.747-1.053 2.403-.656.657-1.475.928-2.403 1.053-.884.12-2 .119-3.354.119H8.929c-1.354 0-2.47 0-3.354-.119-.928-.125-1.747-.396-2.403-1.053-.657-.656-.929-1.475-1.053-2.403-.12-.884-.119-2-.119-3.354V11.5l.001-.045A5.184 5.184 0 0 1 .5 7.8c0-.628.092-1.252.272-1.854l.816-2.719zM10 21h4v-3.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5V21zm6-.002c.918-.005 1.608-.025 2.159-.099.706-.095 1.033-.262 1.255-.485.223-.222.39-.55.485-1.255.099-.735.101-1.716.101-3.159v-3.284a5.195 5.195 0 0 1-1.7.284 5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 12 13a5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 5.7 13a5.2 5.2 0 0 1-1.7-.284V16c0 1.442.002 2.424.1 3.159.096.706.263 1.033.486 1.255.222.223.55.39 1.255.485.551.074 1.24.094 2.159.1V17.5a2.5 2.5 0 0 1 2.5-2.5h3a2.5 2.5 0 0 1 2.5 2.5v3.498zM4.581 3c-.497 0-.935.326-1.078.802l-.815 2.72A4.45 4.45 0 0 0 2.5 7.8a3.2 3.2 0 0 0 5.6 2.117 1 1 0 0 1 1.5 0A3.19 3.19 0 0 0 12 11a3.19 3.19 0 0 0 2.4-1.083 1 1 0 0 1 1.5 0A3.2 3.2 0 0 0 21.5 7.8c0-.434-.063-.865-.188-1.28l-.816-2.72A1.125 1.125 0 0 0 19.42 3H4.58z" />
                 </svg>
                 <span>Marketplace</span>
             </button>
             {% if tipo_usuario == 'P' %}
             <button class="failed btn-lateral" id="btnMisCuestionarios" data-url="{{ url_for('cuestionarios') }}">
-                <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                    <path d="M4 7c0-1.886 0-2.829.586-3.414C5.171 3 6.114 3 8 3h8c1.886 0 2.829 0 3.414.586C20 4.171 20 5.114 20 7v8c0 2.829 0 4.243-.879 5.121C18.243 21 16.829 21 14 21h-4c-2.829 0-4.243 0-5.121-.879C4 19.243 4 17.829 4 15V7z"/>
-                    <path d="M15 18v3M9 18v3M9 8h6M9 12h6"/>
+                <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20"
+                    height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    aria-hidden="true">
+                    <path
+                        d="M4 7c0-1.886 0-2.829.586-3.414C5.171 3 6.114 3 8 3h8c1.886 0 2.829 0 3.414.586C20 4.171 20 5.114 20 7v8c0 2.829 0 4.243-.879 5.121C18.243 21 16.829 21 14 21h-4c-2.829 0-4.243 0-5.121-.879C4 19.243 4 17.829 4 15V7z" />
+                    <path d="M15 18v3M9 18v3M9 8h6M9 12h6" />
                 </svg>
                 <span>Mis cuestionarios</span>
             </button>
             <button class="success btn-lateral" id="btnMisPartidas" data-url="{{ url_for('mis_partidas') }}">
-                <svg class="icon-nuevo" xmlns="http://www.w3.org/2000/svg" viewBox="100 150 320 220" width="22" height="22" fill="none" aria-hidden="true">
-                    <path d="M254,183.7h0c-72.82-1.22-101.38,22.29-111.25,39-14.72,24.92-27,81.37,7.64,102.23,10.92,6.57,25.37,3.09,37.4-5.82,19-14.09,41.81-22.21,65.49-22.21h5.46c23.68,0,46.47,8.12,65.49,22.21,12,8.91,26.48,12.39,37.4,5.82,34.67-20.86,22.36-77.31,7.64-102.23-9.87-16.72-38.43-40.23-111.25-39h-4Z" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M201.9,233.93V222.36a2.3,2.3,0,0,0-2.3-2.31H188a2.3,2.3,0,0,0-2.3,2.31v11.57a2.31,2.31,0,0,1-2.31,2.31H171.83a2.3,2.3,0,0,0-2.3,2.3v11.58a2.3,2.3,0,0,0,2.3,2.3h11.58a2.31,2.31,0,0,1,2.31,2.3V266.3a2.3,2.3,0,0,0,2.3,2.3H199.6a2.3,2.3,0,0,0,2.3-2.3V254.72a2.3,2.3,0,0,1,2.3-2.3h11.58a2.3,2.3,0,0,0,2.3-2.3V238.54a2.3,2.3,0,0,0-2.3-2.3H204.2A2.3,2.3,0,0,1,201.9,233.93Z" fill="currentColor"/>
-                    <circle cx="328.06" cy="228.14" r="8.09" fill="currentColor"/><circle cx="328.06" cy="260.51" r="8.09" fill="currentColor"/>
-                    <circle cx="344.24" cy="244.33" r="8.09" fill="currentColor"/><circle cx="311.87" cy="244.33" r="8.09" fill="currentColor"/>
+                <svg class="icon-nuevo" xmlns="http://www.w3.org/2000/svg" viewBox="100 150 320 220" width="22"
+                    height="22" fill="none" aria-hidden="true">
+                    <path
+                        d="M254,183.7h0c-72.82-1.22-101.38,22.29-111.25,39-14.72,24.92-27,81.37,7.64,102.23,10.92,6.57,25.37,3.09,37.4-5.82,19-14.09,41.81-22.21,65.49-22.21h5.46c23.68,0,46.47,8.12,65.49,22.21,12,8.91,26.48,12.39,37.4,5.82,34.67-20.86,22.36-77.31,7.64-102.23-9.87-16.72-38.43-40.23-111.25-39h-4Z"
+                        stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+                    <path
+                        d="M201.9,233.93V222.36a2.3,2.3,0,0,0-2.3-2.31H188a2.3,2.3,0,0,0-2.3,2.31v11.57a2.31,2.31,0,0,1-2.31,2.31H171.83a2.3,2.3,0,0,0-2.3,2.3v11.58a2.3,2.3,0,0,0,2.3,2.3h11.58a2.31,2.31,0,0,1,2.31,2.3V266.3a2.3,2.3,0,0,0,2.3,2.3H199.6a2.3,2.3,0,0,0,2.3-2.3V254.72a2.3,2.3,0,0,1,2.3-2.3h11.58a2.3,2.3,0,0,0,2.3-2.3V238.54a2.3,2.3,0,0,0-2.3-2.3H204.2A2.3,2.3,0,0,1,201.9,233.93Z"
+                        fill="currentColor" />
+                    <circle cx="328.06" cy="228.14" r="8.09" fill="currentColor" />
+                    <circle cx="328.06" cy="260.51" r="8.09" fill="currentColor" />
+                    <circle cx="344.24" cy="244.33" r="8.09" fill="currentColor" />
+                    <circle cx="311.87" cy="244.33" r="8.09" fill="currentColor" />
                 </svg>
                 <span>Mis Partidas</span>
             </button>
@@ -66,35 +85,48 @@
             <div class="nav-buscar">
                 <input placeholder="Buscar..." maxlength="100">
                 <button>
-                    <svg class="icon-buscar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M15.7955 15.8111L21 21M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z" />
+                    <svg class="icon-buscar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                        height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" aria-hidden="true">
+                        <path
+                            d="M15.7955 15.8111L21 21M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z" />
                     </svg>
                 </button>
             </div>
             <div>
                 <button id="btn-nuevo" aria-label="Nueva partida">
-                    <svg class="icon-nuevo" xmlns="http://www.w3.org/2000/svg" viewBox="100 150 320 220" width="22" height="22" fill="none" aria-hidden="true">
-                        <path d="M254,183.7h0c-72.82-1.22-101.38,22.29-111.25,39-14.72,24.92-27,81.37,7.64,102.23,10.92,6.57,25.37,3.09,37.4-5.82,19-14.09,41.81-22.21,65.49-22.21h5.46c23.68,0,46.47,8.12,65.49,22.21,12,8.91,26.48,12.39,37.4,5.82,34.67-20.86,22.36-77.31,7.64-102.23-9.87-16.72-38.43-40.23-111.25-39h-4Z" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M201.9,233.93V222.36a2.3,2.3,0,0,0-2.3-2.31H188a2.3,2.3,0,0,0-2.3,2.31v11.57a2.31,2.31,0,0,1-2.31,2.31H171.83a2.3,2.3,0,0,0-2.3,2.3v11.58a2.3,2.3,0,0,0,2.3,2.3h11.58a2.31,2.31,0,0,1,2.31,2.3V266.3a2.3,2.3,0,0,0,2.3,2.3H199.6a2.3,2.3,0,0,0,2.3-2.3V254.72a2.3,2.3,0,0,1,2.3-2.3h11.58a2.3,2.3,0,0,0,2.3-2.3V238.54a2.3,2.3,0,0,0-2.3-2.3H204.2A2.3,2.3,0,0,1,201.9,233.93Z" fill="currentColor"/>
-                        <circle cx="328.06" cy="228.14" r="8.09" fill="currentColor"/><circle cx="328.06" cy="260.51" r="8.09" fill="currentColor"/>
-                        <circle cx="344.24" cy="244.33" r="8.09" fill="currentColor"/><circle cx="311.87" cy="244.33" r="8.09" fill="currentColor"/>
+                    <svg class="icon-nuevo" xmlns="http://www.w3.org/2000/svg" viewBox="100 150 320 220" width="22"
+                        height="22" fill="none" aria-hidden="true">
+                        <path
+                            d="M254,183.7h0c-72.82-1.22-101.38,22.29-111.25,39-14.72,24.92-27,81.37,7.64,102.23,10.92,6.57,25.37,3.09,37.4-5.82,19-14.09,41.81-22.21,65.49-22.21h5.46c23.68,0,46.47,8.12,65.49,22.21,12,8.91,26.48,12.39,37.4,5.82,34.67-20.86,22.36-77.31,7.64-102.23-9.87-16.72-38.43-40.23-111.25-39h-4Z"
+                            stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+                        <path
+                            d="M201.9,233.93V222.36a2.3,2.3,0,0,0-2.3-2.31H188a2.3,2.3,0,0,0-2.3,2.31v11.57a2.31,2.31,0,0,1-2.31,2.31H171.83a2.3,2.3,0,0,0-2.3,2.3v11.58a2.3,2.3,0,0,0,2.3,2.3h11.58a2.31,2.31,0,0,1,2.31,2.3V266.3a2.3,2.3,0,0,0,2.3,2.3H199.6a2.3,2.3,0,0,0,2.3-2.3V254.72a2.3,2.3,0,0,1,2.3-2.3h11.58a2.3,2.3,0,0,0,2.3-2.3V238.54a2.3,2.3,0,0,0-2.3-2.3H204.2A2.3,2.3,0,0,1,201.9,233.93Z"
+                            fill="currentColor" />
+                        <circle cx="328.06" cy="228.14" r="8.09" fill="currentColor" />
+                        <circle cx="328.06" cy="260.51" r="8.09" fill="currentColor" />
+                        <circle cx="344.24" cy="244.33" r="8.09" fill="currentColor" />
+                        <circle cx="311.87" cy="244.33" r="8.09" fill="currentColor" />
                     </svg>
                     <span>Nueva partida</span>
                 </button>
             </div>
             <button class="btn-notificaciones" aria-label="Notificaciones">
                 <svg class="icon-notificaciones" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M9.33497 4.72727V5.25342C6.64516 6.35644 4.76592 9.97935 4.83412 13.1192L4.83409 14.8631C3.45713 16.6333 3.53815 19.2727 6.9735 19.2727H9.33497C9.33497 19.996 9.61684 20.6897 10.1186 21.2012C10.6203 21.7127 11.3008 22 12.0104 22C12.72 22 13.4005 21.7127 13.9022 21.2012C14.404 20.6897 14.6858 19.996 14.6858 19.2727H17.0538C20.4826 19.2727 20.5323 16.6278 19.1555 14.8576L19.1938 13.1216C19.2631 9.97811 17.3803 6.35194 14.6858 5.25049V4.72727C14.6858 4.00396 14.404 3.31026 13.9022 2.7988C13.4005 2.28734 12.72 2 12.0104 2C11.3008 2 10.6203 2.28734 10.1186 2.7988C9.61684 3.31026 9.33497 4.00395 9.33497 4.72727ZM12.9022 4.72727C12.9022 4.74573 12.9017 4.76414 12.9006 4.78246C12.6101 4.74603 12.3142 4.72727 12.014 4.72727C11.7113 4.72727 11.413 4.74634 11.1203 4.78335C11.1192 4.76474 11.1186 4.74603 11.1186 4.72727C11.1186 4.48617 11.2126 4.25494 11.3798 4.08445C11.547 3.91396 11.7739 3.81818 12.0104 3.81818C12.2469 3.81818 12.4738 3.91396 12.641 4.08445C12.8083 4.25494 12.9022 4.48617 12.9022 4.72727ZM11.1186 19.2727C11.1186 19.5138 11.2126 19.7451 11.3798 19.9156C11.547 20.086 11.7739 20.1818 12.0104 20.1818C12.2469 20.1818 12.4738 20.086 12.641 19.9156C12.8083 19.7451 12.9022 19.5138 12.9022 19.2727H11.1186ZM17.0538 17.4545C17.8157 17.4545 18.2267 16.5435 17.7309 15.9538C17.49 15.6673 17.3616 15.3028 17.3699 14.9286L17.4106 13.0808C17.4787 9.99416 15.0427 6.54545 12.014 6.54545C8.98598 6.54545 6.55028 9.99301 6.61731 13.0789L6.65748 14.9289C6.66561 15.303 6.53726 15.6674 6.29639 15.9538C5.80054 16.5435 6.21158 17.4545 6.9735 17.4545H17.0538Z" fill="currentColor" />
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M9.33497 4.72727V5.25342C6.64516 6.35644 4.76592 9.97935 4.83412 13.1192L4.83409 14.8631C3.45713 16.6333 3.53815 19.2727 6.9735 19.2727H9.33497C9.33497 19.996 9.61684 20.6897 10.1186 21.2012C10.6203 21.7127 11.3008 22 12.0104 22C12.72 22 13.4005 21.7127 13.9022 21.2012C14.404 20.6897 14.6858 19.996 14.6858 19.2727H17.0538C20.4826 19.2727 20.5323 16.6278 19.1555 14.8576L19.1938 13.1216C19.2631 9.97811 17.3803 6.35194 14.6858 5.25049V4.72727C14.6858 4.00396 14.404 3.31026 13.9022 2.7988C13.4005 2.28734 12.72 2 12.0104 2C11.3008 2 10.6203 2.28734 10.1186 2.7988C9.61684 3.31026 9.33497 4.00395 9.33497 4.72727ZM12.9022 4.72727C12.9022 4.74573 12.9017 4.76414 12.9006 4.78246C12.6101 4.74603 12.3142 4.72727 12.014 4.72727C11.7113 4.72727 11.413 4.74634 11.1203 4.78335C11.1192 4.76474 11.1186 4.74603 11.1186 4.72727C11.1186 4.48617 11.2126 4.25494 11.3798 4.08445C11.547 3.91396 11.7739 3.81818 12.0104 3.81818C12.2469 3.81818 12.4738 3.91396 12.641 4.08445C12.8083 4.25494 12.9022 4.48617 12.9022 4.72727ZM11.1186 19.2727C11.1186 19.5138 11.2126 19.7451 11.3798 19.9156C11.547 20.086 11.7739 20.1818 12.0104 20.1818C12.2469 20.1818 12.4738 20.086 12.641 19.9156C12.8083 19.7451 12.9022 19.5138 12.9022 19.2727H11.1186ZM17.0538 17.4545C17.8157 17.4545 18.2267 16.5435 17.7309 15.9538C17.49 15.6673 17.3616 15.3028 17.3699 14.9286L17.4106 13.0808C17.4787 9.99416 15.0427 6.54545 12.014 6.54545C8.98598 6.54545 6.55028 9.99301 6.61731 13.0789L6.65748 14.9289C6.66561 15.303 6.53726 15.6674 6.29639 15.9538C5.80054 16.5435 6.21158 17.4545 6.9735 17.4545H17.0538Z"
+                        fill="currentColor" />
                 </svg>
             </button>
             <div class="nav-perfil">
                 <p>Hola, <strong>{{nombre_usuario}}</strong></p>
                 <div class="perfil-wrap">
-                    <button id="btn-perfil" class="perfil-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-perfil">
+                    <button id="btn-perfil" class="perfil-trigger" aria-haspopup="menu" aria-expanded="false"
+                        aria-controls="menu-perfil">
                         {% set avatar = user.foto or 'img/ico.png' %}
                         <img src="{{ url_for('static', filename=avatar) }}" class="avatar">
                         {% if user.skin_ruta %}
-                            <img src="{{ url_for('static', filename=user.skin_ruta) }}" class="marco-activo">
+                        <img src="{{ url_for('static', filename=user.skin_ruta) }}" class="marco-activo">
                         {% endif %}
                     </button>
                     <div id="menu-perfil" class="menu-perfil" role="menu" aria-labelledby="btn-perfil" hidden>
@@ -102,28 +134,45 @@
                             Conectado como<br><strong>{{nombre_usuario}}</strong>
                         </div>
                         <button class="menu-item" role="menuitem" data-action="perfil">
-                            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5.006 5.006 0 0 0 5 5Zm0 2c-4.337 0-8 2.163-8 4.5V20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5C20 16.163 16.337 14 12 14Z"/></svg>
+                            <svg viewBox="0 0 24 24" width="18" height="18">
+                                <path fill="currentColor"
+                                    d="M12 12a5 5 0 1 0-5-5 5.006 5.006 0 0 0 5 5Zm0 2c-4.337 0-8 2.163-8 4.5V20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5C20 16.163 16.337 14 12 14Z" />
+                            </svg>
                             Perfil
                         </button>
                         <button class="menu-item" role="menuitem" data-action="config">
-                            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.14... (tu svg) ...Z"/></svg>
+                            <svg viewBox="0 0 24 24" width="18" height="18">
+                                <path fill="currentColor" d="M19.14... (tu svg) ...Z" />
+                            </svg>
                             Configuración
                         </button>
                         <button class="menu-item" role="menuitem" data-action="temas">
-                            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9 9.01 9.01 0 0 0-9-9Zm0 16a7 7 0 0 1 0-14Z"/></svg>
+                            <svg viewBox="0 0 24 24" width="18" height="18">
+                                <path fill="currentColor"
+                                    d="M12 3a9 9 0 1 0 9 9 9.01 9.01 0 0 0-9-9Zm0 16a7 7 0 0 1 0-14Z" />
+                            </svg>
                             Temas
                         </button>
                         <button class="menu-item" role="menuitem" data-action="ayuda">
-                            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm1 17h-2v-2h2Zm2.07-7.75... (tu svg) ...Z"/></svg>
+                            <svg viewBox="0 0 24 24" width="18" height="18">
+                                <path fill="currentColor"
+                                    d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm1 17h-2v-2h2Zm2.07-7.75... (tu svg) ...Z" />
+                            </svg>
                             Ayuda
                         </button>
                         <div class="menu-sep" role="separator"></div>
                         <button class="menu-item" role="menuitem" data-action="cambiar-cuenta">
-                            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M16 13v-2h-5V8l-5 4 5 4v-3zM20 3h-8v2h8v14h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg>
+                            <svg viewBox="0 0 24 24" width="18" height="18">
+                                <path fill="currentColor"
+                                    d="M16 13v-2h-5V8l-5 4 5 4v-3zM20 3h-8v2h8v14h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z" />
+                            </svg>
                             Cambiar de cuenta
                         </button>
                         <button class="menu-item danger" role="menuitem" data-action="salir">
-                            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M16 13v-2H8V8l-5 4 5 4v-3zM20 3h-8v2h8v14h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg>
+                            <svg viewBox="0 0 24 24" width="18" height="18">
+                                <path fill="currentColor"
+                                    d="M16 13v-2H8V8l-5 4 5 4v-3zM20 3h-8v2h8v14h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z" />
+                            </svg>
                             Cerrar sesión
                         </button>
                     </div>
@@ -140,116 +189,164 @@
 
     <footer class="bottom-nav-mobile">
         <a href="{{ url_for('dashboard') }}" class="bottom-nav-item" data-url-match="/dashboard">
-            <svg class="icon-inicio" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
-                 <path d="M2 12.2039C2 9.91549 2 8.77128 2.5192 7.82274C3.0384 6.87421 3.98695 6.28551 5.88403 5.10813L7.88403 3.86687C9.88939 2.62229 10.8921 2 12 2C13.1079 2 14.1106 2.62229 16.116 3.86687L18.116 5.10812C20.0131 6.28551 20.9616 6.87421 21.4808 7.82274C22 8.77128 22 9.91549 22 12.2039V13.725C22 17.6258 22 19.5763 20.8284 20.7881C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.7881C2 19.5763 2 17.6258 2 13.725V12.2039Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                 <path d="M15 18H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <svg class="icon-inicio" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"
+                fill="none" aria-hidden="true">
+                <path
+                    d="M2 12.2039C2 9.91549 2 8.77128 2.5192 7.82274C3.0384 6.87421 3.98695 6.28551 5.88403 5.10813L7.88403 3.86687C9.88939 2.62229 10.8921 2 12 2C13.1079 2 14.1106 2.62229 16.116 3.86687L18.116 5.10812C20.0131 6.28551 20.9616 6.87421 21.4808 7.82274C22 8.77128 22 9.91549 22 12.2039V13.725C22 17.6258 22 19.5763 20.8284 20.7881C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.7881C2 19.5763 2 17.6258 2 13.725V12.2039Z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M15 18H9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
             </svg>
             <span>Inicio</span>
         </a>
-        <a href="{{ url_for('cuestionarios_explorar') }}" class="bottom-nav-item" data-url-match="/cuestionarios/explorar">
-            <svg class="icon-explorar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24" fill="currentColor" aria-hidden="true">
-                <path d="M22.707 9.293a1 1 0 0 0-1.023-.242l-9 3a1.001 1.001 0 0 0-.632.633l-3 9a1 1 0 0 0 1.265 1.265l9-3a1.001 1.001 0 0 0 .632-.633l3-9a1 1 0 0 0-.242-1.023zM11.581 20.419l2.209-6.628 4.419 4.419-6.628 2.209z" />
-                <path d="M16 30a14 14 0 1 1 0-28 14 14 0 0 1 0 28zm0-25.4A11.4 11.4 0 1 0 27.4 16 11.412 11.412 0 0 0 16 4.6z" />
+        <a href="{{ url_for('cuestionarios_explorar') }}" class="bottom-nav-item"
+            data-url-match="/cuestionarios/explorar">
+            <svg class="icon-explorar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24"
+                fill="currentColor" aria-hidden="true">
+                <path
+                    d="M22.707 9.293a1 1 0 0 0-1.023-.242l-9 3a1.001 1.001 0 0 0-.632.633l-3 9a1 1 0 0 0 1.265 1.265l9-3a1.001 1.001 0 0 0 .632-.633l3-9a1 1 0 0 0-.242-1.023zM11.581 20.419l2.209-6.628 4.419 4.419-6.628 2.209z" />
+                <path
+                    d="M16 30a14 14 0 1 1 0-28 14 14 0 0 1 0 28zm0-25.4A11.4 11.4 0 1 0 27.4 16 11.412 11.412 0 0 0 16 4.6z" />
             </svg>
             <span>Explorar</span>
         </a>
         <a href="{{ url_for('tienda_skins') }}" class="bottom-nav-item" data-url-match="/tienda">
-            <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
-                 <path d="M1.588 3.227A3.125 3.125 0 0 1 4.58 1h14.84c1.38 0 2.597.905 2.993 2.227l.816 2.719a6.47 6.47 0 0 1 .272 1.854A5.183 5.183 0 0 1 22 11.455v4.615c0 1.355 0 2.471-.119 3.355-.125.928-.396 1.747-1.053 2.403-.656.657-1.475.928-2.403 1.053-.884.12-2 .119-3.354.119H8.929c-1.354 0-2.47 0-3.354-.119-.928-.125-1.747-.396-2.403-1.053-.657-.656-.929-1.475-1.053-2.403-.12-.884-.119-2-.119-3.354V11.5l.001-.045A5.184 5.184 0 0 1 .5 7.8c0-.628.092-1.252.272-1.854l.816-2.719zM10 21h4v-3.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5V21zm6-.002c.918-.005 1.608-.025 2.159-.099.706-.095 1.033-.262 1.255-.485.223-.222.39-.55.485-1.255.099-.735.101-1.716.101-3.159v-3.284a5.195 5.195 0 0 1-1.7.284 5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 12 13a5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 5.7 13a5.2 5.2 0 0 1-1.7-.284V16c0 1.442.002 2.424.1 3.159.096.706.263 1.033.486 1.255.222.223.55.39 1.255.485.551.074 1.24.094 2.159.1V17.5a2.5 2.5 0 0 1 2.5-2.5h3a2.5 2.5 0 0 1 2.5 2.5v3.498zM4.581 3c-.497 0-.935.326-1.078.802l-.815 2.72A4.45 4.45 0 0 0 2.5 7.8a3.2 3.2 0 0 0 5.6 2.117 1 1 0 0 1 1.5 0A3.19 3.19 0 0 0 12 11a3.19 3.19 0 0 0 2.4-1.083 1 1 0 0 1 1.5 0A3.2 3.2 0 0 0 21.5 7.8c0-.434-.063-.865-.188-1.28l-.816-2.72A1.125 1.125 0 0 0 19.42 3H4.58z" />
+            <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"
+                fill="currentColor" aria-hidden="true">
+                <path
+                    d="M1.588 3.227A3.125 3.125 0 0 1 4.58 1h14.84c1.38 0 2.597.905 2.993 2.227l.816 2.719a6.47 6.47 0 0 1 .272 1.854A5.183 5.183 0 0 1 22 11.455v4.615c0 1.355 0 2.471-.119 3.355-.125.928-.396 1.747-1.053 2.403-.656.657-1.475.928-2.403 1.053-.884.12-2 .119-3.354.119H8.929c-1.354 0-2.47 0-3.354-.119-.928-.125-1.747-.396-2.403-1.053-.657-.656-.929-1.475-1.053-2.403-.12-.884-.119-2-.119-3.354V11.5l.001-.045A5.184 5.184 0 0 1 .5 7.8c0-.628.092-1.252.272-1.854l.816-2.719zM10 21h4v-3.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5V21zm6-.002c.918-.005 1.608-.025 2.159-.099.706-.095 1.033-.262 1.255-.485.223-.222.39-.55.485-1.255.099-.735.101-1.716.101-3.159v-3.284a5.195 5.195 0 0 1-1.7.284 5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 12 13a5.18 5.18 0 0 1-3.15-1.062A5.18 5.18 0 0 1 5.7 13a5.2 5.2 0 0 1-1.7-.284V16c0 1.442.002 2.424.1 3.159.096.706.263 1.033.486 1.255.222.223.55.39 1.255.485.551.074 1.24.094 2.159.1V17.5a2.5 2.5 0 0 1 2.5-2.5h3a2.5 2.5 0 0 1 2.5 2.5v3.498zM4.581 3c-.497 0-.935.326-1.078.802l-.815 2.72A4.45 4.45 0 0 0 2.5 7.8a3.2 3.2 0 0 0 5.6 2.117 1 1 0 0 1 1.5 0A3.19 3.19 0 0 0 12 11a3.19 3.19 0 0 0 2.4-1.083 1 1 0 0 1 1.5 0A3.2 3.2 0 0 0 21.5 7.8c0-.434-.063-.865-.188-1.28l-.816-2.72A1.125 1.125 0 0 0 19.42 3H4.58z" />
             </svg>
             <span>Marketplace</span>
         </a>
+
+
+        {% if tipo_usuario == 'P' %}
+        <a href="{{ url_for('cuestionarios') }}" class="bottom-nav-item" data-url-match="/usuario/perfil">
+
+            <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path
+                    d="M4 7c0-1.886 0-2.829.586-3.414C5.171 3 6.114 3 8 3h8c1.886 0 2.829 0 3.414.586C20 4.171 20 5.114 20 7v8c0 2.829 0 4.243-.879 5.121C18.243 21 16.829 21 14 21h-4c-2.829 0-4.243 0-5.121-.879C4 19.243 4 17.829 4 15V7z" />
+                <path d="M15 18v3M9 18v3M9 8h6M9 12h6" />
+            </svg>
+            <span>Mis cuestionarios<span>
+        </a>
+        <a href="{{ url_for('mis_partidas') }}" class="bottom-nav-item" data-url-match="/usuario/perfil">
+
+            <svg class="icon-nuevo" xmlns="http://www.w3.org/2000/svg" viewBox="100 150 320 220" width="22" height="22"
+                fill="none" aria-hidden="true">
+                <path
+                    d="M254,183.7h0c-72.82-1.22-101.38,22.29-111.25,39-14.72,24.92-27,81.37,7.64,102.23,10.92,6.57,25.37,3.09,37.4-5.82,19-14.09,41.81-22.21,65.49-22.21h5.46c23.68,0,46.47,8.12,65.49,22.21,12,8.91,26.48,12.39,37.4,5.82,34.67-20.86,22.36-77.31,7.64-102.23-9.87-16.72-38.43-40.23-111.25-39h-4Z"
+                    stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                    d="M201.9,233.93V222.36a2.3,2.3,0,0,0-2.3-2.31H188a2.3,2.3,0,0,0-2.3,2.31v11.57a2.31,2.31,0,0,1-2.31,2.31H171.83a2.3,2.3,0,0,0-2.3,2.3v11.58a2.3,2.3,0,0,0,2.3,2.3h11.58a2.31,2.31,0,0,1,2.31,2.3V266.3a2.3,2.3,0,0,0,2.3,2.3H199.6a2.3,2.3,0,0,0,2.3-2.3V254.72a2.3,2.3,0,0,1,2.3-2.3h11.58a2.3,2.3,0,0,0,2.3-2.3V238.54a2.3,2.3,0,0,0-2.3-2.3H204.2A2.3,2.3,0,0,1,201.9,233.93Z"
+                    fill="currentColor" />
+                <circle cx="328.06" cy="228.14" r="8.09" fill="currentColor" />
+                <circle cx="328.06" cy="260.51" r="8.09" fill="currentColor" />
+                <circle cx="344.24" cy="244.33" r="8.09" fill="currentColor" />
+                <circle cx="311.87" cy="244.33" r="8.09" fill="currentColor" />
+            </svg>
+            <span>Mis partidas<span>
+        </a>
+        {% endif %}
+
         <a href="{{ url_for('usuario_perfil') }}" class="bottom-nav-item" data-url-match="/usuario/perfil">
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
             <span>Perfil</span>
         </a>
+
     </footer>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- Lógica del Modal de Mensajes ---
-        const flashModal = document.getElementById('flash-modal');
-        const messagesContainer = document.getElementById('modal-messages-container');
-        const closeButton = flashModal?.querySelector('.close-button');
-        function closeModal() { if (flashModal) flashModal.style.display = 'none'; }
-        if (flashModal && flashModal.dataset.hasMessages === 'true') { flashModal.style.display = 'flex'; }
-        if (closeButton) closeButton.addEventListener('click', closeModal);
-        if (flashModal) flashModal.addEventListener('click', e => { if (e.target === flashModal) closeModal(); });
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Lógica del Modal de Mensajes ---
+            const flashModal = document.getElementById('flash-modal');
+            const messagesContainer = document.getElementById('modal-messages-container');
+            const closeButton = flashModal?.querySelector('.close-button');
+            function closeModal() { if (flashModal) flashModal.style.display = 'none'; }
+            if (flashModal && flashModal.dataset.hasMessages === 'true') { flashModal.style.display = 'flex'; }
+            if (closeButton) closeButton.addEventListener('click', closeModal);
+            if (flashModal) flashModal.addEventListener('click', e => { if (e.target === flashModal) closeModal(); });
 
-        // --- Lógica del Dropdown de Perfil (Desktop y Mobile) ---
-        const trigger = document.getElementById('btn-perfil');
-        const menu = document.getElementById('menu-perfil');
-        if (trigger && menu) {
-             function openMenu() {
-                menu.hidden = false; menu.classList.add('is-open');
-                trigger.setAttribute('aria-expanded', 'true');
-             }
-             function closeMenu() {
-                menu.classList.remove('is-open'); trigger.setAttribute('aria-expanded', 'false');
-                setTimeout(() => { menu.hidden = true; }, 160);
-             }
-             trigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                menu.classList.contains('is-open') ? closeMenu() : openMenu();
-             });
-             document.addEventListener('click', (e) => {
-                if (menu.classList.contains('is-open') && !menu.contains(e.target) && !trigger.contains(e.target)) {
+            // --- Lógica del Dropdown de Perfil (Desktop y Mobile) ---
+            const trigger = document.getElementById('btn-perfil');
+            const menu = document.getElementById('menu-perfil');
+            if (trigger && menu) {
+                function openMenu() {
+                    menu.hidden = false; menu.classList.add('is-open');
+                    trigger.setAttribute('aria-expanded', 'true');
+                }
+                function closeMenu() {
+                    menu.classList.remove('is-open'); trigger.setAttribute('aria-expanded', 'false');
+                    setTimeout(() => { menu.hidden = true; }, 160);
+                }
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    menu.classList.contains('is-open') ? closeMenu() : openMenu();
+                });
+                document.addEventListener('click', (e) => {
+                    if (menu.classList.contains('is-open') && !menu.contains(e.target) && !trigger.contains(e.target)) {
+                        closeMenu();
+                    }
+                });
+                menu.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.menu-item');
+                    if (!btn) return;
+                    const action = btn.dataset.action;
+                    if (action === 'salir') window.location.href = "{{ url_for('logout') }}";
+                    if (action === 'perfil') window.location.href = "{{ url_for('usuario_perfil') }}";
                     closeMenu();
-                }
-             });
-             menu.addEventListener('click', (e) => {
-                 const btn = e.target.closest('.menu-item');
-                 if (!btn) return;
-                 const action = btn.dataset.action;
-                 if (action === 'salir')  window.location.href = "{{ url_for('logout') }}";
-                 if (action === 'perfil') window.location.href = "{{ url_for('usuario_perfil') }}";
-                 closeMenu();
-             });
-        }
+                });
+            }
 
-        // --- Lógica de Navegación (para botones .btn-lateral) ---
-        const botonesLaterales = document.querySelectorAll('.btn-lateral');
-        botonesLaterales.forEach(function(boton) {
-            boton.addEventListener('click', function() {
-                const url = this.dataset.url;
-                window.location.href = url;
+            // --- Lógica de Navegación (para botones .btn-lateral) ---
+            const botonesLaterales = document.querySelectorAll('.btn-lateral');
+            botonesLaterales.forEach(function (boton) {
+                boton.addEventListener('click', function () {
+                    const url = this.dataset.url;
+                    window.location.href = url;
+                });
             });
-        });
 
-        // --- Lógica de Estado Activo (Nav Inferior) ---
-        const currentPath = window.location.pathname;
-        const navItems = document.querySelectorAll('.bottom-nav-item');
-        let itemActivo = false;
-        const inicioUrl = "{{ url_for('dashboard') }}";
-        navItems.forEach(item => {
-            const urlMatch = item.getAttribute('data-url-match');
-            if (urlMatch) {
-                if (urlMatch === '/dashboard' && currentPath === inicioUrl) {
-                    item.classList.add('active');
-                    itemActivo = true;
-                } else if (urlMatch !== '/dashboard' && currentPath.startsWith(urlMatch)) {
-                    item.classList.add('active');
-                    itemActivo = true;
+            // --- Lógica de Estado Activo (Nav Inferior) ---
+            const currentPath = window.location.pathname;
+            const navItems = document.querySelectorAll('.bottom-nav-item');
+            let itemActivo = false;
+            const inicioUrl = "{{ url_for('dashboard') }}";
+            navItems.forEach(item => {
+                const urlMatch = item.getAttribute('data-url-match');
+                if (urlMatch) {
+                    if (urlMatch === '/dashboard' && currentPath === inicioUrl) {
+                        item.classList.add('active');
+                        itemActivo = true;
+                    } else if (urlMatch !== '/dashboard' && currentPath.startsWith(urlMatch)) {
+                        item.classList.add('active');
+                        itemActivo = true;
+                    }
                 }
+            });
+            if (!itemActivo) {
+                const inicioItem = document.querySelector('.bottom-nav-item[data-url-match="/dashboard"]');
+                if (inicioItem) inicioItem.classList.add('active');
+            }
+
+            // --- Logo Click ---
+            const logoLink = document.getElementById('imgLogo');
+            if (logoLink) {
+                logoLink.addEventListener('click', (e) => {
+                    e.preventDefault(); // Previene la acción del <a> si está en el header
+                    window.location.href = "{{ url_for('dashboard') }}";
+                });
             }
         });
-        if (!itemActivo) {
-             const inicioItem = document.querySelector('.bottom-nav-item[data-url-match="/dashboard"]');
-             if (inicioItem) inicioItem.classList.add('active');
-        }
-
-        // --- Logo Click ---
-        const logoLink = document.getElementById('imgLogo');
-        if (logoLink) {
-            logoLink.addEventListener('click', (e) => {
-                 e.preventDefault(); // Previene la acción del <a> si está en el header
-                 window.location.href = "{{ url_for('dashboard') }}";
-            });
-        }
-    });
     </script>
 
     {% block scripts %}{% endblock %}
 
 </body>
+
 </html>
