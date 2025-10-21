@@ -281,7 +281,7 @@ def actualizar_perfil(id_usuario, nombre_completo, nombre_usuario):
             sql_check = """
                 SELECT id_usuario 
                 FROM USUARIO 
-                WHERE nombre_usuario = %s AND id_usuario != %s
+                WHERE nombre_usuario = %s AND id_usuario != %s AND vigente = 1
             """
             cursor.execute(sql_check, (nombre_usuario, id_usuario))
             if cursor.fetchone():
