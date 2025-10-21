@@ -15,7 +15,7 @@ def obtener_conexion():
         password=DB_PASS,
         db=DB_NAME,
         port=int(DB_PORT),
-        charset="utf8mb4",
+        charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor,
         # autocommit=True,
         # --- 2. AÑADE ESTA LÍNEA PARA HABILITAR SSL ---

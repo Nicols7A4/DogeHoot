@@ -155,3 +155,15 @@ def obtener_partida_por_pin(pin):
     return partida
 
 
+def obtener_opcion_por_id(id_opcion):
+    conexion = obtener_conexion()
+    opcion = None
+    try:
+        with conexion.cursor() as cursor:
+            cursor.execute("SELECT * FROM OPCIONES WHERE id_opcion = %s", (id_opcion,))
+            opcion = cursor.fetchone()
+    finally:
+        if conexion:
+            conexion.close()
+    return opcion
+

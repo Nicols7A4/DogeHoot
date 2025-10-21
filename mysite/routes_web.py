@@ -624,6 +624,17 @@ def lobby(pin):
         return redirect(url_for('auth'))
 
     return render_template('lobby_participante.html', pin=pin)
+    # return render_template('juego_participante.html', pin=pin)
+    # return render_template('lobby_seleccion.html', pin=pin)
+
+
+
+# routes_web.py
+@app.route('/juego/<string:pin>')
+def pagina_juego(pin):
+    if 'user_id' not in session:
+        return redirect(url_for('auth'))
+    return render_template('juego_participante.html', pin=pin)
 
 @app.route("/partida/<int:id_partida>/juego")
 def partida_juego(pin):
