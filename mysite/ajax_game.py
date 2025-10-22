@@ -1,5 +1,6 @@
 import time
 from flask import session
+import random
 
 from controladores import controlador_partidas as ctrl_partidas
 from controladores import preguntas_opciones as cpo
@@ -9,7 +10,7 @@ from controladores import usuarios as ctrl_usuarios
 # Estado de partidas en memoria (similar a game_events)
 partidas_en_juego = {}
 
-RESULTS_DELAY_SECONDS = 2  # Igual que en el código que funcionaba
+RESULTS_DELAY_SECONDS = 4  # Tiempo de visualización del ranking/resultados (aumentado a 4 para mejor legibilidad)
 
 
 def _calcular_puntos(tiempo_restante, tiempo_total):
@@ -56,6 +57,8 @@ def _ensure_loaded(pin):
         'question_duration': None,
         'results_started_at': None,
         'ultimo_resultado': None,
+        # puntajes previos para calcular diferencia
+        'puntajes_pregunta_anterior': {},  # {nombre_grupo/usuario: puntaje_anterior}
     }
 
     return partidas_en_juego[pin]
@@ -135,8 +138,14 @@ def join_player(pin):
             if not partida['grupos']:
                 partida['grupos'].append({'nombre': 'Individual', 'miembros': [], 'puntaje': 0, 'respondio_pregunta': False})
             partida['grupos'][0]['miembros'].append(nombre_usuario)
+            partida['participantes'][nombre_usuario]['grupo'] = 'Individual'
 
-    return partida
+    # Retornar información incluyendo el grupo
+    return {
+        'participante': partida['participantes'][nombre_usuario],
+        'grupo': partida['participantes'][nombre_usuario].get('grupo'),
+        'modalidad_grupal': partida['modalidad_grupal']
+    }
 
 
 def select_group(pin, nombre_grupo):
@@ -162,10 +171,40 @@ def select_group(pin, nombre_grupo):
     return False
 
 
+def _assign_unassigned_players_to_groups(partida):
+    """Auto-asigna jugadores sin grupo a grupos aleatorios"""
+    if not partida['modalidad_grupal']:
+        return  # Solo para modal grupal
+    
+    participantes_sin_grupo = partida['participantes_sin_grupo']
+    
+    if not participantes_sin_grupo:
+        return  # No hay sin asignar
+    
+    for nombre_usuario in participantes_sin_grupo:
+        # Elige grupo aleatorio
+        grupo_aleatorio = random.choice(partida['grupos'])
+        
+        # Asigna participante al grupo
+        grupo_aleatorio['miembros'].append(nombre_usuario)
+        partida['participantes'][nombre_usuario]['grupo'] = grupo_aleatorio['nombre']
+        
+        print(f"[AUTO-ASIGNAR] {nombre_usuario} → {grupo_aleatorio['nombre']}")
+    
+    # Limpia lista de sin grupo
+    partida['participantes_sin_grupo'] = []
+
+
 def start_game(pin):
     partida = partidas_en_juego.get(pin)
     if not partida or partida['estado'] != 'E':
         return False
+    
+    # Validar que haya al menos un participante
+    if not partida['participantes']:
+        return False
+    
+    _assign_unassigned_players_to_groups(partida)
 
     partida['estado'] = 'J'
     # arrancar en primera pregunta
@@ -176,6 +215,15 @@ def _start_next_question(pin):
     partida = partidas_en_juego.get(pin)
     if not partida or partida['estado'] != 'J':
         return False
+
+    # Guardar puntajes actuales como "puntajes de pregunta anterior"
+    partida['puntajes_pregunta_anterior'] = {}
+    if partida['modalidad_grupal']:
+        for g in partida['grupos']:
+            partida['puntajes_pregunta_anterior'][g['nombre']] = g['puntaje']
+    else:
+        for nombre, participante in partida['participantes'].items():
+            partida['puntajes_pregunta_anterior'][nombre] = participante['puntaje']
 
     # siguiente índice
     partida['pregunta_actual_index'] += 1
@@ -243,6 +291,7 @@ def _compute_results(partida):
     return {
         'texto_opcion_correcta': texto_correcta,
         'ranking': ranking_data,
+        'pregunta_numero': partida['pregunta_actual_index'] + 1,
     }
 
 
@@ -273,6 +322,37 @@ def advance_state_if_needed(pin):
     return partida
 
 
+def _compute_current_ranking(partida):
+    """Calcula el ranking actual ordenado por puntaje, con información de puntos ganados en esta pregunta"""
+    if partida['modalidad_grupal']:
+        # En modo grupal, retornar puntajes de grupos
+        ranking = sorted(partida['grupos'], key=lambda g: g['puntaje'], reverse=True)
+        ranking_data = []
+        for g in ranking:
+            puntaje_anterior = partida.get('puntajes_pregunta_anterior', {}).get(g['nombre'], g['puntaje'])
+            puntos_ganados = g['puntaje'] - puntaje_anterior
+            ranking_data.append({
+                'nombre': g['nombre'], 
+                'puntaje': g['puntaje'],
+                'puntos_ganados': puntos_ganados if partida['pregunta_actual_index'] >= 0 else 0
+            })
+        return ranking_data
+    else:
+        # En modo individual, retornar puntajes de participantes
+        participantes_list = list(partida['participantes'].items())
+        ranking = sorted(participantes_list, key=lambda x: x[1]['puntaje'], reverse=True)
+        ranking_data = []
+        for nombre, data in ranking:
+            puntaje_anterior = partida.get('puntajes_pregunta_anterior', {}).get(nombre, data['puntaje'])
+            puntos_ganados = data['puntaje'] - puntaje_anterior
+            ranking_data.append({
+                'nombre': nombre, 
+                'puntaje': data['puntaje'],
+                'puntos_ganados': puntos_ganados if partida['pregunta_actual_index'] >= 0 else 0
+            })
+        return ranking_data
+
+
 def get_status(pin):
     partida = advance_state_if_needed(pin)
     if not partida:
@@ -289,17 +369,25 @@ def get_current(pin):
     if not partida:
         return {'existe': False}
 
+    nombre_usuario = session.get('nombre_usuario')
+    mi_grupo = None
+    if nombre_usuario and nombre_usuario in partida['participantes']:
+        mi_grupo = partida['participantes'][nombre_usuario].get('grupo')
+
+    # Generar ranking actual
+    ranking_actual = _compute_current_ranking(partida)
+
     if partida['estado'] == 'F' or partida['fase'] == 'final':
-        return {'existe': True, 'estado': 'F', 'fase': 'final', 'data': _final_ranking(partida)}
+        return {'existe': True, 'estado': 'F', 'fase': 'final', 'data': _final_ranking(partida), 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual}
 
     if partida['estado'] == 'J' and partida['fase'] == 'question':
-        return {'existe': True, 'estado': 'J', 'fase': 'question', 'data': _compute_question_payload(partida)}
+        return {'existe': True, 'estado': 'J', 'fase': 'question', 'data': _compute_question_payload(partida), 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual}
 
     if partida['estado'] == 'J' and partida['fase'] == 'results':
-        return {'existe': True, 'estado': 'J', 'fase': 'results', 'data': partida.get('ultimo_resultado')}
+        return {'existe': True, 'estado': 'J', 'fase': 'results', 'data': partida.get('ultimo_resultado'), 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual}
 
     # lobby
-    return {'existe': True, 'estado': partida['estado'], 'fase': partida['fase']}
+    return {'existe': True, 'estado': partida['estado'], 'fase': partida['fase'], 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual}
 
 
 def submit_answer(pin, id_opcion, tiempo_restante):

@@ -10,8 +10,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
             background: var(--main-bg);
@@ -37,11 +41,20 @@
             animation: fadeIn 0.3s ease;
         }
 
-        .screen.active { display: block; }
+        .screen.active {
+            display: block;
+        }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* PANTALLA DE PREGUNTA */
@@ -94,8 +107,35 @@
         }
 
         @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        /* ETIQUETA DE GRUPO */
+        .group-badge {
+            display: inline-block;
+            background: var(--btn-submitted-bg);
+            color: var(--btn-submitted-text);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 2px solid var(--btn-submitted-text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 15px;
+            box-shadow: 0 3px 10px rgba(142, 92, 246, 0.2);
+        }
+
+        .group-badge.hidden {
+            display: none;
         }
 
         .btn-grid {
@@ -187,6 +227,26 @@
             box-shadow: 0 6px 20px rgba(43, 182, 115, 0.25);
         }
 
+        .stat-item.incorrect {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.15);
+        }
+
+        .stat-item.incorrect:hover {
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.25);
+        }
+
+        .stat-item.not-answered {
+            background: #e2e3e5;
+            border-color: #d3d6d8;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.15);
+        }
+
+        .stat-item.not-answered:hover {
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.25);
+        }
+
         .stat-label {
             display: block;
             font-size: 0.9rem;
@@ -197,12 +257,53 @@
             margin-bottom: 12px;
         }
 
+        .stat-label.incorrect {
+            color: #721c24;
+        }
+
+        .stat-label.not-answered {
+            color: #383d41;
+        }
+
         .stat-value {
             display: block;
             font-size: 2.5rem;
             font-weight: 700;
             color: var(--btn-success-text);
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-value.incorrect {
+            color: #dc3545;
+        }
+
+        .stat-value.not-answered {
+            color: #6c757d;
+        }
+
+        /* PUNTOS GANADOS EN ESTA PREGUNTA */
+        .points-gained {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--btn-success-text);
+            margin-bottom: 8px;
+        }
+
+        .points-gained.positive {
+            color: #28a745;
+        }
+
+        .points-gained.zero {
+            color: var(--text-muted);
+        }
+
+        .score-accumulated-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 8px;
         }
 
         /* PANTALLA DE PODIO */
@@ -222,6 +323,42 @@
             color: var(--text-muted);
             text-align: center;
             margin-bottom: 40px;
+        }
+
+        .my-position-banner {
+            background: linear-gradient(135deg, var(--btn-submitted-bg), #7c3aed);
+            border: 3px solid var(--btn-submitted-text);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 35px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(142, 92, 246, 0.3);
+            animation: slideDown 0.5s ease;
+        }
+
+        .my-position-banner h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--btn-submitted-text);
+            margin-bottom: 8px;
+        }
+
+        .my-position-banner p {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .podium-places {
@@ -304,6 +441,7 @@
                     <span>TIEMPO</span>
                     <div id="player-timer" class="player-timer">10</div>
                 </div>
+                <div id="group-badge" class="group-badge hidden"></div>
             </div>
             <div id="answer-grid" class="btn-grid"></div>
         </div>
@@ -314,8 +452,10 @@
                 <h2 id="waiting-title">¡Respuesta enviada!</h2>
                 <p id="waiting-message">Esperando a los demás...</p>
                 <div class="waiting-stats">
-                    <div class="stat-item">
+                    <div id="score-stat" class="stat-item">
                         <span class="stat-label">TU PUNTUACIÓN</span>
+                        <span id="points-gained" class="points-gained positive">+ 0</span>
+                        <span class="score-accumulated-label">Acumulado</span>
                         <span id="waiting-score" class="stat-value">0</span>
                     </div>
                     <div class="stat-item">
@@ -330,6 +470,10 @@
         <div id="podium-screen" class="screen">
             <div class="podium-header">¡JUEGO TERMINADO!</div>
             <div class="podium-subheader">RANKING FINAL</div>
+            <div id="my-position" class="my-position-banner" style="display: none;">
+                <h3 id="position-title">¡Felicidades!</h3>
+                <p id="position-text">Has quedado en 1° Lugar</p>
+            </div>
             <div id="podium-places" class="podium-places"></div>
             <div style="margin-top:30px;">
                 <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Volver al Dashboard</a>
@@ -343,6 +487,8 @@
         let timerInterval;
         let lastQuestionIndex = -1;
         let respondido = false;
+        let miGrupo = null;  // Variable para almacenar el grupo del participante
+        let miPuntajeAnterior = 0;  // Variable para rastrear puntaje anterior
 
         function switchScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -353,7 +499,7 @@
             if (respondido) return;
             respondido = true;
             clearInterval(timerInterval);
-            
+
             try {
                 const res = await fetch('/api/game/answer', {
                     method: 'POST',
@@ -361,19 +507,46 @@
                     body: JSON.stringify({ pin, id_opcion: idOpcion, tiempo_restante: tiempoRestante })
                 });
                 const data = await res.json();
-                
+
                 // Mostrar resultado inmediatamente
                 switchScreen('waiting-screen');
+
+                // Limpiar estilos previos
+                const scoreStat = document.getElementById('score-stat');
+                scoreStat.classList.remove('incorrect', 'not-answered');
+
+                const scoreLabel = scoreStat.querySelector('.stat-label');
+                scoreLabel.classList.remove('incorrect', 'not-answered');
+
+                const scoreValue = document.getElementById('waiting-score');
+                scoreValue.classList.remove('incorrect', 'not-answered');
+
+                const pointsGained = document.getElementById('points-gained');
+                pointsGained.classList.remove('positive', 'zero', 'incorrect', 'not-answered');
+
                 if (data.es_correcta) {
                     document.getElementById('waiting-title').textContent = '¡CORRECTO! ✅';
                     document.getElementById('waiting-title').style.color = '#28a745';
+                    // Puntos en verde (correcto)
+                    const puntosEsta = data.mi_puntaje - miPuntajeAnterior;
+                    scoreValue.textContent = data.mi_puntaje || 0;
+                    pointsGained.textContent = `+ ${puntosEsta}`;
+                    pointsGained.classList.add('positive');
                 } else {
                     document.getElementById('waiting-title').textContent = '❌ Incorrecto';
                     document.getElementById('waiting-title').style.color = '#dc3545';
+                    // Aplicar estilos de incorrecto
+                    scoreStat.classList.add('incorrect');
+                    scoreLabel.classList.add('incorrect');
+                    scoreValue.classList.add('incorrect');
+                    pointsGained.classList.add('incorrect');
+                    // Puntos en rojo (incorrecto = 0 puntos)
+                    scoreValue.textContent = data.mi_puntaje || 0;
+                    pointsGained.textContent = '+ 0';
                 }
+
                 document.getElementById('waiting-message').textContent = 'Esperando a los demás jugadores...';
                 document.getElementById('correct-answer').textContent = data.respuesta_correcta || '-';
-                document.getElementById('waiting-score').textContent = data.mi_puntaje || 0;
             } catch (e) {
                 console.error('Error al enviar respuesta', e);
                 switchScreen('waiting-screen');
@@ -395,23 +568,65 @@
                 tiempoDisplay.textContent = Math.max(0, tiempoRestante);
                 if (tiempoRestante <= 0) {
                     clearInterval(timerInterval);
+                    // Si no respondió, mostrar pantalla de "no respondió"
+                    if (!respondido) {
+                        mostrarNoRespondio();
+                    }
                 }
             }, 1000);
+        }
+
+        function mostrarNoRespondio() {
+            respondido = true;
+            switchScreen('waiting-screen');
+
+            // Títle y mensaje para sin responder
+            document.getElementById('waiting-title').textContent = '⏰ ¡Se acabó el tiempo!';
+            document.getElementById('waiting-title').style.color = '#6c757d';
+            document.getElementById('waiting-message').textContent = 'No respondiste esta pregunta';
+
+            // Estilos para puntuación: gris (no respondió)
+            const scoreStat = document.getElementById('score-stat');
+            scoreStat.classList.remove('incorrect');
+            scoreStat.classList.add('not-answered');
+
+            const scoreLabel = scoreStat.querySelector('.stat-label');
+            scoreLabel.classList.add('not-answered');
+
+            const scoreValue = document.getElementById('waiting-score');
+            scoreValue.textContent = miPuntajeAnterior; // Mantener el puntaje anterior
+            scoreValue.classList.add('not-answered');
+
+            const pointsGained = document.getElementById('points-gained');
+            pointsGained.textContent = '+ 0';
+            pointsGained.classList.remove('positive');
+            pointsGained.classList.add('not-answered');
+
+            document.getElementById('correct-answer').textContent = '?';
         }
 
         function renderQuestion(data) {
             // Resetear estado de respuesta para la nueva pregunta
             respondido = false;
             clearInterval(timerInterval);
-            
+
             switchScreen('question-screen');
             document.getElementById('question-text').textContent = data.texto;
-            
+
+            // Mostrar etiqueta de grupo si pertenece a uno (modo grupal)
+            const groupBadge = document.getElementById('group-badge');
+            if (miGrupo) {
+                groupBadge.textContent = `👥 ${miGrupo}`;
+                groupBadge.classList.remove('hidden');
+            } else {
+                groupBadge.classList.add('hidden');
+            }
+
             // Mostrar imagen si existe
             const questionHeader = document.querySelector('.question-header');
             const existingImg = questionHeader.querySelector('.question-image');
             if (existingImg) existingImg.remove();
-            
+
             if (data.adjunto) {
                 const img = document.createElement('img');
                 img.src = `/static/${data.adjunto}`;
@@ -427,7 +642,7 @@
                 img.style.objectFit = 'contain';
                 questionHeader.appendChild(img);
             }
-            
+
             const answerGrid = document.getElementById('answer-grid');
             answerGrid.innerHTML = '';
             (data.opciones || []).forEach(op => {
@@ -438,17 +653,32 @@
                 answerGrid.appendChild(btn);
             });
 
+            // LIMPIAR ESTILOS DE LA PREGUNTA ANTERIOR
+            // Resetear estilos de puntos ganados cuando llega una nueva pregunta
+            const scoreStat = document.getElementById('score-stat');
+            const pointsGained = document.getElementById('points-gained');
+            const scoreValue = document.getElementById('waiting-score');
+
+            scoreStat.classList.remove('incorrect', 'not-answered');
+            pointsGained.classList.remove('positive', 'zero', 'incorrect', 'not-answered');
+            scoreValue.classList.remove('incorrect', 'not-answered');
+
+            // Reset a estado por defecto
+            pointsGained.textContent = '+ 0';
+            pointsGained.classList.add('positive');
+
             iniciarTimer(data.tiempo, data.started_at, data.server_time);
         }
 
         function renderResults(data) {
             clearInterval(timerInterval);
             switchScreen('waiting-screen');
+
             // Mostrar respuesta correcta
             if (data && data.texto_opcion_correcta) {
                 document.getElementById('correct-answer').textContent = data.texto_opcion_correcta;
             }
-            
+
             // Buscar mi puntuación en el ranking
             const miNombre = "{{ session.get('nombre_usuario', 'Invitado') }}";
             let miPuntaje = 0;
@@ -456,9 +686,22 @@
                 const miEntry = data.ranking.find(r => r.nombre === miNombre);
                 if (miEntry) {
                     miPuntaje = miEntry.puntaje;
+                    // Guardar puntaje actual para la siguiente pregunta
+                    miPuntajeAnterior = miPuntaje;
                 }
             }
-            document.getElementById('waiting-score').textContent = miPuntaje;
+
+            // Actualizar puntuación acumulada
+            // IMPORTANTE: NO limpiar las clases de puntos-ganados aquí
+            // porque ya fueron establecidas en enviarRespuesta() y queremos mantener su color
+            const scoreValue = document.getElementById('waiting-score');
+            scoreValue.textContent = miPuntaje;
+            // Solo remover clases si NUNCA se han marcado (primera vez)
+            if (!scoreValue.classList.contains('incorrect') &&
+                !scoreValue.classList.contains('not-answered')) {
+                scoreValue.classList.remove('incorrect', 'not-answered');
+            }
+
             document.getElementById('waiting-message').textContent = 'Siguiente pregunta en breve...';
         }
 
@@ -466,8 +709,17 @@
             clearInterval(timerInterval);
             switchScreen('podium-screen');
             const podiumPlaces = document.getElementById('podium-places');
+            const myPositionBanner = document.getElementById('my-position');
+            const positionTitle = document.getElementById('position-title');
+            const positionText = document.getElementById('position-text');
+
             podiumPlaces.innerHTML = '';
-            
+
+            // Obtener nombre del usuario actual
+            const miNombre = "{{ session.get('nombre_usuario', 'Invitado') }}";
+            let miPosicion = -1;
+            let esGrupo = false;
+
             (data || []).forEach((item, idx) => {
                 const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '';
                 podiumPlaces.innerHTML += `
@@ -477,7 +729,27 @@
                         <div class="podium-score">${item.puntaje} pts</div>
                     </div>
                 `;
+
+                // Verificar si es mi posición
+                if (item.nombre === miNombre || item.nombre === miGrupo) {
+                    miPosicion = idx + 1;
+                    esGrupo = item.nombre === miGrupo;
+                }
             });
+
+            // Mostrar banner con mi posición
+            if (miPosicion !== -1) {
+                myPositionBanner.style.display = 'block';
+
+                const sufijo = miPosicion === 1 ? 'er' : 'o';
+                const articulo = esGrupo ? 'Tu grupo ha' : 'Has';
+                const sujeto = esGrupo ? 'Tu grupo' : 'Tú';
+
+                positionTitle.textContent = miPosicion === 1 ? '🎉 ¡GANADOR!' : '¡Bien hecho!';
+                positionText.textContent = `${articulo} quedado en ${miPosicion}${sufijo} Lugar`;
+            } else {
+                myPositionBanner.style.display = 'none';
+            }
         }
 
         async function pollCurrent() {
@@ -485,13 +757,19 @@
                 const res = await fetch(`/api/game/current?pin=${encodeURIComponent(pin)}`);
                 if (!res.ok) return;
                 const cur = await res.json();
-                
+
+                // Actualizar grupo si cambió (útil si fue auto-asignado)
+                if (cur.mi_grupo && cur.mi_grupo !== miGrupo) {
+                    miGrupo = cur.mi_grupo;
+                    console.log(`🔄 Grupo actualizado a: ${miGrupo}`);
+                }
+
                 // Final del juego
                 if (cur.estado === 'F' || cur.fase === 'final') {
                     renderFinal(cur.data);
                     return;
                 }
-                
+
                 // Nueva pregunta - solo renderizar si cambió el índice
                 if (cur.fase === 'question' && cur.data && cur.data.index !== lastQuestionIndex) {
                     lastQuestionIndex = cur.data.index;
@@ -501,18 +779,25 @@
                 else if (cur.fase === 'results' && cur.data) {
                     renderResults(cur.data);
                 }
-            } catch (e) { 
-                console.error('Error en pollCurrent', e); 
+            } catch (e) {
+                console.error('Error en pollCurrent', e);
             }
         }
 
         async function joinGame() {
             try {
-                await fetch('/api/player/join', {
+                const res = await fetch('/api/player/join', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ pin })
                 });
+                const data = await res.json();
+
+                // Obtener el grupo del participante si está disponible
+                if (data.grupo) {
+                    miGrupo = data.grupo;
+                    console.log(`✅ Te uniste al grupo: ${miGrupo}`);
+                }
             } catch (e) {
                 console.error('Error al unirse al juego', e);
             }
