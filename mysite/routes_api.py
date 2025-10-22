@@ -18,6 +18,7 @@ from ajax_game import (
     get_lobby_state,
     join_player,
     select_group,
+    remove_player,
     start_game,
     get_status,
     get_current,
@@ -594,6 +595,20 @@ def api_player_select_group():
     return jsonify({'ok': True, 'lobby': get_lobby_state(pin)})
 
 
+@app.post('/api/player/leave')
+def api_player_leave():
+    data = request.get_json(force=True) or {}
+    pin = (data.get('pin') or '').strip().upper()
+    if not pin:
+        return jsonify({'error': 'pin requerido'}), 400
+    if not _ensure_loaded(pin):
+        return jsonify({'error': 'PIN inválido'}), 404
+    ok = remove_player(pin)
+    if not ok:
+        return jsonify({'error': 'no se pudo salir'}), 400
+    return jsonify({'ok': True})
+
+
 @app.post('/api/game/start')
 def api_game_start():
     data = request.get_json(force=True) or {}
@@ -684,7 +699,9 @@ def api_game_answer():
         'ok': bool(ok),
         'respuesta_correcta': respuesta_correcta,
         'es_correcta': es_correcta,
-        'mi_puntaje': mi_puntaje
+        'mi_puntaje': mi_puntaje,
+        'nombre_quien_respondio': session.get('nombre_usuario', 'Compañero'),  # ⭐ Para modal grupal
+        'texto_opcion': opcion_seleccionada.get('opcion', 'Opción desconocida') if opcion_seleccionada else 'Opción desconocida'  # ⭐ Para modal grupal
     })
 
 #------------------CODIGO PARA ACCEDER AL CUESTIONARIO EN MODO VISUALIZACION------

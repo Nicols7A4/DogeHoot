@@ -160,13 +160,24 @@
             color: var(--btn-pending-text);
             border-color: var(--btn-pending-text);
         }
-        
+
         .btn-secondary:hover {
             background: #FFE0B8;
         }
 
         .btn-secondary:hover {
             border-color: var(--btn-pending-text);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            border-color: #c82333;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-3px);
         }
 
         .player-pool-box {
@@ -212,15 +223,21 @@
     <div class="container">
         <div class="screen active">
             <div class="lobby-header">SALA DE ESPERA</div>
-            <div class="lobby-subheader">PIN: <span style="font-weight:700; color:#0069ff; letter-spacing:2px;">{{ pin }}</span></div>
+            <div class="lobby-subheader">PIN: <span style="font-weight:700; color:#0069ff; letter-spacing:2px;">{{ pin
+                    }}</span></div>
             <div class="lobby-body">
                 <div id="grupos-container" class="groups-grid"></div>
-                            <div id="sin-grupo-container" style="display:none;">
-                <h3 style="color: var(--btn-inprogress-text); margin-bottom: 1rem;">Sin grupo</h3>
-                <div id="sin-grupo-list" class="players-grid"></div>
+                <div id="sin-grupo-container" style="display:none;">
+                    <h3 style="color: var(--btn-inprogress-text); margin-bottom: 1rem;">Sin grupo</h3>
+                    <div id="sin-grupo-list" class="players-grid"></div>
+                </div>
             </div>
+            <div id="mensaje-espera" style="margin-top:30px; color:#6c757d; font-weight:600;">Esperando al anfitrión...
             </div>
-            <div id="mensaje-espera" style="margin-top:30px; color:#6c757d; font-weight:600;">Esperando al anfitrión...</div>
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-salir" class="btn btn-danger" onclick="salirDelLobby()" style="max-width: 200px;">🚪
+                    Salir</button>
+            </div>
         </div>
     </div>
 
@@ -243,13 +260,34 @@
             }
         }
 
+        async function salirDelLobby() {
+            try {
+                const res = await fetch('/api/player/leave', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin })
+                });
+                if (res.ok) {
+                    // Detener los polls
+                    if (pollLobbyInterval) clearInterval(pollLobbyInterval);
+                    if (pollStatusInterval) clearInterval(pollStatusInterval);
+                    // Redirigir al dashboard
+                    window.location.href = '{{ url_for("dashboard") }}';
+                } else {
+                    alert('Error al salir del lobby');
+                }
+            } catch (e) {
+                console.error('Error al salir del lobby', e);
+            }
+        }
+
         function renderLobby(lobby) {
             const gruposContainer = document.getElementById('grupos-container');
             const sinGrupoContainer = document.getElementById('sin-grupo-container');
             const sinGrupoList = document.getElementById('sin-grupo-list');
 
             gruposContainer.innerHTML = '';
-            
+
             // Contar total de participantes
             let totalParticipantes = 0;
             if (lobby.modalidad_grupal) {
@@ -257,7 +295,7 @@
                     lobby.grupos.forEach(g => {
                         const card = document.createElement('div');
                         card.className = 'player-lobby-group-box';
-                        
+
                         let membersHTML = '';
                         if (Array.isArray(g.miembros) && g.miembros.length > 0) {
                             membersHTML = g.miembros.map(m => {
@@ -278,7 +316,7 @@
                         } else {
                             membersHTML = '<p style="color:var(--text-muted); font-size:0.9rem;text-align:center;">Ningun miembro</p>';
                         }
-                        
+
                         card.innerHTML = `
                             <div class="player-lobby-group-header">${g.nombre}</div>
                             <div class="player-lobby-group-members">${membersHTML}</div>
@@ -292,10 +330,10 @@
                 // Modo individual: mostrar todos los participantes con fotos
                 if (Array.isArray(lobby.grupos) && lobby.grupos.length > 0 && lobby.grupos[0].miembros) {
                     totalParticipantes = lobby.grupos[0].miembros.length;
-                    
+
                     const card = document.createElement('div');
                     card.className = 'player-lobby-group-box';
-                    
+
                     let membersHTML = '';
                     if (totalParticipantes > 0) {
                         membersHTML = lobby.grupos[0].miembros.map(m => {
@@ -315,7 +353,7 @@
                     } else {
                         membersHTML = '<p style="color:var(--text-muted); font-size:0.9rem;text-align:center;">Esperando jugadores...</p>';
                     }
-                    
+
                     card.innerHTML = `
                         <div class="player-lobby-group-header">Participantes</div>
                         <div class="player-lobby-group-members">${membersHTML}</div>
@@ -332,7 +370,7 @@
                     const nombre = typeof p === 'string' ? p : p.nombre;
                     const foto = typeof p === 'object' ? p.foto : 'img/ico.png';
                     const skin = typeof p === 'object' ? p.skin : null;
-                    
+
                     const playerDiv = document.createElement('div');
                     playerDiv.className = 'player-avatar-wrap';
                     playerDiv.innerHTML = `
@@ -349,7 +387,7 @@
             }
 
             // Actualizar mensaje de espera con contador de participantes
-            document.getElementById('mensaje-espera').textContent = 
+            document.getElementById('mensaje-espera').textContent =
                 `${totalParticipantes} jugador${totalParticipantes !== 1 ? 'es' : ''} conectado${totalParticipantes !== 1 ? 's' : ''}. Esperando al anfitrion...`;
         }
 

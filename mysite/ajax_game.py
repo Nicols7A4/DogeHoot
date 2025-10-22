@@ -171,6 +171,33 @@ def select_group(pin, nombre_grupo):
     return False
 
 
+def remove_player(pin):
+    """Remueve al jugador actual de la partida"""
+    partida = partidas_en_juego.get(pin)
+    if not partida:
+        return False
+
+    nombre_usuario = session.get('nombre_usuario')
+    if not nombre_usuario:
+        return False
+
+    # Remover de participantes
+    if nombre_usuario in partida['participantes']:
+        del partida['participantes'][nombre_usuario]
+
+    # Remover de la lista de sin grupo
+    if nombre_usuario in partida['participantes_sin_grupo']:
+        partida['participantes_sin_grupo'].remove(nombre_usuario)
+
+    # Remover de los grupos
+    for g in partida['grupos']:
+        if nombre_usuario in g['miembros']:
+            g['miembros'].remove(nombre_usuario)
+            break
+
+    return True
+
+
 def _assign_unassigned_players_to_groups(partida):
     """Auto-asigna jugadores sin grupo a grupos aleatorios"""
     if not partida['modalidad_grupal']:
@@ -249,9 +276,37 @@ def _start_next_question(pin):
     return True
 
 
-def _compute_question_payload(partida):
+def _compute_question_payload(partida, nombre_usuario=None):
     pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
     opciones = cpo.obtener_opciones_por_pregunta(pregunta['id_pregunta'])
+    
+    # ⭐ DETECTAR SI MI GRUPO YA RESPONDIÓ (solo para modalidad grupal)
+    grupo_respondio = False
+    quien_respondio = None
+    respuesta_texto = None
+    
+    if partida['modalidad_grupal'] and nombre_usuario:
+        # Obtener mi grupo
+        mi_participante = partida['participantes'].get(nombre_usuario)
+        if mi_participante:
+            mi_grupo_nombre = mi_participante.get('grupo')
+            # Buscar si MI grupo respondió esta pregunta
+            for g in partida['grupos']:
+                if g['nombre'] == mi_grupo_nombre and g.get('respondio_pregunta', False):
+                    grupo_respondio = True
+                    # Encontrar quién respondió del MI grupo
+                    for nombre, participante in partida['participantes'].items():
+                        if participante.get('grupo') == mi_grupo_nombre and participante.get('respondio_esta_pregunta', False):
+                            quien_respondio = nombre
+                            # Encontrar el texto de la opción respondida
+                            if participante.get('id_opcion_respondida'):
+                                for op in opciones:
+                                    if op['id_opcion'] == participante['id_opcion_respondida']:
+                                        respuesta_texto = op['opcion']
+                                        break
+                            break
+                    break
+    
     return {
         'index': partida['pregunta_actual_index'],
         'texto': pregunta['pregunta'],
@@ -260,6 +315,11 @@ def _compute_question_payload(partida):
         'adjunto': pregunta.get('adjunto'),
         'started_at': partida['question_started_at'],
         'server_time': time.time(),
+        'servidor_ahora': time.time(),
+        # ⭐ NUEVOS CAMPOS PARA MODALIDAD GRUPAL
+        'grupo_respondio': grupo_respondio,
+        'quien_respondio': quien_respondio,
+        'respuesta_texto': respuesta_texto,
     }
 
 
@@ -288,10 +348,24 @@ def _compute_results(partida):
                     usados.add(nombre)
                     break
 
+    # Obtener información de si el usuario actual respondió correctamente
+    nombre_usuario = session.get('nombre_usuario')
+    respondio_correcta = False
+    respondio_pregunta = False
+    
+    if nombre_usuario and nombre_usuario in partida['participantes']:
+        participante = partida['participantes'][nombre_usuario]
+        respondio_pregunta = participante.get('respondio_esta_pregunta', False)
+        # Si respondió, check si fue correcta
+        if respondio_pregunta:
+            respondio_correcta = participante.get('respuesta_correcta', False)
+
     return {
         'texto_opcion_correcta': texto_correcta,
         'ranking': ranking_data,
         'pregunta_numero': partida['pregunta_actual_index'] + 1,
+        'respondio_correcta': respondio_correcta,
+        'respondio_pregunta': respondio_pregunta,
     }
 
 
@@ -376,18 +450,21 @@ def get_current(pin):
 
     # Generar ranking actual
     ranking_actual = _compute_current_ranking(partida)
+    
+    # Hora del servidor para sincronización en cliente
+    servidor_ahora = time.time()
 
     if partida['estado'] == 'F' or partida['fase'] == 'final':
-        return {'existe': True, 'estado': 'F', 'fase': 'final', 'data': _final_ranking(partida), 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual}
+        return {'existe': True, 'estado': 'F', 'fase': 'final', 'data': _final_ranking(partida), 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual, 'servidor_ahora': servidor_ahora, 'modalidad_grupal': partida['modalidad_grupal']}
 
     if partida['estado'] == 'J' and partida['fase'] == 'question':
-        return {'existe': True, 'estado': 'J', 'fase': 'question', 'data': _compute_question_payload(partida), 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual}
+        return {'existe': True, 'estado': 'J', 'fase': 'question', 'data': _compute_question_payload(partida, nombre_usuario), 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual, 'servidor_ahora': servidor_ahora, 'modalidad_grupal': partida['modalidad_grupal']}
 
     if partida['estado'] == 'J' and partida['fase'] == 'results':
-        return {'existe': True, 'estado': 'J', 'fase': 'results', 'data': partida.get('ultimo_resultado'), 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual}
+        return {'existe': True, 'estado': 'J', 'fase': 'results', 'data': partida.get('ultimo_resultado'), 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual, 'servidor_ahora': servidor_ahora, 'modalidad_grupal': partida['modalidad_grupal']}
 
     # lobby
-    return {'existe': True, 'estado': partida['estado'], 'fase': partida['fase'], 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual}
+    return {'existe': True, 'estado': partida['estado'], 'fase': partida['fase'], 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual, 'servidor_ahora': servidor_ahora, 'modalidad_grupal': partida['modalidad_grupal']}
 
 
 def submit_answer(pin, id_opcion, tiempo_restante):
@@ -414,7 +491,8 @@ def submit_answer(pin, id_opcion, tiempo_restante):
     pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
     tiempo_total = pregunta['tiempo']
 
-    puntos = _calcular_puntos(tiempo_restante, tiempo_total) if opcion_db['es_correcta_bool'] else 0
+    es_correcta = opcion_db['es_correcta_bool']
+    puntos = _calcular_puntos(tiempo_restante, tiempo_total) if es_correcta else 0
 
     if partida['modalidad_grupal']:
         nombre_grupo = participante.get('grupo')
@@ -427,11 +505,15 @@ def submit_answer(pin, id_opcion, tiempo_restante):
         grupo['respondio_pregunta'] = True
         # Marcar que este participante ya respondió
         participante['respondio_esta_pregunta'] = True
+        participante['respuesta_correcta'] = es_correcta  # Guardar si fue correcta
+        participante['id_opcion_respondida'] = id_opcion  # ⭐ Guardar opción respondida
         return True
 
     # individual
     participante['puntaje'] += puntos
     participante['respondio_esta_pregunta'] = True
+    participante['respuesta_correcta'] = es_correcta  # Guardar si fue correcta
+    participante['id_opcion_respondida'] = id_opcion  # ⭐ Guardar opción respondida
     return True
 
 
