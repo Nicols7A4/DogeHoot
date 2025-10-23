@@ -547,6 +547,10 @@
         let quienRespondio = null;  // Quién respondió
         let queRespondio = null;  // Qué opción respondió
 
+        // ⭐ TRACKING LOCAL DE RESPUESTA
+        let miRespuestaLocal = null;  // {respondio: bool, correcta: bool, bloqueado: bool}
+        let resultadosYaMostrados = false;  // Para evitar renderizar resultados múltiples veces
+
         function switchScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
@@ -570,6 +574,16 @@
         async function enviarRespuesta(idOpcion) {
             if (respondido || grupoYaRespondio) return;  // ⭐ Bloquear si grupo ya respondió
             respondido = true;
+
+            // ⭐ GUARDAR QUE YO RESPONDÍ LOCALMENTE
+            miRespuestaLocal = {
+                respondio: true,
+                correcta: null,  // Aún no sabemos si es correcta
+                bloqueado: false,
+                opcionId: idOpcion
+            };
+
+            console.log('✅ Respuesta enviada localmente, esperando confirmación del servidor...');
 
             try {
                 const res = await fetch('/api/game/answer', {
@@ -599,6 +613,7 @@
             } catch (e) {
                 console.error('Error al enviar respuesta', e);
                 respondido = false;
+                miRespuestaLocal = null;  // Resetear si falla
             }
         }
 
@@ -683,9 +698,12 @@
         function renderQuestion(data) {
             // Resetear estado de respuesta para la nueva pregunta
             respondido = false;
+            miRespuestaLocal = null;  // ⭐ Resetear respuesta local
+            resultadosYaMostrados = false;  // ⭐ Permitir mostrar resultados de esta pregunta
             ocultarNotificacionRespuestaGrupo();  // ⭐ Ocultar notificación de pregunta anterior
             clearInterval(timerInterval);
 
+            console.log('🆕 Nueva pregunta cargada, estados reseteados');
             switchScreen('question-screen');
             document.getElementById('question-text').textContent = data.texto;
 
@@ -746,8 +764,26 @@
         }
 
         function renderResults(data, ranking_actual) {
+            // ⭐ EVITAR RENDERIZAR MÚLTIPLES VECES
+            if (resultadosYaMostrados) {
+                console.log('⚠️ Resultados ya mostrados, ignorando llamada duplicada');
+                return;
+            }
+            resultadosYaMostrados = true;
+
             clearInterval(timerInterval);
             switchScreen('waiting-screen');
+
+            // 🔍 DEBUG COMPLETO
+            console.log('📊 renderResults recibido (RAW DATA):', data);
+            console.log('📊 Estado local guardado:', miRespuestaLocal);
+            console.log('📊 Valores del servidor:', {
+                respondio_pregunta: data?.respondio_pregunta,
+                respondio_pregunta_type: typeof data?.respondio_pregunta,
+                respondio_correcta: data?.respondio_correcta,
+                respondio_correcta_type: typeof data?.respondio_correcta,
+                fue_bloqueado_por_grupo: data?.fue_bloqueado_por_grupo,
+            });
 
             // Mostrar respuesta correcta
             if (data && data.texto_opcion_correcta) {
@@ -779,31 +815,70 @@
             scoreValue.classList.remove('incorrect', 'not-answered');
             pointsGained.classList.remove('positive', 'zero', 'incorrect', 'not-answered');
 
-            // Determinar si respondió correctamente
-            if (data && data.respondio_correcta) {
-                document.getElementById('waiting-title').textContent = '¡CORRECTO! ✅';
-                document.getElementById('waiting-title').style.color = '#28a745';
-                scoreValue.textContent = miPuntaje || 0;
-                pointsGained.textContent = `+ ${puntosGanados}`;
-                pointsGained.classList.add('positive');
-            } else if (data && data.respondio_pregunta === false) {
-                // No respondió (timeout)
-                document.getElementById('waiting-title').textContent = '⏰ ¡Se acabó el tiempo!';
-                document.getElementById('waiting-title').style.color = '#6c757d';
+            // ⭐ DETERMINAR ESTADO - PRIORIZAR ESTADO LOCAL si existe
+            let respondio, correcta, bloqueado;
+
+            if (miRespuestaLocal && miRespuestaLocal.respondio) {
+                // Usar estado local (lo que YO sé que hice)
+                respondio = true;
+                bloqueado = false;
+                // La corrección viene del servidor (comparar puntos)
+                correcta = puntosGanados > 0;
+                console.log('🎯 Usando ESTADO LOCAL + puntos del servidor');
+            } else {
+                // Usar datos del servidor
+                respondio = data && (data.respondio_pregunta === true);
+                correcta = data && (data.respondio_correcta === true);
+                bloqueado = data && (data.fue_bloqueado_por_grupo === true);
+                console.log('🎯 Usando DATOS DEL SERVIDOR');
+            }
+
+            console.log('🎯 Decisiones finales:', {
+                respondio,
+                correcta,
+                bloqueado,
+                puntosGanados
+            });
+
+            if (respondio) {
+                // El usuario SÍ respondió
+                if (correcta) {
+                    // ✅ Respondió correctamente
+                    console.log('✅ CORRECTO detectado');
+                    document.getElementById('waiting-title').textContent = '¡CORRECTO! ✅';
+                    document.getElementById('waiting-title').style.color = '#28a745';
+                    scoreValue.textContent = miPuntaje || 0;
+                    pointsGained.textContent = `+ ${puntosGanados}`;
+                    pointsGained.classList.add('positive');
+                } else {
+                    // ❌ Respondió pero incorrectamente
+                    console.log('❌ INCORRECTO detectado');
+                    document.getElementById('waiting-title').textContent = '❌ Incorrecto';
+                    document.getElementById('waiting-title').style.color = '#dc3545';
+                    scoreStat.classList.add('incorrect');
+                    scoreLabel.classList.add('incorrect');
+                    scoreValue.classList.add('incorrect');
+                    pointsGained.classList.add('incorrect');
+                    scoreValue.textContent = miPuntaje || 0;
+                    pointsGained.textContent = '+ 0';
+                }
+            } else {
+                // El usuario NO respondió (timeout o bloqueado)
+                if (bloqueado) {
+                    // ⏸️ Fue bloqueado por su grupo
+                    console.log('⏸️ BLOQUEADO detectado');
+                    document.getElementById('waiting-title').textContent = '⏸️ Bloqueado por el Grupo';
+                    document.getElementById('waiting-title').style.color = '#ff9800';
+                } else {
+                    // ⏰ No respondió (timeout)
+                    console.log('⏰ TIMEOUT detectado');
+                    document.getElementById('waiting-title').textContent = '⏰ ¡Se acabó el tiempo!';
+                    document.getElementById('waiting-title').style.color = '#6c757d';
+                }
                 scoreStat.classList.add('not-answered');
                 scoreLabel.classList.add('not-answered');
                 scoreValue.classList.add('not-answered');
                 pointsGained.classList.add('not-answered');
-                scoreValue.textContent = miPuntaje || 0;
-                pointsGained.textContent = '+ 0';
-            } else {
-                // Respondió pero incorrecta
-                document.getElementById('waiting-title').textContent = '❌ Incorrecto';
-                document.getElementById('waiting-title').style.color = '#dc3545';
-                scoreStat.classList.add('incorrect');
-                scoreLabel.classList.add('incorrect');
-                scoreValue.classList.add('incorrect');
-                pointsGained.classList.add('incorrect');
                 scoreValue.textContent = miPuntaje || 0;
                 pointsGained.textContent = '+ 0';
             }
@@ -907,6 +982,7 @@
                 }
                 // Resultados - mostrar cuando el servidor diga que es hora
                 else if (cur.fase === 'results' && cur.data) {
+                    console.log('📡 pollCurrent recibió RESULTS:', cur.data);
                     renderResults(cur.data, cur.ranking_actual);
                 }
             } catch (e) {

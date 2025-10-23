@@ -130,7 +130,11 @@ def join_player(pin):
             'puntaje': 0, 
             'id_usuario': id_usuario,
             'foto': foto,
-            'skin': skin
+            'skin': skin,
+            'respondio_esta_pregunta': False,
+            'respuesta_correcta': False,
+            'id_opcion_respondida': None,
+            'fue_bloqueado_por_grupo': False,
         }
         if partida['modalidad_grupal']:
             partida['participantes_sin_grupo'].append(nombre_usuario)
@@ -263,9 +267,12 @@ def _start_next_question(pin):
     for g in partida.get('grupos', []):
         g['respondio_pregunta'] = False
     
-    # Resetear flags de respuesta para modo individual
+    # Resetear flags de respuesta para todos los participantes
     for nombre, participante in partida['participantes'].items():
         participante['respondio_esta_pregunta'] = False
+        participante['respuesta_correcta'] = False
+        participante['id_opcion_respondida'] = None
+        participante['fue_bloqueado_por_grupo'] = False
 
     pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
     partida['fase'] = 'question'
@@ -352,13 +359,18 @@ def _compute_results(partida):
     nombre_usuario = session.get('nombre_usuario')
     respondio_correcta = False
     respondio_pregunta = False
+    fue_bloqueado_por_grupo = False
     
     if nombre_usuario and nombre_usuario in partida['participantes']:
         participante = partida['participantes'][nombre_usuario]
+        # Obtener valores como booleanos puros
         respondio_pregunta = participante.get('respondio_esta_pregunta', False)
+        fue_bloqueado_por_grupo = participante.get('fue_bloqueado_por_grupo', False)
         # Si respondió, check si fue correcta
         if respondio_pregunta:
             respondio_correcta = participante.get('respuesta_correcta', False)
+        
+        print(f"[DEBUG] _compute_results - {nombre_usuario}: respondio={respondio_pregunta} (type: {type(respondio_pregunta)}), correcta={respondio_correcta} (type: {type(respondio_correcta)}), bloqueado={fue_bloqueado_por_grupo}")
 
     return {
         'texto_opcion_correcta': texto_correcta,
@@ -366,6 +378,7 @@ def _compute_results(partida):
         'pregunta_numero': partida['pregunta_actual_index'] + 1,
         'respondio_correcta': respondio_correcta,
         'respondio_pregunta': respondio_pregunta,
+        'fue_bloqueado_por_grupo': fue_bloqueado_por_grupo,
     }
 
 
@@ -491,8 +504,11 @@ def submit_answer(pin, id_opcion, tiempo_restante):
     pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
     tiempo_total = pregunta['tiempo']
 
-    es_correcta = opcion_db['es_correcta_bool']
+    # Convertir a booleano de Python (True o False)
+    es_correcta = bool(opcion_db.get('es_correcta_bool', False))
     puntos = _calcular_puntos(tiempo_restante, tiempo_total) if es_correcta else 0
+    
+    print(f"[DEBUG] submit_answer - opcion {id_opcion}: es_correcta={es_correcta} (type: {type(es_correcta)}), puntos={puntos}")
 
     if partida['modalidad_grupal']:
         nombre_grupo = participante.get('grupo')
@@ -507,6 +523,14 @@ def submit_answer(pin, id_opcion, tiempo_restante):
         participante['respondio_esta_pregunta'] = True
         participante['respuesta_correcta'] = es_correcta  # Guardar si fue correcta
         participante['id_opcion_respondida'] = id_opcion  # ⭐ Guardar opción respondida
+        
+        print(f"[DEBUG] submit_answer GRUPAL - {nombre_usuario} ({nombre_grupo}): respondio={True}, correcta={es_correcta}, puntos={puntos}")
+        
+        # Marcar otros miembros del grupo como bloqueados
+        for p in partida['participantes'].values():
+            if p.get('grupo') == nombre_grupo and not p.get('respondio_esta_pregunta'):
+                p['fue_bloqueado_por_grupo'] = True
+        
         return True
 
     # individual
@@ -514,6 +538,8 @@ def submit_answer(pin, id_opcion, tiempo_restante):
     participante['respondio_esta_pregunta'] = True
     participante['respuesta_correcta'] = es_correcta  # Guardar si fue correcta
     participante['id_opcion_respondida'] = id_opcion  # ⭐ Guardar opción respondida
+    
+    print(f"[DEBUG] submit_answer - {nombre_usuario}: respondio={True}, correcta={es_correcta}, puntos={puntos}")
     return True
 
 
