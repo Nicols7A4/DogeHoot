@@ -577,13 +577,14 @@
 
             // ⭐ GUARDAR QUE YO RESPONDÍ LOCALMENTE
             miRespuestaLocal = {
-                respondio: true,
-                correcta: null,  // Aún no sabemos si es correcta
-                bloqueado: false,
+                respondio: true,           // YO respondí
+                correcta: null,            // Aún no sabemos si es correcta
+                bloqueado: false,          // YO no fui bloqueado
+                grupoRespondio: false,     // No aplica (yo respondí)
                 opcionId: idOpcion
             };
 
-            console.log('✅ Respuesta enviada localmente, esperando confirmación del servidor...');
+            console.log('✅ YO respondí localmente. Estado guardado:', miRespuestaLocal);
 
             try {
                 const res = await fetch('/api/game/answer', {
@@ -774,23 +775,17 @@
             clearInterval(timerInterval);
             switchScreen('waiting-screen');
 
-            // 🔍 DEBUG COMPLETO
-            console.log('📊 renderResults recibido (RAW DATA):', data);
-            console.log('📊 Estado local guardado:', miRespuestaLocal);
-            console.log('📊 Valores del servidor:', {
-                respondio_pregunta: data?.respondio_pregunta,
-                respondio_pregunta_type: typeof data?.respondio_pregunta,
-                respondio_correcta: data?.respondio_correcta,
-                respondio_correcta_type: typeof data?.respondio_correcta,
-                fue_bloqueado_por_grupo: data?.fue_bloqueado_por_grupo,
-            });
+            console.log('📊 === INICIO renderResults ===');
+            console.log('📊 Data del servidor:', data);
+            console.log('📊 Modalidad grupal:', modalidadGrupal);
+            console.log('📊 Mi respuesta local:', miRespuestaLocal);
 
             // Mostrar respuesta correcta
             if (data && data.texto_opcion_correcta) {
                 document.getElementById('correct-answer').textContent = data.texto_opcion_correcta;
             }
 
-            // Buscar mi puntuación en el ranking actual (que incluye puntos_ganados)
+            // Buscar mi puntuación en el ranking actual
             const miNombre = "{{ session.get('nombre_usuario', 'Invitado') }}";
             let miPuntaje = 0;
             let puntosGanados = 0;
@@ -803,78 +798,78 @@
                 }
             }
 
-            // Mostrar resultados basados en respuesta
+            console.log('📊 Puntaje encontrado:', miPuntaje, '| Puntos ganados:', puntosGanados);
+
+            // Preparar elementos del DOM
             const scoreStat = document.getElementById('score-stat');
             const scoreLabel = scoreStat.querySelector('.stat-label');
             const scoreValue = document.getElementById('waiting-score');
             const pointsGained = document.getElementById('points-gained');
 
-            // Limpiar clases previas
+            // Limpiar todas las clases previas
             scoreStat.classList.remove('incorrect', 'not-answered');
             scoreLabel.classList.remove('incorrect', 'not-answered');
             scoreValue.classList.remove('incorrect', 'not-answered');
             pointsGained.classList.remove('positive', 'zero', 'incorrect', 'not-answered');
 
-            // ⭐ DETERMINAR ESTADO - PRIORIZAR ESTADO LOCAL si existe
-            let respondio, correcta, bloqueado;
+            // ⭐⭐⭐ LÓGICA SIMPLE Y CLARA ⭐⭐⭐
 
-            if (miRespuestaLocal && miRespuestaLocal.respondio) {
-                // Usar estado local (lo que YO sé que hice)
-                respondio = true;
-                bloqueado = false;
-                // La corrección viene del servidor (comparar puntos)
-                correcta = puntosGanados > 0;
-                console.log('🎯 Usando ESTADO LOCAL + puntos del servidor');
-            } else {
-                // Usar datos del servidor
-                respondio = data && (data.respondio_pregunta === true);
-                correcta = data && (data.respondio_correcta === true);
-                bloqueado = data && (data.fue_bloqueado_por_grupo === true);
-                console.log('🎯 Usando DATOS DEL SERVIDOR');
-            }
+            // PASO 1: Determinar si YO respondí personalmente
+            const yoRespondi = miRespuestaLocal && miRespuestaLocal.respondio === true;
 
-            console.log('🎯 Decisiones finales:', {
-                respondio,
-                correcta,
-                bloqueado,
-                puntosGanados
-            });
+            console.log('📊 ¿Yo respondí personalmente?', yoRespondi);
 
-            if (respondio) {
-                // El usuario SÍ respondió
-                if (correcta) {
-                    // ✅ Respondió correctamente
-                    console.log('✅ CORRECTO detectado');
+            if (yoRespondi) {
+                // ========== YO RESPONDÍ PERSONALMENTE ==========
+                // En cualquier modo (individual o grupal), si YO respondí, mostrar MI resultado
+
+                if (puntosGanados > 0) {
+                    // ✅ CORRECTO
+                    console.log('✅ Yo respondí → CORRECTO (tengo puntos)');
                     document.getElementById('waiting-title').textContent = '¡CORRECTO! ✅';
                     document.getElementById('waiting-title').style.color = '#28a745';
-                    scoreValue.textContent = miPuntaje || 0;
                     pointsGained.textContent = `+ ${puntosGanados}`;
                     pointsGained.classList.add('positive');
                 } else {
-                    // ❌ Respondió pero incorrectamente
-                    console.log('❌ INCORRECTO detectado');
+                    // ❌ INCORRECTO
+                    console.log('❌ Yo respondí → INCORRECTO (sin puntos)');
                     document.getElementById('waiting-title').textContent = '❌ Incorrecto';
                     document.getElementById('waiting-title').style.color = '#dc3545';
                     scoreStat.classList.add('incorrect');
                     scoreLabel.classList.add('incorrect');
                     scoreValue.classList.add('incorrect');
                     pointsGained.classList.add('incorrect');
-                    scoreValue.textContent = miPuntaje || 0;
                     pointsGained.textContent = '+ 0';
                 }
+
+                scoreValue.textContent = miPuntaje || 0;
+
+            } else if (modalidadGrupal && puntosGanados > 0) {
+                // ========== MODO GRUPAL: MI GRUPO GANÓ PUNTOS (aunque yo no haya respondido) ==========
+                console.log('✅ Modo grupal → Mi GRUPO respondió CORRECTO (tengo puntos de grupo)');
+                document.getElementById('waiting-title').textContent = '¡CORRECTO! ✅';
+                document.getElementById('waiting-title').style.color = '#28a745';
+                pointsGained.textContent = `+ ${puntosGanados}`;
+                pointsGained.classList.add('positive');
+                scoreValue.textContent = miPuntaje || 0;
+
+            } else if (modalidadGrupal && puntosGanados === 0 && miRespuestaLocal && miRespuestaLocal.bloqueado) {
+                // ========== MODO GRUPAL: ALGUIEN DE MI GRUPO RESPONDIÓ MAL ==========
+                console.log('❌ Modo grupal → Mi GRUPO respondió INCORRECTO');
+                document.getElementById('waiting-title').textContent = '❌ Incorrecto';
+                document.getElementById('waiting-title').style.color = '#dc3545';
+                scoreStat.classList.add('incorrect');
+                scoreLabel.classList.add('incorrect');
+                scoreValue.classList.add('incorrect');
+                pointsGained.classList.add('incorrect');
+                scoreValue.textContent = miPuntaje || 0;
+                pointsGained.textContent = '+ 0';
+
             } else {
-                // El usuario NO respondió (timeout o bloqueado)
-                if (bloqueado) {
-                    // ⏸️ Fue bloqueado por su grupo
-                    console.log('⏸️ BLOQUEADO detectado');
-                    document.getElementById('waiting-title').textContent = '⏸️ Bloqueado por el Grupo';
-                    document.getElementById('waiting-title').style.color = '#ff9800';
-                } else {
-                    // ⏰ No respondió (timeout)
-                    console.log('⏰ TIMEOUT detectado');
-                    document.getElementById('waiting-title').textContent = '⏰ ¡Se acabó el tiempo!';
-                    document.getElementById('waiting-title').style.color = '#6c757d';
-                }
+                // ========== NO RESPONDÍ (TIMEOUT) ==========
+                console.log('⏰ No respondí → SE ACABÓ EL TIEMPO');
+                document.getElementById('waiting-title').textContent = '⏰ ¡Se acabó el tiempo!';
+                document.getElementById('waiting-title').style.color = '#6c757d';
                 scoreStat.classList.add('not-answered');
                 scoreLabel.classList.add('not-answered');
                 scoreValue.classList.add('not-answered');
@@ -884,6 +879,7 @@
             }
 
             document.getElementById('waiting-message').textContent = 'Siguiente pregunta en breve...';
+            console.log('📊 === FIN renderResults ===');
         } function renderFinal(data) {
             clearInterval(timerInterval);
             switchScreen('podium-screen');
@@ -958,6 +954,19 @@
                     grupoYaRespondio = true;
                     quienRespondio = cur.data.quien_respondio || "Un compañero";
                     queRespondio = cur.data.respuesta_texto || "Opción desconocida";
+
+                    // ⭐ GUARDAR QUE EL GRUPO RESPONDIÓ (aunque yo no haya sido)
+                    if (!miRespuestaLocal || !miRespuestaLocal.respondio) {
+                        // Solo si YO no respondí personalmente
+                        miRespuestaLocal = {
+                            respondio: false,      // YO no respondí personalmente
+                            correcta: null,        // Se determinará con los puntos
+                            bloqueado: true,       // Fui bloqueado por el grupo
+                            grupoRespondio: true,  // Mi grupo SÍ respondió
+                            opcionId: null
+                        };
+                        console.log('👥 Mi GRUPO respondió (yo fui bloqueado). Estado guardado:', miRespuestaLocal);
+                    }
 
                     mostrarNotificacionRespuestaGrupo(quienRespondio, queRespondio);
 
