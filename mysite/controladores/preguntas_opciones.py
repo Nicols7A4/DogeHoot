@@ -120,11 +120,6 @@ def quitar_imagen_pregunta(id_pregunta):
         if conexion:
             conexion.close()
 
-
-
-
-
-
 # --- Lógica de Opciones ---
 def crear_opcion(id_pregunta, opcion, es_correcta_bool, descripcion=None, adjunto=None):
     """Crea una nueva opción para una pregunta."""

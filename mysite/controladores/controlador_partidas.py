@@ -3,6 +3,7 @@ from controladores import controlador_recompensas as c_rec
 from datetime import datetime
 import random
 import string
+import pymysql 
 
 def _generar_pin():
     """Genera un código aleatorio de 6 caracteres (mayúsculas y números)."""
@@ -166,4 +167,56 @@ def obtener_opcion_por_id(id_opcion):
         if conexion:
             conexion.close()
     return opcion
+
+# ---------------------------------- AGREGADO POR PAME - Reportes
+def log_respuesta_en_bd(partida, participante, pregunta, opcion_db, puntos, tiempo_restante, nombre_usuario):
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as c:
+            # UPSERT (dispara por uniq_partida_usuario o uniq_partida_nombre)
+            c.execute("""
+                INSERT INTO PARTICIPANTE (id_partida, id_usuario, nombre, id_grupo, puntaje, registrado)
+                VALUES (%s, %s, %s, %s, 0, %s)
+                ON DUPLICATE KEY UPDATE id_grupo = VALUES(id_grupo)
+            """, (
+                partida['id_partida'],
+                participante.get('id_usuario'),
+                nombre_usuario,
+                None,                      # o el id del grupo si lo manejas
+                1 if participante.get('id_usuario') else 0  # registrado: 1/0
+            ))
+
+            c.execute("""
+                SELECT id_participante
+                FROM PARTICIPANTE
+                WHERE id_partida=%s AND nombre=%s
+                LIMIT 1
+            """, (partida['id_partida'], nombre_usuario))
+            row = c.fetchone()
+            if not row:
+                conexion.rollback()
+                return False
+            id_participante = row['id_participante']
+
+            seg_usados = int(max(0, (pregunta['tiempo'] or 0) - (tiempo_restante or 0)))
+
+            # ¡Ahora RESPUESTA_PARTICIPANTE tiene id_partida y id_pregunta!
+            c.execute("""
+                INSERT INTO RESPUESTA_PARTICIPANTE
+                (id_partida, id_participante, id_pregunta, id_opcion, pregunta_texto, opcion_texto,
+                es_correcta, puntaje, tiempo_respuesta)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s, SEC_TO_TIME(%s))
+            """, (
+                partida['id_partida'], id_participante,
+                pregunta['id_pregunta'], opcion_db['id_opcion'],
+                pregunta['pregunta'], opcion_db['opcion'],
+                1 if opcion_db.get('es_correcta_bool') else 0, int(puntos),
+                seg_usados
+            ))
+
+        conexion.commit()
+        conexion.close()
+        return True
+    except Exception:
+        return False
 
