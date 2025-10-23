@@ -10,7 +10,9 @@
     }
 
     :root {
-        --vh: 100dvh
+        --vh: 100dvh;
+        --bottom-nav-height: 60px;
+        --action-bar-height: 50px
     }
 
     * {
@@ -22,29 +24,41 @@
         margin: 0 auto;
         display: flex;
         flex-direction: column;
-        height: var(--vh);
-        padding: 0 .75rem .75rem;
-        gap: .75rem
+        height: calc(var(--vh) - var(--bottom-nav-height) - var(--action-bar-height));
+        padding: 0 .5rem 0;
+        gap: .5rem
     }
 
     .topbar-tabs {
         display: flex;
-        gap: .5rem;
+        gap: .3rem;
         border-bottom: 1px solid var(--border-soft);
         align-items: center;
-        padding-top: .5rem
+        padding-top: .5rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        flex-shrink: 0
+    }
+
+    .topbar-tabs::-webkit-scrollbar {
+        display: none
     }
 
     .tab-btn {
-        padding: .5rem .9rem;
+        padding: .5rem .7rem;
         border: 1px solid var(--border-soft);
         border-bottom: none;
-        border-radius: 10px 10px 0 0;
+        border-radius: 8px 8px 0 0;
         background: #f8fbff;
         color: var(--text-color);
         font-weight: 600;
         cursor: pointer;
-        font-size: .95rem
+        font-size: .85rem;
+        white-space: nowrap;
+        flex-shrink: 0
     }
 
     .tab-btn.active {
@@ -52,25 +66,38 @@
         box-shadow: var(--panel-shadow)
     }
 
-    .top-actions {
-        margin-left: auto;
+    .bottom-action-bar {
+        position: fixed;
+        bottom: var(--bottom-nav-height);
+        left: 0;
+        right: 0;
+        height: var(--action-bar-height);
+        background: var(--panel-bg);
+        border-top: 1px solid var(--border-soft);
         display: flex;
-        gap: .5rem
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        padding: 0 1rem;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, .08);
+        z-index: 100
     }
 
     .btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: .5rem;
+        gap: .35rem;
         border: 2px solid transparent;
-        border-radius: 12px;
-        padding: .6rem 1rem;
-        font-size: .95rem;
+        border-radius: 10px;
+        padding: .55rem .9rem;
+        font-size: .85rem;
         font-weight: 600;
         cursor: pointer;
         text-decoration: none;
-        transition: all .2s ease-in-out
+        transition: all .2s ease-in-out;
+        white-space: nowrap;
+        flex-shrink: 0
     }
 
     .btn:hover {
@@ -120,91 +147,150 @@
     }
 
     .btn-sm {
-        padding: .45rem .75rem;
-        font-size: .9rem
+        padding: .45rem .6rem;
+        font-size: .75rem
     }
 
     .views-wrapper {
         flex: 1;
         min-height: 0;
-        display: grid
+        display: grid;
+        overflow: hidden
     }
 
     .view {
         display: none;
-        min-height: 0
+        min-height: 0;
+        overflow: hidden
     }
 
     .view.active {
         display: grid;
         grid-template-rows: 1fr;
-        min-height: 0
+        min-height: 0;
+        overflow: hidden
     }
 
     .card {
         background: var(--panel-bg);
-        border-radius: 16px;
+        border-radius: 12px;
         box-shadow: var(--panel-shadow);
         border: 1px solid var(--border-soft);
         overflow: hidden;
-        display: grid;
-        grid-template-rows: auto 1fr;
-        min-height: 0
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%
     }
 
     .card-header {
-        padding: .8rem 1rem;
-        font-size: 1rem;
+        padding: .65rem .75rem;
+        font-size: .9rem;
         font-weight: 700;
         color: var(--text-color);
         border-bottom: 1px solid var(--border-soft);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: .75rem
+        gap: .4rem;
+        flex-wrap: wrap;
+        flex-shrink: 0
     }
 
     .card-body {
-        padding: .8rem 1rem;
+        flex: 1;
         min-height: 0;
-        display: grid;
-        grid-template-rows: 1fr;
-        overflow: hidden
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: .65rem .75rem;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 1rem
     }
 
+    /* ========== DATOS GENERALES - VERSIÓN MÓVIL MEJORADA ========== */
     .form-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: .75rem
+        display: flex;
+        flex-direction: column;
+        gap: .85rem;
+        padding-bottom: 1rem
+    }
+
+    .form-section {
+        background: #fff;
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        padding: .85rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .03)
+    }
+
+    .form-section-title {
+        font-size: .85rem;
+        font-weight: 800;
+        color: var(--text-color);
+        margin-bottom: .65rem;
+        padding-bottom: .45rem;
+        border-bottom: 2px solid #f0f4f8;
+        display: flex;
+        align-items: center;
+        gap: .4rem
+    }
+
+    .form-section-title::before {
+        content: '';
+        width: 3px;
+        height: 14px;
+        background: var(--btn-inprogress-bg);
+        border-radius: 2px
     }
 
     .form-row {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: .5rem
+        display: flex;
+        flex-direction: column;
+        gap: .45rem
     }
 
     .form-group {
-        display: grid;
+        display: flex;
+        flex-direction: column;
         gap: .35rem
     }
 
     .form-group label {
         font-weight: 700;
         color: var(--text-color);
-        font-size: .95rem
+        font-size: .8rem;
+        display: flex;
+        align-items: center;
+        gap: .3rem
+    }
+
+    .form-group label::after {
+        content: '*';
+        color: var(--btn-failed-text);
+        font-weight: 900;
+        font-size: .85rem
+    }
+
+    .form-group.optional label::after {
+        content: '(opcional)';
+        color: var(--text-muted);
+        font-weight: 500;
+        font-size: .7rem;
+        margin-left: auto
     }
 
     .form-control,
     .form-select {
         width: 100%;
-        padding: .7rem .9rem;
+        padding: .65rem .75rem;
         border: 1px solid var(--border-soft);
-        border-radius: 12px;
+        border-radius: 8px;
         background: #fdfdfd;
         font-family: 'Poppins', sans-serif;
-        font-size: 1rem;
-        transition: all .2s ease
+        font-size: .85rem;
+        transition: all .2s ease;
+        -webkit-appearance: none;
+        appearance: none
     }
 
     .form-control:focus,
@@ -217,18 +303,19 @@
 
     textarea.form-control {
         resize: vertical;
-        min-height: 110px
+        min-height: 100px;
+        line-height: 1.5
     }
 
     .char-counter-container {
         display: flex;
         justify-content: flex-end;
-        margin-top: .25rem
+        margin-top: .1rem
     }
 
     .char-counter {
-        font-size: .85rem;
-        font-weight: 500;
+        font-size: .7rem;
+        font-weight: 600;
         color: var(--text-muted)
     }
 
@@ -241,61 +328,91 @@
         font-weight: 700
     }
 
-    .inline-grid-two {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: .75rem;
-        align-items: end
-    }
-
     .form-check {
         display: flex;
         align-items: center;
-        gap: .5rem;
-        font-weight: 700;
-        color: var(--text-color)
+        gap: .55rem;
+        font-weight: 600;
+        color: var(--text-color);
+        padding: .75rem;
+        background: #f8fbff;
+        border-radius: 8px;
+        border: 1px solid #e3eef9;
+        cursor: pointer;
+        transition: all .2s ease;
+        font-size: .85rem
     }
 
+    .form-check:hover {
+        background: #f0f7ff;
+        border-color: var(--btn-inprogress-text)
+    }
+
+    .form-check input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--btn-inprogress-bg);
+        flex-shrink: 0
+    }
+
+    .section-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--border-soft), transparent);
+        margin: .4rem 0
+    }
+
+    /* ========== PREGUNTAS Y RESPUESTAS ========== */
     .section-title {
         font-weight: 800;
         color: var(--text-color);
-        font-size: 1.05rem
+        font-size: .85rem
     }
 
     .q-mobile-switch {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: .5rem;
-        margin-bottom: .5rem
+        gap: .35rem;
+        margin-bottom: .5rem;
+        background: #f5f8fc;
+        padding: .3rem;
+        border-radius: 8px;
+        flex-shrink: 0
     }
 
     .q-mobile-switch .sw {
-        border: 1px solid var(--border-soft);
-        background: #fff;
-        border-radius: 10px;
-        padding: .55rem .75rem;
+        border: 1px solid transparent;
+        background: transparent;
+        border-radius: 6px;
+        padding: .5rem .65rem;
         font-weight: 700;
         text-align: center;
-        cursor: pointer
+        cursor: pointer;
+        font-size: .8rem;
+        transition: all .2s ease
     }
 
     .q-mobile-switch .sw.active {
-        background: #f3f7ff;
+        background: #fff;
         border-color: var(--btn-inprogress-text);
-        box-shadow: 0 0 0 3px rgba(30, 136, 229, .1)
+        box-shadow: 0 2px 8px rgba(30, 136, 229, .15)
     }
 
     .q-layout {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr;
-        gap: .75rem;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
         height: 100%;
-        min-height: 0
+        min-height: 0;
+        flex: 1;
+        overflow: hidden
     }
 
     .q-layout.show-sidebar .q-sidebar {
-        display: grid
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0
     }
 
     .q-layout.show-sidebar .q-canvas {
@@ -307,43 +424,52 @@
     }
 
     .q-layout.show-editor .q-canvas {
-        display: block
+        display: block;
+        flex: 1;
+        min-height: 0
     }
 
     .q-sidebar {
         overflow-y: auto;
         overflow-x: hidden;
-        padding-right: .5rem;
-        padding-bottom: .5rem;
-        border-right: 1px dashed var(--border-soft);
-        display: grid;
-        gap: .75rem;
+        padding-right: .3rem;
+        padding-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
         scrollbar-gutter: stable;
         min-height: 0;
-        height: 100%
+        flex: 1;
+        -webkit-overflow-scrolling: touch
     }
 
     .slide-card {
         display: flex;
         flex-direction: column;
-        gap: .5rem;
+        gap: .45rem;
         padding: .6rem;
         border: 1px solid var(--border-soft);
-        border-radius: 12px;
+        border-radius: 10px;
         background: #fff;
         cursor: pointer;
-        transition: box-shadow .2s ease, border-color .2s ease
+        transition: all .2s ease;
+        flex-shrink: 0
+    }
+
+    .slide-card:active {
+        transform: scale(.98)
     }
 
     .slide-card.active {
         border-color: var(--btn-inprogress-text);
-        box-shadow: 0 0 0 3px rgba(30, 136, 229, .08)
+        box-shadow: 0 0 0 3px rgba(30, 136, 229, .12);
+        background: #f8fbff
     }
 
     .slide-thumb16x9 {
         width: 100%;
         aspect-ratio: 16/9;
-        border-radius: 8px;
+        border-radius: 6px;
         background: #f5f7ff;
         border: 1px solid var(--border-soft);
         overflow: hidden;
@@ -358,9 +484,10 @@
     }
 
     .slide-title-full {
-        font-weight: 800;
+        font-weight: 700;
         color: var(--text-color);
-        line-height: 1.35
+        line-height: 1.35;
+        font-size: .85rem
     }
 
     .slide-row {
@@ -371,84 +498,101 @@
     .iconbtn {
         background: #fff;
         border: 1px solid var(--border-soft);
-        border-radius: 8px;
-        padding: .35rem .6rem;
-        cursor: pointer
+        border-radius: 6px;
+        padding: .35rem .55rem;
+        cursor: pointer;
+        font-size: .75rem;
+        font-weight: 600;
+        transition: all .2s ease
     }
 
     .iconbtn:hover {
-        background: #f6f8ff
+        background: #f6f8ff;
+        border-color: var(--btn-failed-text);
+        color: var(--btn-failed-text)
     }
 
     .q-canvas {
         background: linear-gradient(180deg, #fafcff 0%, #ffffff 100%);
         border: 1px solid var(--border-soft);
-        border-radius: 16px;
-        padding: .75rem;
+        border-radius: 10px;
+        padding: .6rem;
+        padding-bottom: 1rem;
         box-shadow: 0 4px 16px rgba(0, 0, 0, .04);
         min-height: 0;
-        height: 100%;
-        overflow: auto;
-        display: block
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: block;
+        -webkit-overflow-scrolling: touch;
+        flex: 1
     }
 
     .q-header-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: .6rem;
+        gap: .45rem;
         align-items: center;
-        margin-bottom: .6rem
+        margin-bottom: .55rem
     }
 
     .q-header-grid .mini {
         display: flex;
-        gap: .4rem;
-        align-items: center
+        flex-direction: column;
+        gap: .2rem
     }
 
     .q-header-grid label {
-        font-size: .85rem;
+        font-size: .7rem;
         color: var(--text-muted);
         font-weight: 700;
         margin: 0
     }
 
+    .q-header-grid input {
+        padding: .45rem .55rem;
+        font-size: .8rem
+    }
+
     .q-title {
-        font-size: 1rem;
+        font-size: .85rem;
         font-weight: 800;
         color: var(--text-color);
-        justify-self: end
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: .45rem;
+        background: #f8fbff;
+        border-radius: 6px
     }
 
     .question-box {
-        border-radius: 14px;
+        border-radius: 10px;
         background: #fff;
         border: 1px solid var(--border-soft);
-        padding: .8rem;
-        margin-bottom: .8rem;
+        padding: .65rem;
+        margin-bottom: .65rem;
         display: grid;
         grid-template-rows: auto auto auto;
-        row-gap: .7rem
+        row-gap: .6rem
     }
 
     .question-input {
         width: 100%;
-        font-size: 1.05rem;
+        font-size: .9rem;
         font-weight: 700;
-        padding: .55rem .8rem;
-        border-radius: 12px;
+        padding: .55rem .7rem;
+        border-radius: 8px;
         border: 1px dashed var(--border-soft);
         background: #fcfdff
     }
 
     .media-wrap {
-        border-radius: 14px;
+        border-radius: 10px;
         border: 2px dashed #cfe3ff;
         background: #f7faff;
-        padding: .7rem;
+        padding: .6rem;
         position: relative;
-        min-height: 130px;
-        max-height: 220px;
+        min-height: 120px;
+        max-height: 180px;
         display: flex;
         align-items: center;
         justify-content: center
@@ -462,46 +606,48 @@
     .media-empty {
         text-align: center;
         color: #5c7fb1;
-        font-size: .95rem
+        font-size: .8rem;
+        padding: .45rem
     }
 
     .media-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        border-radius: 10px;
+        border-radius: 8px;
         border: 1px solid #e8eef9
     }
 
     .media-controls {
         position: absolute;
-        right: .6rem;
-        bottom: .6rem;
+        right: .45rem;
+        bottom: .45rem;
         display: flex;
-        gap: .5rem
+        gap: .35rem;
+        flex-wrap: wrap
     }
 
     .answer-grid {
-        margin-top: .2rem;
+        margin-top: .15rem;
         display: grid;
         grid-template-columns: 1fr;
-        gap: .6rem
+        gap: .5rem
     }
 
     .answer-card {
-        border-radius: 12px;
+        border-radius: 8px;
         border: 2px solid transparent;
         background: #fff;
-        padding: .65rem .8rem;
-        min-height: 80px;
+        padding: .55rem .65rem;
+        min-height: 65px;
         display: grid;
-        grid-template-columns: 28px 1fr;
+        grid-template-columns: 24px 1fr;
         grid-template-rows: auto auto;
         grid-template-areas: "shape input" "tools counter";
-        column-gap: .55rem;
-        row-gap: .45rem;
+        column-gap: .45rem;
+        row-gap: .35rem;
         align-items: center;
-        transition: box-shadow .2s ease, border-color .2s ease
+        transition: all .2s ease
     }
 
     .answer-card.correct {
@@ -511,30 +657,31 @@
 
     .answer-shape {
         grid-area: shape;
-        width: 26px;
-        height: 26px;
-        border-radius: 6px;
+        width: 22px;
+        height: 22px;
+        border-radius: 5px;
         display: grid;
         place-items: center;
         color: #fff;
-        font-weight: 900
+        font-weight: 900;
+        font-size: .8rem
     }
 
     .answer-content {
         grid-area: input;
         display: flex;
         flex-direction: column;
-        gap: .25rem
+        gap: .15rem
     }
 
     .answer-input {
         width: 100%;
         border: 1px solid var(--border-soft);
-        border-radius: 10px;
-        padding: .55rem .7rem;
+        border-radius: 6px;
+        padding: .45rem .6rem;
         background: #fff;
         outline: none;
-        font-size: .95rem
+        font-size: .8rem
     }
 
     .answer-input::placeholder {
@@ -544,25 +691,39 @@
     .answer-tools {
         grid-area: tools;
         display: flex;
-        gap: .4rem;
-        align-items: center
+        gap: .3rem;
+        align-items: center;
+        flex-wrap: wrap
     }
 
     .answer-tools .btn-tool {
         background: #fff;
         border: 1px solid var(--border-soft);
-        border-radius: 8px;
-        padding: .35rem .6rem;
-        cursor: pointer
+        border-radius: 5px;
+        padding: .25rem .45rem;
+        cursor: pointer;
+        font-size: .7rem;
+        font-weight: 600;
+        transition: all .2s ease
     }
 
     .answer-tools .btn-tool:hover {
         background: #f3f6ff
     }
 
+    .answer-tools .btn-tool:first-child:hover {
+        border-color: var(--btn-success-text);
+        color: var(--btn-success-text)
+    }
+
+    .answer-tools .btn-tool:last-child:hover {
+        border-color: var(--btn-failed-text);
+        color: var(--btn-failed-text)
+    }
+
     .counter-small {
         grid-area: counter;
-        font-size: .8rem;
+        font-size: .65rem;
         color: var(--text-muted);
         font-weight: 600;
         text-align: right
@@ -607,19 +768,26 @@
     .add-more-zone {
         display: flex;
         justify-content: center;
-        margin-top: .45rem
+        margin-top: .35rem
     }
 
     .add-more-btn {
         display: inline-flex;
         align-items: center;
-        gap: .5rem;
-        padding: .55rem 1rem;
+        gap: .35rem;
+        padding: .5rem .8rem;
         border-radius: 999px;
         border: 1px dashed var(--border-soft);
         background: #f7fbff;
         cursor: pointer;
-        font-weight: 700
+        font-weight: 700;
+        font-size: .75rem;
+        transition: all .2s ease
+    }
+
+    .add-more-btn:hover {
+        background: #eef6ff;
+        border-color: var(--btn-inprogress-text)
     }
 
     .modo-visualizacion .form-control,
@@ -643,13 +811,14 @@
         justify-content: center;
         align-items: center;
         z-index: 1000;
-        backdrop-filter: blur(4px)
+        backdrop-filter: blur(4px);
+        padding: 1rem
     }
 
     .popup-box {
         background: var(--panel-bg);
-        padding: 24px;
-        border-radius: 16px;
+        padding: 1.5rem;
+        border-radius: 14px;
         box-shadow: 0 8px 30px rgba(0, 0, 0, .2);
         text-align: center;
         width: 90%;
@@ -658,8 +827,8 @@
     }
 
     .popup-box p {
-        margin: 0 0 16px;
-        font-size: 1.02rem;
+        margin: 0 0 1rem;
+        font-size: .95rem;
         color: var(--text-color);
         line-height: 1.6
     }
@@ -667,35 +836,106 @@
     .popup-buttons {
         display: flex;
         justify-content: center;
-        gap: 12px
+        gap: .6rem;
+        flex-wrap: wrap
     }
 
+    /* ========== TABLET ========== */
     @media (min-width:768px) {
-        .form-grid {
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem
+        .editor-container {
+            padding: 0 .75rem 0;
+            gap: .65rem;
+            height: calc(var(--vh) - var(--bottom-nav-height) - var(--action-bar-height))
         }
 
-        .inline-grid-two {
-            grid-template-columns: 1fr auto
+        .topbar-tabs {
+            gap: .45rem
+        }
+
+        .tab-btn {
+            padding: .55rem .85rem;
+            font-size: .9rem
+        }
+
+        .btn {
+            padding: .6rem 1rem;
+            font-size: .9rem
+        }
+
+        .card-header {
+            padding: .8rem .95rem;
+            font-size: .95rem
+        }
+
+        .card-body {
+            padding: .8rem .95rem;
+            padding-bottom: 1rem
+        }
+
+        .form-grid {
+            gap: .95rem
+        }
+
+        .form-section {
+            padding: 1.05rem
+        }
+
+        .form-group label {
+            font-size: .85rem
+        }
+
+        .form-control,
+        .form-select {
+            padding: .75rem .85rem;
+            font-size: .9rem
         }
 
         .q-header-grid {
-            grid-template-columns: repeat(2, 1fr) 2fr
+            grid-template-columns: repeat(2, 1fr) 2fr;
+            gap: .55rem
+        }
+
+        .q-title {
+            grid-column: 3;
+            text-align: right
         }
 
         .answer-grid {
             grid-template-columns: 1fr 1fr
         }
+
+        .question-input {
+            font-size: .95rem
+        }
     }
 
+    /* ========== DESKTOP ========== */
     @media (min-width:1024px) {
         .editor-container {
-            padding: 0 1rem 1rem
+            padding: 0 1rem 0;
+            gap: .75rem;
+            height: calc(var(--vh) - var(--action-bar-height))
+        }
+
+        .topbar-tabs {
+            padding-right: 1rem
         }
 
         .tab-btn {
-            padding: .6rem 1rem
+            padding: .6rem 1rem;
+            font-size: .95rem
+        }
+
+        .bottom-action-bar {
+            position: static;
+            max-width: 1200px;
+            margin: 0 auto;
+            justify-content: flex-end;
+            padding: 0 1rem;
+            border-top: none;
+            background: transparent;
+            box-shadow: none;
+            height: var(--action-bar-height)
         }
 
         .card-header {
@@ -707,7 +947,19 @@
         }
 
         .form-grid {
-            grid-template-columns: 1fr 1fr
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            align-content: start;
+            padding-bottom: 0
+        }
+
+        .form-section {
+            padding: 1.25rem
+        }
+
+        .form-section.full-width {
+            grid-column: 1 / -1
         }
 
         .view.active {
@@ -719,25 +971,30 @@
         }
 
         .q-layout {
+            display: grid;
             grid-template-columns: 340px 1fr;
             grid-template-rows: 1fr;
-            gap: 1rem
+            gap: 1rem;
+            flex-direction: row
         }
 
         .q-layout .q-sidebar {
-            display: grid
+            display: flex !important;
+            border-right: 1px dashed var(--border-soft);
+            padding-right: .5rem
         }
 
         .q-layout .q-canvas {
-            display: block
+            display: block !important;
+            padding: .75rem
         }
 
         .q-layout.show-sidebar .q-canvas {
-            display: block
+            display: block !important
         }
 
         .q-layout.show-editor .q-sidebar {
-            display: grid
+            display: flex !important
         }
 
         .answer-grid {
@@ -745,7 +1002,7 @@
         }
 
         .question-input {
-            font-size: 1.1rem
+            font-size: 1.05rem
         }
 
         .q-title {
@@ -760,52 +1017,61 @@
     <div class="topbar-tabs">
         <button id="tab-general" class="tab-btn active" type="button">Datos generales</button>
         <button id="tab-preguntas" class="tab-btn" type="button">Preguntas y respuestas</button>
-        <div class="top-actions">
-            {% if not modo_visualizacion %}
-            <button id="btn-save" class="btn btn-success" onclick="guardarTodo()" disabled>Guardar cambios</button>
-            <button id="btn-cancel" class="btn btn-secondary" onclick="cancelarTodo()" disabled>Cancelar</button>
-            {% else %}
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Ir al Dashboard</a>
-            {% endif %}
-        </div>
     </div>
 
     <div class="views-wrapper">
         <div id="view-general" class="view active">
             <div class="card">
-                <div class="card-header"><span id="titulo-pagina" class="section-title"></span></div>
-                <div class="card-body" style="overflow:auto;">
+                <div class="card-header">
+                    <span id="titulo-pagina" class="section-title"></span>
+                </div>
+                <div class="card-body">
                     <div class="form-grid">
-                        <div class="form-group">
-                            <label for="titulo">Título</label>
-                            <input type="text" id="titulo" class="form-control" placeholder="Título del cuestionario"
-                                oninput="actualizarDato('titulo', this.value)" maxlength="100" {% if modo_visualizacion
-                                %}readonly{% endif %}>
+                        <!-- Sección: Información Básica -->
+                        <div class="form-section">
+                            <div class="form-section-title">Información Básica</div>
+                            <div class="form-group">
+                                <label for="titulo">Título del Cuestionario</label>
+                                <input type="text" id="titulo" class="form-control"
+                                    placeholder="Ej: Introducción a Python"
+                                    oninput="actualizarDato('titulo', this.value)" maxlength="100" {% if
+                                    modo_visualizacion %}readonly{% endif %}>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_categoria">Categoría</label>
+                                <select id="id_categoria" class="form-select"
+                                    onchange="actualizarDato('id_categoria', parseInt(this.value, 10))" {% if
+                                    modo_visualizacion %}disabled{% endif %}>
+                                    {% for cat in categorias %}
+                                    <option value="{{ cat.id_categoria }}">{{ cat.categoria }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="id_categoria">Categoría</label>
-                            <select id="id_categoria" class="form-select"
-                                onchange="actualizarDato('id_categoria', parseInt(this.value, 10))" {% if
-                                modo_visualizacion %}disabled{% endif %}>
-                                {% for cat in categorias %}
-                                <option value="{{ cat.id_categoria }}">{{ cat.categoria }}</option>
-                                {% endfor %}
-                            </select>
+
+                        <!-- Sección: Descripción -->
+                        <div class="form-section">
+                            <div class="form-section-title">Descripción</div>
+                            <div class="form-group optional">
+                                <label for="descripcion">Objetivo del Cuestionario</label>
+                                <textarea id="descripcion" class="form-control"
+                                    placeholder="Describe el propósito y alcance de este cuestionario..."
+                                    oninput="actualizarDato('descripcion', this.value)" maxlength="500" {% if
+                                    modo_visualizacion %}readonly{% endif %}></textarea>
+                                <div class="char-counter-container">
+                                    <span id="descripcion-char-counter" class="char-counter">0 / 500</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group" style="grid-column:1/-1">
-                            <label for="descripcion">Descripción</label>
-                            <textarea id="descripcion" class="form-control" placeholder="Objetivo del cuestionario"
-                                oninput="actualizarDato('descripcion', this.value)" maxlength="500" {% if
-                                modo_visualizacion %}readonly{% endif %}></textarea>
-                            <div class="char-counter-container"><span id="descripcion-char-counter"
-                                    class="char-counter">0 / 500</span></div>
-                        </div>
-                        <div class="form-row" style="grid-column:1/-1;align-items:center">
+
+                        <!-- Sección: Configuración -->
+                        <div class="form-section full-width">
+                            <div class="form-section-title">Configuración de Visibilidad</div>
                             <label class="form-check">
                                 <input type="checkbox" id="es_publico"
                                     onchange="actualizarDato('es_publico', this.checked)" {% if modo_visualizacion
                                     %}disabled{% endif %}>
-                                ¿Hacer público?
+                                <span>Hacer público este cuestionario para todos los usuarios</span>
                             </label>
                         </div>
                     </div>
@@ -818,10 +1084,9 @@
                 <div class="card-header">
                     <span>Editor de preguntas</span>
                     {% if not modo_visualizacion %}
-                    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-                        <button class="btn btn-outline btn-sm" id="btn-volver-general" type="button">Volver a datos
-                            generales</button>
-                        <button class="btn btn-primary btn-sm" onclick="agregarPregunta()">Añadir pregunta</button>
+                    <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+                        <button class="btn btn-outline btn-sm" id="btn-volver-general" type="button">Volver</button>
+                        <button class="btn btn-primary btn-sm" onclick="agregarPregunta()">Añadir</button>
                     </div>
                     {% endif %}
                 </div>
@@ -840,6 +1105,16 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Barra de acciones inferior -->
+<div class="bottom-action-bar">
+    {% if not modo_visualizacion %}
+    <button id="btn-save" class="btn btn-success" onclick="guardarTodo()" disabled>Guardar cambios</button>
+    <button id="btn-cancel" class="btn btn-secondary" onclick="cancelarTodo()" disabled>Cancelar</button>
+    {% else %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Ir al Dashboard</a>
+    {% endif %}
 </div>
 
 <script id="boot-data" type="application/json">
@@ -1013,12 +1288,12 @@
           `}
         `: `
           <div class="media-empty">
-            <div style="font-weight:700;margin-bottom:.3rem;">Buscar e insertar media</div>
+            <div style="font-weight:700;margin-bottom:.3rem;">Añadir imagen</div>
             <label style="text-decoration:underline; cursor:pointer;">
               <input type="file" accept="image/*" style="display:none" onchange="convertirImagen(this,${currentIndex})">
               Subir archivo
             </label>
-            <div>o arrastra y suelta aquí</div>
+            <div style="font-size:.7rem;margin-top:.25rem;">o arrastra y suelta aquí</div>
           </div>
           ${MODO_VISUALIZACION ? '' : `<input type="file" id="hidden-file-${currentIndex}" accept="image/*" style="display:none" onchange="convertirImagen(this,${currentIndex})">`}
         `}

@@ -3,22 +3,336 @@
 {% block head %}
     {{ super() }}
     <style>
-        .partidas-container { max-width: 1000px; margin: 2rem auto; }
-        .partidas-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .partidas-table th, .partidas-table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        .partidas-table th { background-color: #f8f9fa; font-weight: 600; }
-        .badge-estado { padding: 5px 10px; border-radius: 99px; font-size: 0.8rem; font-weight: 700; }
-        .estado-e { background-color: #E6F2FF; color: #1E88E5; } /* Espera (Azul) */
-        .estado-p { background-color: #FFF5C2; color: #E3B505; } /* Proceso (Amarillo) */
-        .estado-f { background-color: #F5F5F5; color: #6c757d; } /* Finalizado (Gris) */
+        /* ===== ESTILOS BASE (MOBILE FIRST) ===== */
+        * {
+            box-sizing: border-box;
+        }
+
+        .partidas-container {
+            width: 100%;
+            padding: 1rem;
+            margin: 0 auto;
+        }
+
+        .partidas-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .partidas-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #212529;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .partidas-header p {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* Tabla: En móvil se oculta */
+        .partidas-table {
+            display: none;
+        }
+
+        /* Cards: Versión móvil */
+        .partidas-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .partida-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 1.25rem;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .partida-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .card-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .card-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .card-value {
+            font-size: 0.95rem;
+            color: #212529;
+            font-weight: 500;
+        }
+
+        .card-titulo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 0.25rem;
+        }
+
+        .card-fecha {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .card-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .pin-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .pin-number {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #212529;
+            letter-spacing: 2px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn-panel {
+            display: inline-block;
+            padding: 0.625rem 1.25rem;
+            background-color: #1E88E5;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-align: center;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .btn-panel:hover {
+            background-color: #1565C0;
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: white;
+        }
+
+        .btn-reporte {
+            display: inline-block;
+            padding: 0.625rem 1.25rem;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-align: center;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .btn-reporte:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: white;
+        }
+
+        /* Badges de estado */
+        .badge-estado {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .estado-e {
+            background-color: #E6F2FF;
+            color: #1E88E5;
+        }
+
+        .estado-p {
+            background-color: #FFF5C2;
+            color: #E3B505;
+        }
+
+        .estado-f {
+            background-color: #F5F5F5;
+            color: #6c757d;
+        }
+
+        /* Mensaje cuando no hay partidas */
+        .empty-state {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 3rem 1.5rem;
+            text-align: center;
+        }
+
+        .empty-state p {
+            color: #6c757d;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        /* ===== TABLET (min-width: 768px) ===== */
+        @media (min-width: 768px) {
+            .partidas-container {
+                padding: 2rem;
+                max-width: 1000px;
+            }
+
+            .partidas-header h1 {
+                font-size: 2rem;
+            }
+
+            .partidas-header p {
+                font-size: 1rem;
+            }
+
+            .partidas-cards {
+                gap: 1.25rem;
+            }
+
+            .partida-card {
+                padding: 1.5rem;
+            }
+
+            .card-titulo {
+                font-size: 1.25rem;
+            }
+
+            .card-actions {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+        }
+
+        /* ===== DESKTOP (min-width: 1024px) ===== */
+        @media (min-width: 1024px) {
+            .partidas-container {
+                padding: 2rem;
+            }
+
+            /* Ocultar cards y mostrar tabla */
+            .partidas-cards {
+                display: none;
+            }
+
+            .partidas-table {
+                display: table;
+                width: 100%;
+                border-collapse: collapse;
+                background: white;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            }
+
+            .partidas-table thead {
+                background-color: #f8f9fa;
+            }
+
+            .partidas-table th {
+                padding: 1rem 1.25rem;
+                text-align: left;
+                font-weight: 600;
+                font-size: 0.9rem;
+                color: #495057;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 2px solid #dee2e6;
+            }
+
+            .partidas-table td {
+                padding: 1.25rem;
+                text-align: left;
+                border-bottom: 1px solid #f0f0f0;
+                font-size: 0.95rem;
+                color: #212529;
+            }
+
+            .partidas-table tbody tr {
+                transition: background-color 0.2s ease;
+            }
+
+            .partidas-table tbody tr:hover {
+                background-color: #f8f9fa;
+            }
+
+            .partidas-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .table-actions {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .pin-display-table {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .pin-number-table {
+                font-weight: 700;
+                font-size: 1.1rem;
+                color: #212529;
+                letter-spacing: 1.5px;
+                font-family: 'Courier New', monospace;
+            }
+
+            .empty-state {
+                padding: 4rem 2rem;
+            }
+
+            .empty-state p {
+                font-size: 1.1rem;
+            }
+        }
     </style>
 {% endblock %}
 
 {% block content %}
 <div class="partidas-container">
-    <h1>Mis Partidas</h1>
-    <p>Aquí puedes ver el historial de todas las partidas que has lanzado.</p>
+    <div class="partidas-header">
+        <h1>Mis Partidas</h1>
+        <p>Aquí puedes ver el historial de todas las partidas que has lanzado.</p>
+    </div>
 
+    <!-- Versión TABLA para Desktop -->
     <table class="partidas-table">
         <thead>
             <tr>
@@ -43,20 +357,66 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if partida.estado != 'F' %}
-                            <strong>{{ partida.pin }}</strong>
-                            <a href="{{ url_for('partida_panel', pin = partida.pin) }}">Ver panel</a>
-                        {% else %}
-                            <a href="#">Ver Reporte</a>
-                        {% endif %}
+                        <div class="table-actions">
+                            {% if partida.estado != 'F' %}
+                                <span class="pin-display-table">
+                                    <span class="pin-number-table">{{ partida.pin }}</span>
+                                </span>
+                                <a href="{{ url_for('partida_panel', pin = partida.pin) }}" class="btn-panel">Ver panel</a>
+                            {% else %}
+                                <a href="#" class="btn-reporte">Ver Reporte</a>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
             {% else %}
                 <tr>
-                    <td colspan="4" style="text-align: center; padding: 2rem;">Aún no has lanzado ninguna partida.</td>
+                    <td colspan="4">
+                        <div class="empty-state">
+                            <p>Aún no has lanzado ninguna partida.</p>
+                        </div>
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Versión CARDS para Móvil/Tablet -->
+    <div class="partidas-cards">
+        {% for partida in partidas %}
+            <div class="partida-card">
+                <div class="card-titulo">{{ partida.cuestionario_titulo }}</div>
+                <div class="card-fecha">{{ partida.fecha_hora_inicio.strftime('%d/%m/%Y a las %H:%M') }}</div>
+
+                <div class="card-row">
+                    <div>
+                        <div class="card-label">Estado</div>
+                        {% if partida.estado == 'E' %}
+                            <span class="badge-estado estado-e">En Espera</span>
+                        {% elif partida.estado == 'P' %}
+                            <span class="badge-estado estado-p">En Proceso</span>
+                        {% else %}
+                            <span class="badge-estado estado-f">Finalizada</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    {% if partida.estado != 'F' %}
+                        <div class="pin-display">
+                            PIN: <span class="pin-number">{{ partida.pin }}</span>
+                        </div>
+                        <a href="{{ url_for('partida_panel', pin = partida.pin) }}" class="btn-panel">Ver panel</a>
+                    {% else %}
+                        <a href="#" class="btn-reporte">Ver Reporte</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>Aún no has lanzado ninguna partida.</p>
+            </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

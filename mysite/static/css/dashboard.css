@@ -29,7 +29,7 @@
 
     /* Nuevas variables para layout */
     --header-height-mobile: 60px;
-    --bottom-nav-height-mobile: 65px;
+    --bottom-nav-height-mobile: 70px;
 }
 
 /* ===================== */
@@ -60,7 +60,7 @@ body {
 
 /* --- Cabecera Superior (Móvil) --- */
 .app-header {
-    display: flex; /* Se mostrará por defecto */
+    display: flex;
     position: fixed; top: 0; left: 0; right: 0;
     height: var(--header-height-mobile);
     background-color: var(--panel-bg);
@@ -77,7 +77,7 @@ body {
 .header-profile-btn {
     border: none; background: none; padding: 0; border-radius: 50%;
     cursor: pointer; width: 38px; height: 38px;
-    position: relative; /* Para el marco activo */
+    position: relative;
 }
 .header-profile-btn img {
     width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
@@ -100,7 +100,7 @@ body {
     padding: 20px 15px;
     width: 100%;
     flex-grow: 1;
-    background-color: var(--main-bg); /* Fondo de contenido */
+    background-color: var(--main-bg);
     border: none;
     box-shadow: none;
     border-radius: 0;
@@ -113,30 +113,178 @@ body {
     margin-bottom: 20px;
 }
 
-/* --- Barra de Navegación Inferior (Móvil) --- */
+/* ======================================= */
+/* NAVBAR INFERIOR MÓVIL - MEJORADA       */
+/* ======================================= */
+
 .bottom-nav-mobile {
-    position: fixed; bottom: 0; left: 0; right: 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     height: var(--bottom-nav-height-mobile);
     background-color: var(--panel-bg);
     border-top: 1px solid var(--border-soft);
     display: flex;
     align-items: stretch;
-    justify-content: space-around;
+    justify-content: space-evenly;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
     z-index: 100;
+    padding: 0 2px;
 }
+
 .bottom-nav-item {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    flex: 1; /* Crecimiento equitativo */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-decoration: none;
     color: var(--text-muted);
-    padding: 6px 0;
-    transition: color 0.2s ease, background-color 0.2s ease;
+    padding: 8px 6px;
+    transition: all 0.2s ease;
+    border-radius: 12px;
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 120px;
 }
-.bottom-nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; }
-.bottom-nav-item span { font-size: 0.7rem; font-weight: 500; }
-.bottom-nav-item.active { color: var(--btn-inprogress-text); }
-.bottom-nav-item:hover { color: var(--text-color); background-color: rgba(0,0,0,0.03); }
+
+/* Iconos - Centrado perfecto */
+.bottom-nav-item svg {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 5px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+    display: block;
+}
+
+/* Textos - Sin cortar palabras */
+.bottom-nav-item span {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.2;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
+    display: block;
+}
+
+/* Estado activo */
+.bottom-nav-item.active {
+    color: var(--btn-inprogress-text);
+    background-color: rgba(30, 136, 229, 0.08);
+}
+
+.bottom-nav-item.active svg {
+    transform: scale(1.1);
+}
+
+/* Hover/Touch */
+.bottom-nav-item:active {
+    transform: scale(0.95);
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Media query para pantallas muy pequeñas (<360px) */
+@media (max-width: 359px) {
+    .bottom-nav-mobile {
+        height: 78px;
+        padding: 0;
+    }
+
+    .bottom-nav-item {
+        padding: 6px 4px;
+    }
+
+    .bottom-nav-item span {
+        font-size: 0.62rem;
+        line-height: 1.15;
+    }
+
+    .bottom-nav-item svg {
+        width: 22px;
+        height: 22px;
+        margin-bottom: 4px;
+    }
+}
+
+/* Media query para pantallas pequeñas (360px - 400px) */
+@media (min-width: 360px) and (max-width: 400px) {
+    .bottom-nav-mobile {
+        height: 72px;
+    }
+
+    .bottom-nav-item {
+        padding: 7px 5px;
+    }
+
+    .bottom-nav-item span {
+        font-size: 0.68rem;
+    }
+
+    .bottom-nav-item svg {
+        width: 23px;
+        height: 23px;
+    }
+}
+
+/* Media query para tablets pequeñas (401px - 767px) */
+@media (min-width: 401px) and (max-width: 767px) {
+    .bottom-nav-mobile {
+        padding: 0 6px;
+    }
+
+    .bottom-nav-item {
+        padding: 10px 8px;
+        max-width: 140px;
+    }
+
+    .bottom-nav-item span {
+        font-size: 0.72rem;
+    }
+
+    .bottom-nav-item svg {
+        width: 26px;
+        height: 26px;
+        margin-bottom: 6px;
+    }
+}
+
+/* Para profesores con 5 items */
+@media (max-width: 767px) {
+    .bottom-nav-mobile:has(.bottom-nav-item:nth-child(5):last-child) .bottom-nav-item {
+        flex: 1 1 0;
+        min-width: 60px;
+    }
+}
+
+/* Para profesores con 6 items */
+@media (max-width: 767px) {
+    .bottom-nav-mobile:has(.bottom-nav-item:nth-child(6)) {
+        padding: 0;
+    }
+
+    .bottom-nav-mobile:has(.bottom-nav-item:nth-child(6)) .bottom-nav-item {
+        padding: 6px 3px;
+        flex: 1 1 0;
+        min-width: 55px;
+    }
+
+    .bottom-nav-mobile:has(.bottom-nav-item:nth-child(6)) .bottom-nav-item span {
+        font-size: 0.62rem;
+        line-height: 1.15;
+    }
+
+    .bottom-nav-mobile:has(.bottom-nav-item:nth-child(6)) .bottom-nav-item svg {
+        width: 22px;
+        height: 22px;
+        margin-bottom: 4px;
+    }
+}
 
 
 /* ======================================= */
@@ -193,7 +341,7 @@ body {
 /* --- Estilos de Tarjetas (Se aplican en móvil y desktop) --- */
 .contenedor-cards {
     display: grid;
-    grid-template-columns: 1fr; /* 1 columna en móvil */
+    grid-template-columns: 1fr;
     gap: 20px;
 }
 .card-quiz, .cuestionario-card {
@@ -245,8 +393,8 @@ body {
 .cuestionario-card .btn.btn-borrar { background:#e53935; color:#fff; }
 .cuestionario-card > .card-footer > .card-actions { display:inline-flex; align-items:center; gap:10px; margin-left:auto; flex-shrink:0; }
 
-/* --- Categorías (Sin cambios, ya son responsivas) --- */
-.div-populares, .div-categorias { padding: 0; } /* Padding ya está en .dashboard */
+/* --- Categorías --- */
+.div-populares, .div-categorias { padding: 0; }
 .div-categorias { margin-top: 20px; }
 .categorias-container { width: 100%; margin-top: 20px; }
 .categorias-titulo { font-size: 1.4rem; font-weight: 600; color: var(--text-color); margin-bottom: 16px; }
@@ -261,19 +409,17 @@ body {
 .categoria.pending { background-color: var(--btn-pending-bg); color: var(--btn-pending-text); }
 .categoria.in-progress { background-color: var(--btn-inprogress-bg); color: var(--btn-inprogress-text); }
 .categoria.submitted { background-color: var(--btn-submitted-bg); color: var(--btn-submitted-text); }
-.categoria.in-review { background-color: var(--btn-inreview-bg); color: var(--btn-inreview-text); }
 .categoria.success { background-color: var(--btn-success-bg); color: var(--btn-success-text); }
 .categoria.failed { background-color: var(--btn-failed-bg); color: var(--btn-failed-text); }
 .categoria.expired { background-color: var(--btn-expired-bg); color: var(--btn-expired-text); }
 .categoria.pending:hover { border-color: var(--btn-pending-text); }
 .categoria.in-progress:hover { border-color: var(--btn-inprogress-text); }
 .categoria.submitted:hover { border-color: var(--btn-submitted-text); }
-.categoria.in-review:hover { border-color: var(--btn-inreview-text); }
 .categoria.success:hover { border-color: var(--btn-success-text); }
 .categoria.failed:hover { border-color: var(--btn-failed-text); }
 .categoria.expired:hover { border-color: var(--btn-expired-text); }
 
-/* Badges (Sin cambios, ya son responsivos) */
+/* Badges */
 .badge {
     display: inline-block; padding: 4px 10px; border-radius: 999px;
     font-size: 12px; font-weight: 600; text-transform: uppercase;
@@ -287,26 +433,22 @@ body {
 /* 7. Media Query para Desktop (>= 1024px) */
 /* ======================================= */
 @media (min-width: 1024px) {
-    /* --- Restaura el Layout de Escritorio --- */
     body {
         display: flex;
-        flex-direction: row; /* Vuelve a la fila horizontal */
-        padding: 10px; /* Padding original del body */
+        flex-direction: row;
+        padding: 10px;
         height: 100vh;
         gap: 10px;
-        /* Quitamos el padding para las barras móviles */
         padding-top: 10px;
         padding-bottom: 10px;
     }
 
-    /* --- Oculta los elementos de Móvil --- */
     .app-header, .bottom-nav-mobile {
         display: none;
     }
 
-    /* --- Muestra y Estila los elementos de Desktop (Sidebar) --- */
     .aside {
-        display: flex; /* Muestra el sidebar */
+        display: flex;
         width: 18vw;
         height: 100%;
         border-radius: 24px;
@@ -318,104 +460,96 @@ body {
         box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
         flex-shrink: 0;
     }
-    .aside-superior img {
-        width: 90%; /* Ancho original del logo */
+
+    .aside-superior {
+        display: flex;
+        justify-content: center;
     }
-    /* ======================================= */
-/* 7. Estilos para el Sidebar (Desktop)    */
-/* ======================================= */
+    .aside-superior img {
+        width: 90%;
+        cursor: pointer;
+    }
 
-.aside-superior {
-    display: flex;
-    justify-content: center;
-}
-.aside-superior img {
-    width: 90%;
-    cursor: pointer;
-}
+    .botones-aside {
+        display: flex;
+        flex-direction: column;
+        gap: var(--btn-gap);
+        width: 100%;
+    }
 
-.botones-aside {
-    display: flex;
-    flex-direction: column;
-    gap: var(--btn-gap);
-    width: 100%;
-}
+    .botones-aside button {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding: var(--btn-padding-y) var(--btn-padding-x);
+        border-radius: var(--btn-radius);
+        font-size: var(--btn-font-size);
+        font-weight: bold;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.25s ease-in-out;
+        box-shadow: var(--btn-shadow);
+        background-color: #FFF;
+    }
 
-.botones-aside button {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: var(--btn-padding-y) var(--btn-padding-x);
-    border-radius: var(--btn-radius);
-    font-size: var(--btn-font-size);
-    font-weight: bold;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.25s ease-in-out;
-    box-shadow: var(--btn-shadow);
-    background-color: #FFF;
-}
+    .botones-aside button:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--btn-hover-shadow);
+    }
 
-.botones-aside button:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--btn-hover-shadow);
-}
+    .aside button.pending { background-color: var(--btn-pending-bg); color: var(--btn-pending-text); }
+    .aside button.in-progress { background-color: var(--btn-inprogress-bg); color: var(--btn-inprogress-text); }
+    .aside button.submitted { background-color: var(--btn-submitted-bg); color: var(--btn-submitted-text); }
+    .aside button.success { background-color: var(--btn-success-bg); color: var(--btn-success-text); }
+    .aside button.failed { background-color: var(--btn-failed-bg); color: var(--btn-failed-text); }
+    .aside button.expired { background-color: var(--btn-expired-bg); color: var(--btn-expired-text); }
 
-/* --- Colores de Botones Laterales --- */
-.aside button.pending { background-color: var(--btn-pending-bg); color: var(--btn-pending-text); }
-.aside button.in-progress { background-color: var(--btn-inprogress-bg); color: var(--btn-inprogress-text); }
-.aside button.submitted { background-color: var(--btn-submitted-bg); color: var(--btn-submitted-text); }
-.aside button.in-review { background-color: var(--btn-inreview-bg); color: var(--btn-inreview-text); }
-.aside button.success { background-color: var(--btn-success-bg); color: var(--btn-success-text); }
-.aside button.failed { background-color: var(--btn-failed-bg); color: var(--btn-failed-text); }
-.aside button.expired { background-color: var(--btn-expired-bg); color: var(--btn-expired-text); }
+    .aside button.pending:hover { border-color: var(--btn-pending-text); }
+    .aside button.in-progress:hover { border-color: var(--btn-inprogress-text); }
+    .aside button.submitted:hover { border-color: var(--btn-submitted-text); }
+    .aside button.success:hover { border-color: var(--btn-success-text); }
+    .aside button.failed:hover { border-color: var(--btn-failed-text); }
+    .aside button.expired:hover { border-color: var(--btn-expired-text); }
 
-/* --- Efectos Hover de Botones Laterales --- */
-.aside button.pending:hover { border-color: var(--btn-pending-text); }
-.aside button.in-progress:hover { border-color: var(--btn-inprogress-text); }
-.aside button.submitted:hover { border-color: var(--btn-submitted-text); }
-.aside button.in-review:hover { border-color: var(--btn-inreview-text); }
-.aside button.success:hover { border-color: var(--btn-success-text); }
-.aside button.failed:hover { border-color: var(--btn-failed-text); }
-.aside button.expired:hover { border-color: var(--btn-expired-text); }
+    .icon-explorar,
+    .icon-inicio,
+    .icon-marketplace,
+    .icon-nuevo {
+        margin-right: 8px;
+        flex-shrink: 0;
+        transition: transform 0.2s ease-in-out;
+        transform-origin: center;
+    }
 
-/* --- Iconos de Botones Laterales --- */
-.icon-explorar,
-.icon-inicio,
-.icon-marketplace {
-    margin-right: 8px;
-    flex-shrink: 0;
-    transition: transform 0.2s ease-in-out;
-    transform-origin: center;
-}
+    .aside button.success:hover .icon-explorar,
+    .aside button.in-progress:hover .icon-inicio,
+    .aside button.submitted:hover .icon-marketplace,
+    .aside button.failed:hover .icon-marketplace,
+    .aside button.success:hover .icon-nuevo {
+        transform: rotate(6deg) scale(1.05);
+    }
 
-.aside button.success:hover .icon-explorar,
-.aside button.in-progress:hover .icon-inicio,
-.aside button.submitted:hover .icon-marketplace,
-.aside button.failed:hover .icon-marketplace {
-    transform: rotate(6deg) scale(1.05);
-}
+    .icon-explorar,
+    .icon-inicio {
+        width: 22px;
+        height: 22px;
+    }
 
-.icon-explorar,
-.icon-inicio {
-    width: 22px;
-    height: 22px;
-}
+    .icon-marketplace,
+    .icon-nuevo {
+        width: 20px;
+        height: 20px;
+    }
 
-.icon-marketplace {
-    width: 20px;
-    height: 20px;
-}
-
-    /* --- Muestra y Estila los elementos de Desktop (Contenedor Derecho) --- */
     .contenedor-derecha {
-        display: flex; /* Muestra el contenedor derecho */
+        display: flex;
         flex-direction: column;
         width: 100%;
         gap: 10px;
     }
+
     .nav {
-        display: flex; /* Muestra la barra de nav superior */
+        display: flex;
         justify-content: space-between;
         align-items: center;
         height: 65px;
@@ -423,6 +557,7 @@ body {
         flex-shrink: 0;
         gap: 20px;
     }
+
     .nav-buscar { height: 75%; flex-grow: 1; display: flex; align-items: center; gap: 10px; }
     .nav-buscar input {
         width: 100%; height: 100%; border: 1px solid var(--border-soft);
@@ -439,7 +574,7 @@ body {
         transition: all 0.2s ease-in-out;
     }
     .nav-buscar button:hover { color: var(--btn-inprogress-text); border-color: var(--btn-inprogress-text); }
-    .nav-grupo-derecha { display: flex; align-items: center; gap: 10px; height: 100%; }
+
     #btn-nuevo {
         display: inline-flex; align-items: center; gap: var(--btn-gap);
         background-color: var(--btn-success-bg); color: var(--btn-success-text);
@@ -449,6 +584,7 @@ body {
         transition: all 0.25s ease-in-out; height: 75%;
     }
     #btn-nuevo:hover { transform: translateY(-2px); box-shadow: var(--btn-hover-shadow); border-color: var(--btn-success-text); }
+
     .btn-notificaciones {
         background-color: var(--btn-pending-bg); color: var(--btn-pending-text);
         height: 75%; aspect-ratio: 1 / 1; border: 2px solid transparent;
@@ -457,20 +593,21 @@ body {
     }
     .btn-notificaciones:hover { transform: translateY(-2px); box-shadow: var(--btn-hover-shadow); border-color: var(--btn-pending-text); }
     .icon-notificaciones { width: 22px; height: 22px; }
+
     .nav-perfil {
         display: flex; align-items: center; gap: 10px; height: 48px;
         background-color: var(--panel-bg); border: 1px solid var(--border-soft);
         border-radius: 50px; padding: 0 8px 0 15px;
     }
-    .nav-perfil p { margin: 0; line-height: 1; display: flex; align-items: center; } /* Alinea verticalmente el texto */
-    .nav-perfil .perfil-trigger { margin-top: 2px; margin-bottom: -2px; } /* Centrado fino del contenedor */
+    .nav-perfil p { margin: 0; line-height: 1; display: flex; align-items: center; }
+    .nav-perfil .perfil-trigger { margin-top: 2px; margin-bottom: -2px; }
+
     .perfil-trigger {
         position: relative; border: none; border-radius: 50%;
         width: 38px; height: 38px; padding: 0; flex-shrink: 0;
         display: inline-flex; align-items: center; justify-content: center;
         background: var(--panel-bg); cursor: pointer; transition: all 0.2s ease;
     }
-    /* Avatar y Marco correctamente superpuestos */
     .perfil-trigger .avatar {
         position: absolute; inset: 0;
         width: 100%; height: 100%; border-radius: 50%;
@@ -483,9 +620,8 @@ body {
     }
     .perfil-trigger:hover { transform: scale(1.1); box-shadow: 0 0 10px rgba(30, 136, 229, 0.3); }
 
-    /* --- Estilos del Contenido (Dashboard) en Desktop --- */
     .dashboard {
-        padding: 20px; /* Restaura el padding original */
+        padding: 20px;
         background-color: #FFFFFF;
         border-radius: 24px;
         border: 0.5px solid var(--border-soft);
