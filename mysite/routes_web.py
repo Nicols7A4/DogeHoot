@@ -812,3 +812,9 @@ def restablecer_con_token(token):
         return redirect(url_for('auth'))
 
     return render_template('restablecer_contrasena.html')
+
+# ---------------------------------- AGREGADO POR PAME - Reportes
+@app.route('/reportes/partida/<pin>')
+def reporte_partida_page(pin):
+    # Página HTML que consumirá el endpoint JSON /api/report/partida
+    return render_template('reportes_partida.html', pin=pin)

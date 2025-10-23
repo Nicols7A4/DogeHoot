@@ -30,9 +30,14 @@ def _ensure_loaded(pin):
     if not partida_db:
         return None
 
+    # preguntas una sola vez
+    preguntas = cpo.obtener_preguntas_por_cuestionario(partida_db['id_cuestionario']) or []
+
+    # preparar grupos
     grupos = []
-    if partida_db['modalidad']:
-        for i in range(partida_db.get('cant_grupos', 2)):
+    if partida_db.get('modalidad'):  # True si es grupal
+        n = int(partida_db.get('cant_grupos') or 2)
+        for i in range(n):
             grupos.append({
                 'nombre': f"Grupo {i+1}",
                 'miembros': [],
@@ -43,12 +48,12 @@ def _ensure_loaded(pin):
     partidas_en_juego[pin] = {
         'id_partida': partida_db['id_partida'],
         'id_cuestionario': partida_db['id_cuestionario'],
-        'modalidad_grupal': partida_db['modalidad'],
-        'estado': 'E',  # E=espera, J=jugando, F=finalizado
-        'fase': 'lobby',  # lobby | question | results | final
+        'modalidad_grupal': bool(partida_db.get('modalidad')),
+        'estado': 'E',                 # E=espera, J=jugando, F=finalizado
+        'fase': 'lobby',               # lobby | question | results | final
         'pregunta_actual_index': -1,
-        'preguntas_data': cpo.obtener_preguntas_por_cuestionario(partida_db['id_cuestionario']),
-        'participantes': {},  # nombre_usuario -> {grupo, puntaje, id_usuario}
+        'preguntas_data': preguntas,   # usamos la lista ya cargada
+        'participantes': {},           # nombre -> {grupo, puntaje, id_usuario, ...}
         'grupos': grupos,
         'participantes_sin_grupo': [],
         # tiempos
@@ -56,11 +61,12 @@ def _ensure_loaded(pin):
         'question_duration': None,
         'results_started_at': None,
         'ultimo_resultado': None,
-        # puntajes previos para calcular diferencia
-        'puntajes_pregunta_anterior': {},  # {nombre_grupo/usuario: puntaje_anterior}
+        # para calcular puntos ganados por pregunta
+        'puntajes_pregunta_anterior': {},  # {nombre: puntaje_anterior}
     }
 
     return partidas_en_juego[pin]
+
 
 
 def get_lobby_state(pin):
@@ -466,8 +472,10 @@ def get_current(pin):
     return {'existe': True, 'estado': partida['estado'], 'fase': partida['fase'], 'mi_grupo': mi_grupo, 'ranking_actual': ranking_actual, 'servidor_ahora': servidor_ahora, 'modalidad_grupal': partida['modalidad_grupal']}
 
 
+# ---------------------------------- AGREGADO POR PAME - Reportes
+#Extrae los datos de la respuesta enviada por el participante para luego invocar una funcion (log_respuesta_en_bd) que ingrese esos datos en la BD
 def submit_answer(pin, id_opcion, tiempo_restante):
-    partida = partidas_en_juego.get(pin)
+    partida = partidas_en_juego.get(pin) # Obtener la partida en memoria
     if not partida or partida['estado'] != 'J' or partida['fase'] != 'question':
         return False
 
