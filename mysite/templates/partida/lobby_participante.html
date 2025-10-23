@@ -7,102 +7,172 @@
     <title>Sala de Espera</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <style>
+        /* ===================== */
+        /* Variables             */
+        /* ===================== */
+        :root {
+            --btn-pending-bg: #FFECD1;
+            --btn-pending-text: #F77F00;
+            --btn-inprogress-bg: #E6F2FF;
+            --btn-inprogress-text: #1E88E5;
+            --btn-submitted-bg: #F1E8FF;
+            --btn-submitted-text: #8E5CF6;
+            --btn-success-bg: #E8F9E9;
+            --btn-success-text: #2BB673;
+            --btn-failed-bg: #FFE6E6;
+            --btn-failed-text: #E53935;
+            --btn-expired-bg: #F5F5F5;
+            --btn-expired-text: #9E9E9E;
+            --main-bg: #FFF9ED;
+            --panel-bg: #FFFFFF;
+            --border-soft: #E0E0E0;
+            --text-color: #333333;
+            --text-muted: #6c757d;
+            --panel-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+            --btn-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+            --btn-hover-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ===================== */
+        /* Layout Base (Mobile)  */
+        /* ===================== */
         body {
-            background-color: var(--main-bg);
-            padding: 20px;
+            background: var(--main-bg);
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            padding: 0.5rem;
         }
 
         .container {
-            max-width: 1000px;
+            width: 100%;
             margin: 0 auto;
         }
 
+        /* ===================== */
+        /* Pantalla Principal    */
+        /* ===================== */
         .screen {
             background: var(--panel-bg);
-            border-radius: 16px;
+            border-radius: var(--radius-lg);
             box-shadow: var(--panel-shadow);
             border: 1px solid var(--border-soft);
-            padding: 30px;
+            padding: 1.25rem;
+            width: 100%;
         }
 
+        /* ===================== */
+        /* Header                */
+        /* ===================== */
         .lobby-header {
-            font-size: 2.4rem;
-            font-weight: 700;
-            color: var(--btn-submitted-text);
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-color);
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .lobby-subheader {
-            font-size: 1.4rem;
+            display: flex;
+            flex-direction: column;
+            font-size: 0.9rem;
             font-weight: 600;
-            color: var(--text-muted);
+            color: #FFFFFF;
             text-align: center;
-            margin-bottom: 35px;
-            line-height: 1.5;
+            margin-bottom: 1.25rem;
+            padding: 0.75rem 1rem;
+            background: var(--btn-inprogress-text);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--btn-shadow);
+        }
+
+        .lobby-subheader span {
+            font-weight: 800;
+            color: var(--btn-pending-bg);
+            letter-spacing: 3px;
+            font-size: 1.25rem;
         }
 
         .lobby-body {
-            min-height: 350px;
+            min-height: 280px;
+            margin-bottom: 1.25rem;
         }
 
+        /* ===================== */
+        /* Grid de Grupos        */
+        /* ===================== */
         .groups-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 18px;
-            margin-bottom: 20px;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
         }
 
         .player-lobby-group-box {
-            background: var(--btn-submitted-bg);
-            border-radius: 18px;
-            padding: 25px;
-            border: 2px solid var(--btn-submitted-text);
-            box-shadow: 0 4px 12px rgba(142, 92, 246, 0.15);
-            transition: all 0.3s ease;
-        }
-
-        .player-lobby-group-box:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(142, 92, 246, 0.25);
+            background: #FAFBFC;
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            border: 2px solid var(--border-soft);
+            box-shadow: var(--btn-shadow);
         }
 
         .player-lobby-group-header {
-            font-size: 1.4rem;
+            font-size: 1rem;
             font-weight: 700;
-            color: var(--btn-submitted-text);
+            color: var(--text-color);
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 1rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            padding-bottom: 0.65rem;
+            border-bottom: 2px solid var(--btn-inprogress-text);
         }
 
+        /* ===================== */
+        /* Avatares              */
+        /* ===================== */
         .player-lobby-group-members {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 15px;
-            min-height: 100px;
+            gap: 1rem;
+            min-height: 110px;
             align-items: start;
-            margin-bottom: 18px;
-            padding: 5px;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            justify-items: center;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 1rem;
+            justify-items: center;
         }
 
         .player-avatar-wrap {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 0.5rem;
         }
 
         .avatar-container {
             position: relative;
-            width: 65px;
-            height: 65px;
+            width: 70px;
+            height: 70px;
         }
 
         .avatar-container img.avatar {
@@ -110,111 +180,321 @@
             height: 100%;
             border-radius: 50%;
             object-fit: cover;
+            border: 3px solid #FFFFFF;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+            position: relative;
+            z-index: 1;
         }
 
         .avatar-container img.marco-activo {
             position: absolute;
-            top: -2px;
-            left: -2px;
-            width: calc(100% + 4px);
-            height: calc(100% + 4px);
-            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 125%;
+            height: 125%;
             object-fit: contain;
             pointer-events: none;
+            z-index: 2;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
         }
 
         .player-name {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
             color: var(--text-color);
             text-align: center;
-            max-width: 75px;
+            max-width: 80px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            background: #FFFFFF;
+            padding: 0.35rem 0.6rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-soft);
         }
 
+        /* ===================== */
+        /* Botones               */
+        /* ===================== */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 0.5rem;
             border: 2px solid transparent;
-            border-radius: 14px;
-            padding: 14px 24px;
-            font-size: 1.05rem;
-            font-weight: 600;
+            border-radius: var(--radius-sm);
+            padding: 0.875rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 700;
             cursor: pointer;
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: var(--btn-shadow);
         }
 
         .btn:hover {
-            transform: translateY(-3px);
             box-shadow: var(--btn-hover-shadow);
         }
 
+        .btn:active {
+            transform: translateY(1px);
+        }
+
         .btn-secondary {
-            background: var(--btn-pending-bg);
-            color: var(--btn-pending-text);
-            border-color: var(--btn-pending-text);
+            background: var(--btn-inprogress-bg);
+            color: var(--btn-inprogress-text);
         }
 
         .btn-secondary:hover {
-            background: #FFE0B8;
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--btn-pending-text);
+            border-color: var(--btn-inprogress-text);
         }
 
         .btn-danger {
-            background: #dc3545;
-            color: white;
-            border-color: #c82333;
+            background: var(--btn-failed-bg);
+            color: var(--btn-failed-text);
         }
 
         .btn-danger:hover {
-            background: #c82333;
-            transform: translateY(-3px);
+            border-color: var(--btn-failed-text);
         }
 
-        .player-pool-box {
-            background: var(--btn-success-bg);
-            border-radius: 18px;
-            padding: 25px;
-            border: 2px solid var(--btn-success-text);
-            box-shadow: 0 4px 12px rgba(43, 182, 115, 0.15);
+        /* ===================== */
+        /* Sin Grupo             */
+        /* ===================== */
+        #sin-grupo-container {
+            margin-top: 1rem;
         }
 
-        .player-pool-box h3 {
-            color: var(--btn-success-text);
-            margin-bottom: 20px;
+        #sin-grupo-container > div:first-of-type {
+            background: #FAFBFC;
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            border: 2px solid var(--border-soft);
+            box-shadow: var(--btn-shadow);
+        }
+
+        #sin-grupo-container h3 {
+            color: var(--text-color);
+            margin-bottom: 1rem;
             text-align: center;
             font-weight: 700;
-            font-size: 1.3rem;
+            font-size: 1rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            padding-bottom: 0.65rem;
+            border-bottom: 2px solid var(--btn-success-text);
         }
 
-        .players-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 15px;
-        }
-
+        /* ===================== */
+        /* Mensaje de Espera     */
+        /* ===================== */
         #mensaje-espera {
-            margin-top: 30px;
-            padding: 20px;
-            background: var(--btn-inprogress-bg);
-            border-radius: 14px;
-            border: 2px solid var(--btn-inprogress-text);
+            margin-top: 1.25rem;
+            padding: 1rem;
+            background: var(--btn-pending-bg);
+            border-radius: var(--radius-sm);
+            border: 2px solid var(--btn-pending-text);
             text-align: center;
             font-weight: 600;
-            font-size: 1.15rem;
-            color: var(--btn-inprogress-text);
-            box-shadow: 0 3px 10px rgba(30, 136, 229, 0.15);
+            font-size: 0.9rem;
+            color: var(--btn-pending-text);
+            box-shadow: var(--btn-shadow);
+            letter-spacing: 0.3px;
+        }
+
+        /* ===================== */
+        /* Contenedor Botones    */
+        /* ===================== */
+        .btn-container {
+            margin-top: 1.25rem;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Mensaje vacio */
+        .empty-message {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+            font-weight: 600;
+            padding: 1.5rem;
+        }
+
+        /* ===================== */
+        /* Media Queries         */
+        /* ===================== */
+        
+        /* Tablets (768px+) */
+        @media (min-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .screen {
+                padding: 2rem;
+            }
+
+            .lobby-header {
+                font-size: 1.85rem;
+                margin-bottom: 1rem;
+            }
+
+            .lobby-subheader {
+                font-size: 1rem;
+                padding: 0.875rem 1.25rem;
+            }
+
+            .lobby-subheader span {
+                font-size: 1.5rem;
+            }
+
+            .groups-grid {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 1.25rem;
+            }
+
+            .player-lobby-group-box {
+                padding: 1.5rem;
+            }
+
+            .player-lobby-group-header {
+                font-size: 1.15rem;
+            }
+
+            .player-lobby-group-members,
+            .players-grid {
+                grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+                gap: 1.25rem;
+            }
+
+            .avatar-container {
+                width: 80px;
+                height: 80px;
+            }
+
+            .player-name {
+                font-size: 0.75rem;
+                max-width: 90px;
+            }
+
+            .btn {
+                font-size: 0.95rem;
+                padding: 1rem 2rem;
+            }
+
+            #mensaje-espera {
+                font-size: 1rem;
+                padding: 1.125rem;
+            }
+        }
+
+        /* Desktop (1024px+) */
+        @media (min-width: 1024px) {
+            body {
+                padding: 1.5rem;
+            }
+
+            .screen {
+                padding: 2.5rem;
+            }
+
+            .lobby-header {
+                font-size: 2.15rem;
+            }
+
+            .lobby-subheader {
+                font-size: 1.1rem;
+                padding: 1rem 1.5rem;
+            }
+
+            .lobby-subheader span {
+                font-size: 1.75rem;
+            }
+
+            .lobby-body {
+                min-height: 320px;
+            }
+
+            .groups-grid {
+                grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .player-lobby-group-box {
+                padding: 1.75rem;
+            }
+
+            .player-lobby-group-header {
+                font-size: 1.25rem;
+            }
+
+            .player-lobby-group-members,
+            .players-grid {
+                grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .avatar-container {
+                width: 85px;
+                height: 85px;
+            }
+
+            .player-name {
+                font-size: 0.8rem;
+                max-width: 95px;
+            }
+
+            .btn {
+                font-size: 1rem;
+                max-width: 240px;
+            }
+
+            #mensaje-espera {
+                font-size: 1.05rem;
+            }
+        }
+
+        /* Large Desktop (1440px+) */
+        @media (min-width: 1440px) {
+            body {
+                padding: 2rem;
+            }
+
+            .screen {
+                padding: 3rem;
+            }
+
+            .groups-grid {
+                grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+                gap: 2rem;
+            }
+
+            .player-lobby-group-box {
+                padding: 2rem;
+            }
+
+            .player-lobby-group-members,
+            .players-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 1.75rem;
+            }
+
+            .avatar-container {
+                width: 90px;
+                height: 90px;
+            }
+
+            .player-name {
+                font-size: 0.85rem;
+                max-width: 100px;
+            }
         }
     </style>
 </head>
@@ -222,21 +502,20 @@
 <body>
     <div class="container">
         <div class="screen active">
-            <div class="lobby-header">SALA DE ESPERA</div>
-            <div class="lobby-subheader">PIN: <span style="font-weight:700; color:#0069ff; letter-spacing:2px;">{{ pin
-                    }}</span></div>
+            <div class="lobby-header">Sala de Espera</div>
+            <div class="lobby-subheader">PIN: <span>{{ pin }}</span></div>
             <div class="lobby-body">
                 <div id="grupos-container" class="groups-grid"></div>
                 <div id="sin-grupo-container" style="display:none;">
-                    <h3 style="color: var(--btn-inprogress-text); margin-bottom: 1rem;">Sin grupo</h3>
-                    <div id="sin-grupo-list" class="players-grid"></div>
+                    <div>
+                        <h3>Jugadores sin grupo</h3>
+                        <div id="sin-grupo-list" class="players-grid"></div>
+                    </div>
                 </div>
             </div>
-            <div id="mensaje-espera" style="margin-top:30px; color:#6c757d; font-weight:600;">Esperando al anfitrión...
-            </div>
-            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
-                <button id="btn-salir" class="btn btn-danger" onclick="salirDelLobby()" style="max-width: 200px;">🚪
-                    Salir</button>
+            <div id="mensaje-espera">Esperando al anfitrion...</div>
+            <div class="btn-container">
+                <button id="btn-salir" class="btn btn-danger" onclick="salirDelLobby()">Salir</button>
             </div>
         </div>
     </div>
@@ -268,10 +547,8 @@
                     body: JSON.stringify({ pin })
                 });
                 if (res.ok) {
-                    // Detener los polls
                     if (pollLobbyInterval) clearInterval(pollLobbyInterval);
                     if (pollStatusInterval) clearInterval(pollStatusInterval);
-                    // Redirigir al dashboard
                     window.location.href = '{{ url_for("dashboard") }}';
                 } else {
                     alert('Error al salir del lobby');
@@ -288,17 +565,16 @@
 
             gruposContainer.innerHTML = '';
 
-            // Contar total de participantes
             let totalParticipantes = 0;
             if (lobby.modalidad_grupal) {
                 if (Array.isArray(lobby.grupos) && lobby.grupos.length > 0) {
-                    lobby.grupos.forEach(g => {
+                    lobby.grupos.forEach((g) => {
                         const card = document.createElement('div');
                         card.className = 'player-lobby-group-box';
 
                         let membersHTML = '';
                         if (Array.isArray(g.miembros) && g.miembros.length > 0) {
-                            membersHTML = g.miembros.map(m => {
+                            membersHTML = g.miembros.map((m) => {
                                 const nombre = typeof m === 'string' ? m : m.nombre;
                                 const foto = typeof m === 'object' ? m.foto : 'img/ico.png';
                                 const skin = typeof m === 'object' ? m.skin : null;
@@ -306,7 +582,7 @@
                                     <div class="player-avatar-wrap">
                                         <div class="avatar-container">
                                             <img src="/static/${foto}" class="avatar" alt="${nombre}">
-                                            ${skin ? `<img src="/static/${skin}" class="marco-activo" alt="Skin">` : ''}
+                                            ${skin ? `<img src="/static/${skin}" class="marco-activo" alt="Marco">` : ''}
                                         </div>
                                         <span class="player-name">${nombre}</span>
                                     </div>
@@ -314,7 +590,7 @@
                             }).join('');
                             totalParticipantes += g.miembros.length;
                         } else {
-                            membersHTML = '<p style="color:var(--text-muted); font-size:0.9rem;text-align:center;">Ningun miembro</p>';
+                            membersHTML = '<p class="empty-message">Ningun miembro aun</p>';
                         }
 
                         card.innerHTML = `
@@ -327,7 +603,6 @@
                 }
                 totalParticipantes += (lobby.participantes_sin_grupo || []).length;
             } else {
-                // Modo individual: mostrar todos los participantes con fotos
                 if (Array.isArray(lobby.grupos) && lobby.grupos.length > 0 && lobby.grupos[0].miembros) {
                     totalParticipantes = lobby.grupos[0].miembros.length;
 
@@ -336,7 +611,7 @@
 
                     let membersHTML = '';
                     if (totalParticipantes > 0) {
-                        membersHTML = lobby.grupos[0].miembros.map(m => {
+                        membersHTML = lobby.grupos[0].miembros.map((m) => {
                             const nombre = typeof m === 'string' ? m : m.nombre;
                             const foto = typeof m === 'object' ? m.foto : 'img/ico.png';
                             const skin = typeof m === 'object' ? m.skin : null;
@@ -344,14 +619,14 @@
                                 <div class="player-avatar-wrap">
                                     <div class="avatar-container">
                                         <img src="/static/${foto}" class="avatar" alt="${nombre}">
-                                        ${skin ? `<img src="/static/${skin}" class="marco-activo" alt="Skin">` : ''}
+                                        ${skin ? `<img src="/static/${skin}" class="marco-activo" alt="Marco">` : ''}
                                     </div>
                                     <span class="player-name">${nombre}</span>
                                 </div>
                             `;
                         }).join('');
                     } else {
-                        membersHTML = '<p style="color:var(--text-muted); font-size:0.9rem;text-align:center;">Esperando jugadores...</p>';
+                        membersHTML = '<p class="empty-message">Esperando jugadores...</p>';
                     }
 
                     card.innerHTML = `
@@ -362,11 +637,10 @@
                 }
             }
 
-            // Mostrar participantes sin grupo si hay
             if (Array.isArray(lobby.participantes_sin_grupo) && lobby.participantes_sin_grupo.length > 0) {
                 sinGrupoContainer.style.display = 'block';
                 sinGrupoList.innerHTML = '';
-                lobby.participantes_sin_grupo.forEach(p => {
+                lobby.participantes_sin_grupo.forEach((p) => {
                     const nombre = typeof p === 'string' ? p : p.nombre;
                     const foto = typeof p === 'object' ? p.foto : 'img/ico.png';
                     const skin = typeof p === 'object' ? p.skin : null;
@@ -376,7 +650,7 @@
                     playerDiv.innerHTML = `
                         <div class="avatar-container">
                             <img src="/static/${foto}" class="avatar" alt="${nombre}">
-                            ${skin ? `<img src="/static/${skin}" class="marco-activo" alt="Skin">` : ''}
+                            ${skin ? `<img src="/static/${skin}" class="marco-activo" alt="Marco">` : ''}
                         </div>
                         <span class="player-name">${nombre}</span>
                     `;
@@ -386,7 +660,6 @@
                 sinGrupoContainer.style.display = 'none';
             }
 
-            // Actualizar mensaje de espera con contador de participantes
             document.getElementById('mensaje-espera').textContent =
                 `${totalParticipantes} jugador${totalParticipantes !== 1 ? 'es' : ''} conectado${totalParticipantes !== 1 ? 's' : ''}. Esperando al anfitrion...`;
         }
@@ -400,7 +673,7 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    document.getElementById('mensaje-espera').textContent = 'Error: PIN inválido';
+                    document.getElementById('mensaje-espera').textContent = 'Error: PIN invalido';
                     return;
                 }
                 renderLobby(data.lobby);
@@ -411,7 +684,7 @@
                         const l = await r.json();
                         renderLobby(l);
                     }
-                }, 800); // Más rápido para ver cambios de otros jugadores
+                }, 800);
 
                 pollStatusInterval = setInterval(async () => {
                     const r = await fetch(`/api/game/status?pin=${encodeURIComponent(pin)}`);
@@ -423,13 +696,12 @@
                             window.location.href = s.url;
                         }
                     }
-                }, 600); // Más rápido para detectar inicio del juego
+                }, 600);
             } catch (e) {
                 console.error('Error al unirse', e);
             }
         }
 
-        // init
         joinLobby();
     </script>
 </body>
