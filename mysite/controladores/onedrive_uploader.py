@@ -79,7 +79,7 @@ class OneDriveUploader:
         if not self.refresh_token:
             raise Exception("No hay refresh token disponible. Necesitas autenticarte primero.")
         
-        url = 'https://login.microsoftonline.com/consumers/oauth2/v2.0/token'
+        url = 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
         
         data = {
             'client_id': CLIENT_ID,
@@ -118,7 +118,7 @@ class OneDriveUploader:
             'response_mode': 'query'
         }
         
-        auth_url = f'https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?{urlencode(params)}'
+        auth_url = f'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?{urlencode(params)}'
         
         print("="*60)
         print(f"🔗 URL de autorización generada:")
@@ -139,7 +139,7 @@ class OneDriveUploader:
         Returns:
             dict: {'success': bool, 'message': str}
         """
-        url = 'https://login.microsoftonline.com/consumers/oauth2/v2.0/token'
+        url = 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
         
         data = {
             'client_id': CLIENT_ID,
@@ -355,6 +355,100 @@ class OneDriveUploader:
             return {
                 'success': False,
                 'message': f'Error al crear carpeta: {str(e)}'
+            }
+    
+    def compartir_archivo(self, file_id, email, role='read', send_notification=True):
+        """
+        Comparte un archivo de OneDrive con un usuario específico
+        
+        Args:
+            file_id (str): ID del archivo en OneDrive
+            email (str): Correo electrónico del destinatario
+            role (str): Permisos ('read', 'write', 'owner')
+            send_notification (bool): Enviar notificación por correo
+            
+        Returns:
+            dict: {'success': bool, 'message': str, 'permission_id': str}
+        """
+        if not self.access_token:
+            return {
+                'success': False,
+                'message': 'No hay token de acceso. Necesitas autenticarte primero.'
+            }
+        
+        try:
+            # Primero intentamos con createLink (enlace de solo lectura)
+            url = f'https://graph.microsoft.com/v1.0/me/drive/items/{file_id}/createLink'
+            
+            headers = {
+                'Authorization': f'Bearer {self.access_token}',
+                'Content-Type': 'application/json'
+            }
+            
+            # Crear un enlace compartido
+            data = {
+                'type': 'view',  # 'view' para solo lectura, 'edit' para edición
+                'scope': 'anonymous'  # Cualquiera con el enlace puede verlo
+            }
+            
+            response = requests.post(url, headers=headers, json=data)
+            
+            if response.status_code in [200, 201]:
+                link_data = response.json()
+                share_link = link_data.get('link', {}).get('webUrl')
+                
+                # Ahora intentamos invitar al usuario específico
+                invite_url = f'https://graph.microsoft.com/v1.0/me/drive/items/{file_id}/invite'
+                
+                invite_data = {
+                    'requireSignIn': False,  # Cambiado a False para evitar problemas de permisos
+                    'sendInvitation': send_notification,
+                    'roles': [role],
+                    'recipients': [
+                        {
+                            'email': email
+                        }
+                    ],
+                    'message': 'Te comparto este reporte de DogeHoot'
+                }
+                
+                invite_response = requests.post(invite_url, headers=headers, json=invite_data)
+                
+                if invite_response.status_code in [200, 201]:
+                    permission_data = invite_response.json()
+                    return {
+                        'success': True,
+                        'message': f'Archivo compartido exitosamente con {email}',
+                        'permission_id': permission_data.get('value', [{}])[0].get('id') if permission_data.get('value') else None,
+                        'shared_with': email,
+                        'share_link': share_link,
+                        'role': role
+                    }
+                else:
+                    # Si falla la invitación, al menos devolvemos el enlace
+                    return {
+                        'success': True,
+                        'message': f'Archivo subido. Se creó un enlace compartido (no se pudo enviar invitación directa a {email})',
+                        'shared_with': email,
+                        'share_link': share_link,
+                        'warning': f'No se pudo enviar invitación: {invite_response.text}'
+                    }
+                    
+            elif response.status_code == 401:
+                # Token expirado, intentar refrescar
+                self._refresh_access_token()
+                # Reintentar compartir
+                return self.compartir_archivo(file_id, email, role, send_notification)
+            else:
+                return {
+                    'success': False,
+                    'message': f'Error al compartir archivo: {response.status_code} - {response.text}'
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f'Error al compartir archivo: {str(e)}'
             }
 
 

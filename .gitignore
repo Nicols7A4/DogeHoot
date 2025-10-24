@@ -11,3 +11,6 @@ __pycache__/
 respaldos/
 *.pyc
 .envtoken_onedrive.json
+
+token_onedrive.json
+.env

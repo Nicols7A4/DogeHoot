@@ -1378,18 +1378,20 @@ def api_report_partida_export_drive():
 @app.route('/api/report/partida/export-onedrive', methods=['GET'])
 def api_report_partida_export_onedrive():
     """
-    Genera Excel y lo sube a OneDrive en la carpeta 'DogeHoot/Reportes'
+    Genera Excel y lo sube a OneDrive en la carpeta 'DogeHoot/Reportes' y lo comparte con un correo
     
     Uso: 
-    - /api/report/partida/export-onedrive?pin=AB12CD
-    - /api/report/partida/export-onedrive?idpartida=123
-    
-    Opcional: &email=correo@ejemplo.com (para guardar referencia)
+    - /api/report/partida/export-onedrive?pin=AB12CD&email=correo@ejemplo.com
+    - /api/report/partida/export-onedrive?id_partida=123&email=correo@ejemplo.com
     """
     try:
         pin = request.args.get('pin')
-        idpartida = request.args.get('idpartida', type=int)
-        email = request.args.get('email')  # Opcional, solo para referencia
+        id_partida = request.args.get('id_partida', type=int)
+        email = request.args.get('email')
+        
+        # Validar que se proporcione el correo
+        if not email:
+            return jsonify({"ok": False, "msg": "Debe proporcionar un correo electrónico (parámetro 'email')"}), 400
         
         # Importar el uploader de OneDrive
         from controladores.onedrive_uploader import OneDriveUploader
@@ -1399,13 +1401,13 @@ def api_report_partida_export_onedrive():
         
         if pin:
             data = c_part.reporte_por_pin(pin)
-        elif idpartida:
-            data = c_part.reporte_por_partidaid(idpartida)
+        elif id_partida:
+            data = c_part.reporte_por_partida_id(id_partida)
         else:
-            return jsonify(ok=False, msg='Proporcione pin o idpartida'), 400
+            return jsonify({"ok": False, "msg": "Proporcione pin o id_partida"}), 400
         
         if not data:
-            return jsonify(ok=False, msg='Partida no encontrada'), 404
+            return jsonify({"ok": False, "msg": "Partida no encontrada"}), 404
         
         # === PASO 2: Crear el archivo Excel (mismo código que ya tienes) ===
         from openpyxl import Workbook
@@ -1453,28 +1455,28 @@ def api_report_partida_export_onedrive():
         try:
             with cx.cursor(pymysql.cursors.DictCursor) as c:
                 c.execute("""
-                    SELECT pa.nombre, pa.idgrupo, rp.idpregunta, rp.escorrecta,
-                           TIME_TO_SEC(rp.tiemporespuesta) AS tiemposeg,
+                    SELECT pa.nombre, pa.id_grupo, rp.id_pregunta, rp.es_correcta,
+                           TIME_TO_SEC(rp.tiempo_respuesta) AS tiempo_seg,
                            rp.puntaje,
                            (SELECT SUM(rp2.puntaje) FROM RESPUESTA_PARTICIPANTE rp2
-                            WHERE rp2.idparticipante = rp.idparticipante 
-                            AND rp2.idrespuesta <= rp.idrespuesta) AS puntajeacum
+                            WHERE rp2.id_participante = rp.id_participante 
+                            AND rp2.id_respuesta <= rp.id_respuesta) AS puntaje_acum
                     FROM RESPUESTA_PARTICIPANTE rp
-                    JOIN PARTICIPANTE pa ON pa.idparticipante = rp.idparticipante
-                    WHERE rp.idpartida = %s
-                    ORDER BY pa.nombre, rp.idpregunta
-                """, (idpartida if idpartida else data['header']['idpartida'],))
+                    JOIN PARTICIPANTE pa ON pa.id_participante = rp.id_participante
+                    WHERE rp.id_partida = %s
+                    ORDER BY pa.nombre, rp.id_pregunta
+                """, (id_partida if id_partida else data['header']['id_partida'],))
                 rows_part = c.fetchall()
                 
                 for r in rows_part:
                     ws_detalle_part.append([
                         r['nombre'],
-                        r['idgrupo'] or '',
-                        r['idpregunta'],
-                        int(r['escorrecta']),
-                        int(r['tiemposeg'] or 0),
+                        r['id_grupo'] or '',
+                        r['id_pregunta'],
+                        int(r['es_correcta']),
+                        int(r['tiempo_seg'] or 0),
                         int(r['puntaje']),
-                        int(r['puntajeacum'] or 0)
+                        int(r['puntaje_acum'] or 0)
                     ])
         finally:
             cx.close()
@@ -1492,29 +1494,29 @@ def api_report_partida_export_onedrive():
         try:
             with cx.cursor(pymysql.cursors.DictCursor) as c:
                 c.execute("""
-                    SELECT rp.idpregunta, MIN(rp.preguntatexto) AS preguntatexto,
-                           rp.opciontexto, MAX(rp.escorrecta) AS escorrecta,
-                           COUNT(*) AS respuestasrecibidas,
-                           SUM(rp.escorrecta) AS aciertos,
-                           ROUND(AVG(TIME_TO_SEC(rp.tiemporespuesta)), 2) AS tiempoprom
+                    SELECT rp.id_pregunta, MIN(rp.pregunta_texto) AS pregunta_texto,
+                           rp.opcion_texto, MAX(rp.es_correcta) AS es_correcta,
+                           COUNT(*) AS respuestas_recibidas,
+                           SUM(rp.es_correcta) AS aciertos,
+                           ROUND(AVG(TIME_TO_SEC(rp.tiempo_respuesta)), 2) AS tiempo_prom
                     FROM RESPUESTA_PARTICIPANTE rp
-                    WHERE rp.idpartida = %s
-                    GROUP BY rp.idpregunta, rp.opciontexto
-                    ORDER BY rp.idpregunta, rp.opciontexto
-                """, (idpartida if idpartida else data['header']['idpartida'],))
+                    WHERE rp.id_partida = %s
+                    GROUP BY rp.id_pregunta, rp.opcion_texto
+                    ORDER BY rp.id_pregunta, rp.opcion_texto
+                """, (id_partida if id_partida else data['header']['id_partida'],))
                 rows_preg = c.fetchall()
                 
                 for r in rows_preg:
-                    pct_aciertos = round(int(r['aciertos']) / int(r['respuestasrecibidas']) * 100, 2) if r['respuestasrecibidas'] > 0 else 0
+                    pct_aciertos = round(int(r['aciertos']) / int(r['respuestas_recibidas']) * 100, 2) if r['respuestas_recibidas'] > 0 else 0
                     ws_detalle_preg.append([
-                        r['idpregunta'],
-                        r['preguntatexto'],
-                        r['opciontexto'],
-                        int(r['escorrecta']),
-                        int(r['respuestasrecibidas']),
+                        r['id_pregunta'],
+                        r['pregunta_texto'],
+                        r['opcion_texto'],
+                        int(r['es_correcta']),
+                        int(r['respuestas_recibidas']),
                         int(r['aciertos']),
                         pct_aciertos,
-                        float(r['tiempoprom'] or 0)
+                        float(r['tiempo_prom'] or 0)
                     ])
         finally:
             cx.close()
@@ -1525,7 +1527,7 @@ def api_report_partida_export_onedrive():
         excel_bytes = output.getvalue()
         
         # Nombre del archivo
-        filename = f'DogeHoot_Reporte_{pin if pin else idpartida}.xlsx'
+        filename = f'DogeHoot_Reporte_{pin if pin else id_partida}.xlsx'
         
         # === PASO 4: Subir a OneDrive ===
         uploader = OneDriveUploader()
@@ -1537,25 +1539,46 @@ def api_report_partida_export_onedrive():
             folder_path='DogeHoot/Reportes'
         )
         
-        if resultado['success']:
-            return jsonify({
-                'ok': True,
-                'msg': f'Reporte subido exitosamente a OneDrive',
-                'filename': resultado['file_name'],
-                'file_id': resultado['file_id'],
-                'web_url': resultado['web_url'],  # URL para ver el archivo en OneDrive
-                'download_url': resultado.get('download_url'),  # URL de descarga directa
-                'email': email  # Solo como referencia si lo enviaron
-            }), 200
-        else:
+        if not resultado['success']:
             return jsonify({
                 'ok': False,
                 'msg': f'Error al subir a OneDrive: {resultado["message"]}'
             }), 500
+        
+        # === PASO 5: Compartir el archivo con el correo proporcionado ===
+        file_id = resultado['file_id']
+        resultado_compartir = uploader.compartir_archivo(
+            file_id=file_id,
+            email=email,
+            role='read',  # Solo lectura
+            send_notification=True  # Enviar notificación por correo
+        )
+        
+        if resultado_compartir['success']:
+            return jsonify({
+                'ok': True,
+                'msg': f'Reporte subido y compartido exitosamente con {email}',
+                'file_name': resultado['file_name'],
+                'file_id': resultado['file_id'],
+                'web_url': resultado['web_url'],  # URL para ver el archivo en OneDrive
+                'download_url': resultado.get('download_url'),  # URL de descarga directa
+                'shared_with': email
+            }), 200
+        else:
+            # El archivo se subió pero no se pudo compartir
+            return jsonify({
+                'ok': True,
+                'msg': f'Reporte subido pero hubo un error al compartir: {resultado_compartir["message"]}',
+                'file_name': resultado['file_name'],
+                'file_id': resultado['file_id'],
+                'web_url': resultado['web_url'],
+                'download_url': resultado.get('download_url'),
+                'warning': 'No se pudo compartir con el correo especificado'
+            }), 200
             
     except Exception as e:
         traceback.print_exc()
-        return jsonify(ok=False, msg=str(e)), 500
+        return jsonify({"ok": False, "msg": str(e)}), 500
 
 
 # ============================================
