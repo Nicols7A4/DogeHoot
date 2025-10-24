@@ -10,4 +10,4 @@ mysite/pruebas/token_drive.json
 __pycache__/
 respaldos/
 *.pyc
-.env
+.envtoken_onedrive.json

@@ -1,4 +1,4 @@
-from flask import jsonify, request, url_for, session, Response, send_file, current_app
+from flask import jsonify, request, url_for, session, Response, send_file, redirect, current_app
 import traceback
 import os
 import time
@@ -20,6 +20,7 @@ from controladores import controlador_partidas as c_part
 from controladores import controlador_recompensas as c_rec
 from controladores import usuarios as ctrl
 from controladores import email_sender
+from controladores.onedrive_uploader import OneDriveUploader
 from ajax_game import (
     partidas_en_juego,
     _ensure_loaded,
@@ -1373,3 +1374,272 @@ def api_report_partida_export_drive():
         traceback.print_exc()
         return jsonify({"ok": False, "msg": str(e)}), 500
 
+
+@app.route('/api/report/partida/export-onedrive', methods=['GET'])
+def api_report_partida_export_onedrive():
+    """
+    Genera Excel y lo sube a OneDrive en la carpeta 'DogeHoot/Reportes'
+    
+    Uso: 
+    - /api/report/partida/export-onedrive?pin=AB12CD
+    - /api/report/partida/export-onedrive?idpartida=123
+    
+    Opcional: &email=correo@ejemplo.com (para guardar referencia)
+    """
+    try:
+        pin = request.args.get('pin')
+        idpartida = request.args.get('idpartida', type=int)
+        email = request.args.get('email')  # Opcional, solo para referencia
+        
+        # Importar el uploader de OneDrive
+        from controladores.onedrive_uploader import OneDriveUploader
+        
+        # === PASO 1: Obtener datos del reporte (igual que Google Drive) ===
+        from controladores import controlador_partidas as c_part
+        
+        if pin:
+            data = c_part.reporte_por_pin(pin)
+        elif idpartida:
+            data = c_part.reporte_por_partidaid(idpartida)
+        else:
+            return jsonify(ok=False, msg='Proporcione pin o idpartida'), 400
+        
+        if not data:
+            return jsonify(ok=False, msg='Partida no encontrada'), 404
+        
+        # === PASO 2: Crear el archivo Excel (mismo código que ya tienes) ===
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill
+        import io
+        
+        wb = Workbook()
+        wb.remove(wb.active)  # Eliminar hoja por defecto
+        
+        # --- HOJA 1: RESUMEN ---
+        ws_resumen = wb.create_sheet("Resumen")
+        ws_resumen.append(['Posición', 'Usuario/Grupo', 'Puntaje Total', 'Respuestas Correctas', 
+                          'Respuestas Incorrectas', '% Acierto', 'Tiempo Promedio (seg)'])
+        
+        # Estilo del header
+        for cell in ws_resumen[1]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
+        
+        # Llenar datos
+        for idx, part in enumerate(data['participantes'], start=1):
+            total_resp = int(part['correctas']) + int(part['incorrectas'])
+            pct_acierto = round(int(part['correctas']) / total_resp * 100, 2) if total_resp > 0 else 0
+            ws_resumen.append([
+                idx,
+                part['nombre'],
+                int(part['puntaje_total']),
+                int(part['correctas']),
+                int(part['incorrectas']),
+                pct_acierto,
+                round(float(part['tiempo_prom_seg'] or 0), 2)
+            ])
+        
+        # --- HOJA 2: DETALLE POR PARTICIPANTE ---
+        ws_detalle_part = wb.create_sheet("Detalle por participante")
+        ws_detalle_part.append(['Usuario', 'Grupo', 'Pregunta N°', 'Correcta (0/1)', 
+                               'Tiempo Restante', 'Puntos Otorgados', 'Puntaje Acumulado'])
+        
+        for cell in ws_detalle_part[1]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
+        
+        # Obtener detalle de respuestas
+        cx = obtener_conexion()
+        try:
+            with cx.cursor(pymysql.cursors.DictCursor) as c:
+                c.execute("""
+                    SELECT pa.nombre, pa.idgrupo, rp.idpregunta, rp.escorrecta,
+                           TIME_TO_SEC(rp.tiemporespuesta) AS tiemposeg,
+                           rp.puntaje,
+                           (SELECT SUM(rp2.puntaje) FROM RESPUESTA_PARTICIPANTE rp2
+                            WHERE rp2.idparticipante = rp.idparticipante 
+                            AND rp2.idrespuesta <= rp.idrespuesta) AS puntajeacum
+                    FROM RESPUESTA_PARTICIPANTE rp
+                    JOIN PARTICIPANTE pa ON pa.idparticipante = rp.idparticipante
+                    WHERE rp.idpartida = %s
+                    ORDER BY pa.nombre, rp.idpregunta
+                """, (idpartida if idpartida else data['header']['idpartida'],))
+                rows_part = c.fetchall()
+                
+                for r in rows_part:
+                    ws_detalle_part.append([
+                        r['nombre'],
+                        r['idgrupo'] or '',
+                        r['idpregunta'],
+                        int(r['escorrecta']),
+                        int(r['tiemposeg'] or 0),
+                        int(r['puntaje']),
+                        int(r['puntajeacum'] or 0)
+                    ])
+        finally:
+            cx.close()
+        
+        # --- HOJA 3: DETALLE POR PREGUNTA ---
+        ws_detalle_preg = wb.create_sheet("Detalle por pregunta")
+        ws_detalle_preg.append(['Pregunta', 'Texto Pregunta', 'Opción', 'Es Correcta (0/1)',
+                               'Respuestas Recibidas', 'Aciertos', '% Aciertos', 'Tiempo Promedio'])
+        
+        for cell in ws_detalle_preg[1]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
+        
+        cx = obtener_conexion()
+        try:
+            with cx.cursor(pymysql.cursors.DictCursor) as c:
+                c.execute("""
+                    SELECT rp.idpregunta, MIN(rp.preguntatexto) AS preguntatexto,
+                           rp.opciontexto, MAX(rp.escorrecta) AS escorrecta,
+                           COUNT(*) AS respuestasrecibidas,
+                           SUM(rp.escorrecta) AS aciertos,
+                           ROUND(AVG(TIME_TO_SEC(rp.tiemporespuesta)), 2) AS tiempoprom
+                    FROM RESPUESTA_PARTICIPANTE rp
+                    WHERE rp.idpartida = %s
+                    GROUP BY rp.idpregunta, rp.opciontexto
+                    ORDER BY rp.idpregunta, rp.opciontexto
+                """, (idpartida if idpartida else data['header']['idpartida'],))
+                rows_preg = c.fetchall()
+                
+                for r in rows_preg:
+                    pct_aciertos = round(int(r['aciertos']) / int(r['respuestasrecibidas']) * 100, 2) if r['respuestasrecibidas'] > 0 else 0
+                    ws_detalle_preg.append([
+                        r['idpregunta'],
+                        r['preguntatexto'],
+                        r['opciontexto'],
+                        int(r['escorrecta']),
+                        int(r['respuestasrecibidas']),
+                        int(r['aciertos']),
+                        pct_aciertos,
+                        float(r['tiempoprom'] or 0)
+                    ])
+        finally:
+            cx.close()
+        
+        # === PASO 3: Guardar Excel en memoria (bytes) ===
+        output = io.BytesIO()
+        wb.save(output)
+        excel_bytes = output.getvalue()
+        
+        # Nombre del archivo
+        filename = f'DogeHoot_Reporte_{pin if pin else idpartida}.xlsx'
+        
+        # === PASO 4: Subir a OneDrive ===
+        uploader = OneDriveUploader()
+        
+        # Subir el archivo desde memoria a la carpeta DogeHoot/Reportes
+        resultado = uploader.subir_desde_memoria(
+            excel_bytes,
+            filename,
+            folder_path='DogeHoot/Reportes'
+        )
+        
+        if resultado['success']:
+            return jsonify({
+                'ok': True,
+                'msg': f'Reporte subido exitosamente a OneDrive',
+                'filename': resultado['file_name'],
+                'file_id': resultado['file_id'],
+                'web_url': resultado['web_url'],  # URL para ver el archivo en OneDrive
+                'download_url': resultado.get('download_url'),  # URL de descarga directa
+                'email': email  # Solo como referencia si lo enviaron
+            }), 200
+        else:
+            return jsonify({
+                'ok': False,
+                'msg': f'Error al subir a OneDrive: {resultado["message"]}'
+            }), 500
+            
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify(ok=False, msg=str(e)), 500
+
+
+# ============================================
+# RUTAS PARA ONEDRIVE OAuth
+# ============================================
+
+@app.route('/onedrive/auth')
+def onedrive_auth():
+    """Inicia el proceso de autenticación con OneDrive"""
+    uploader = OneDriveUploader()
+    auth_url = uploader.get_authorization_url()
+    return redirect(auth_url)
+
+
+@app.route('/onedrive/callback', methods=['GET', 'POST'])
+def onedrive_callback():
+    """Callback de OneDrive después de la autenticación"""
+    # Obtener todos los parámetros para debugging
+    all_params = dict(request.args)
+    all_form = dict(request.form) if request.form else {}
+    
+    print("="*50)
+    print(f"Método de petición: {request.method}")
+    print(f"URL completa: {request.url}")
+    print(f"Query params (GET): {all_params}")
+    print(f"Form data (POST): {all_form}")
+    print(f"Headers: {dict(request.headers)}")
+    print("="*50)
+    
+    # Intentar obtener el código de GET o POST
+    code = request.args.get('code') or request.form.get('code')
+    error = request.args.get('error') or request.form.get('error')
+    error_description = request.args.get('error_description') or request.form.get('error_description')
+    
+    if error:
+        return jsonify({
+            'success': False,
+            'message': f'Error en autenticación: {error}',
+            'error_description': error_description,
+            'params_received': all_params,
+            'form_received': all_form
+        }), 400
+    
+    if code:
+        print(f"✓ Código recibido: {code[:20]}...")
+        uploader = OneDriveUploader()
+        result = uploader.exchange_code_for_tokens(code)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': 'OneDrive conectado exitosamente. Ya puedes subir archivos.'
+            })
+        else:
+            return jsonify(result), 400
+    
+    # Si no hay código ni error, mostrar qué se recibió
+    return jsonify({
+        'success': False,
+        'message': 'No se recibió código de autenticación',
+        'params_received': all_params,
+        'form_received': all_form,
+        'url_received': request.url
+    }), 400
+
+
+@app.route('/onedrive/test-upload')
+def onedrive_test_upload():
+    """Ruta de prueba para subir un archivo a OneDrive"""
+    try:
+        uploader = OneDriveUploader()
+        
+        # Crear un archivo de prueba
+        test_content = b"Este es un archivo de prueba de DogeHoot"
+        result = uploader.subir_desde_memoria(
+            test_content,
+            'prueba_dogehoot.txt',
+            folder_path='DogeHoot/Pruebas'
+        )
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
