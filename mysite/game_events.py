@@ -388,6 +388,19 @@ def finalizar_juego(pin):
     # Marcamos la partida como finalizada en la BD
     ctrl_partidas.finalizar_partida(partida['id_partida'])
 
+     # --- OTORGAR RECOMPENSAS AUTOMÁTICAMENTE ---
+    try:
+
+        recompensas_ok = c_rec.otorgar_recompensas(partida['id_partida'])
+        if recompensas_ok:
+            print(f"Recompensas otorgadas automáticamente para la partida {partida['id_partida']}")
+        else:
+            print(f"No se pudieron otorgar recompensas para la partida {partida['id_partida']}")
+    except Exception as e:
+        import traceback
+        print(f"Error otorgando recompensas automáticamente: {e}")
+        print(traceback.format_exc())
+
     socketio.emit('juego_finalizado', {'ranking': ranking_data}, room=pin, namespace='/')
     
     if pin in partidas_en_juego:
