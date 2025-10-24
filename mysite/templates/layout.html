@@ -221,7 +221,7 @@
 
 
         {% if tipo_usuario == 'P' %}
-        <a href="{{ url_for('cuestionarios') }}" class="bottom-nav-item" data-url-match="/usuario/perfil">
+        <a href="{{ url_for('cuestionarios') }}" class="bottom-nav-item" data-url-match="/cuestionarios">
 
             <svg class="icon-marketplace" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20"
                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -229,9 +229,9 @@
                     d="M4 7c0-1.886 0-2.829.586-3.414C5.171 3 6.114 3 8 3h8c1.886 0 2.829 0 3.414.586C20 4.171 20 5.114 20 7v8c0 2.829 0 4.243-.879 5.121C18.243 21 16.829 21 14 21h-4c-2.829 0-4.243 0-5.121-.879C4 19.243 4 17.829 4 15V7z" />
                 <path d="M15 18v3M9 18v3M9 8h6M9 12h6" />
             </svg>
-            <span>Mis cuestionarios<span>
+            <span>Mis cuestionarios</span>
         </a>
-        <a href="{{ url_for('mis_partidas') }}" class="bottom-nav-item" data-url-match="/usuario/perfil">
+        <a href="{{ url_for('mis_partidas') }}" class="bottom-nav-item" data-url-match="/mis-partidas">
 
             <svg class="icon-nuevo" xmlns="http://www.w3.org/2000/svg" viewBox="100 150 320 220" width="22" height="22"
                 fill="none" aria-hidden="true">
@@ -246,7 +246,7 @@
                 <circle cx="344.24" cy="244.33" r="8.09" fill="currentColor" />
                 <circle cx="311.87" cy="244.33" r="8.09" fill="currentColor" />
             </svg>
-            <span>Mis partidas<span>
+            <span>Mis partidas</span>
         </a>
         {% endif %}
 
@@ -323,7 +323,11 @@
                     if (urlMatch === '/dashboard' && currentPath === inicioUrl) {
                         item.classList.add('active');
                         itemActivo = true;
-                    } else if (urlMatch !== '/dashboard' && currentPath.startsWith(urlMatch)) {
+                    } else if (urlMatch === '/cuestionarios' && currentPath.startsWith('/cuestionarios') && !currentPath.startsWith('/cuestionarios/explorar')) {
+                        // Activar "Mis cuestionarios" solo si NO es /cuestionarios/explorar
+                        item.classList.add('active');
+                        itemActivo = true;
+                    } else if (urlMatch !== '/dashboard' && urlMatch !== '/cuestionarios' && currentPath.startsWith(urlMatch)) {
                         item.classList.add('active');
                         itemActivo = true;
                     }
