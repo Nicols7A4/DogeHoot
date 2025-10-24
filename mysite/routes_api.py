@@ -940,9 +940,6 @@ def api_report_partida_export():
         else:
             return jsonify({"ok": False, "msg": "Proporcione pin o id_partida"}), 400
 
-        if not data:
-            return jsonify({"ok": False, "msg": "Partida no encontrada"}), 404
-
         # Crear libro Excel
         wb = Workbook()
         wb.remove(wb.active)  # Eliminar hoja por defecto
