@@ -5,6 +5,13 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 from flask import Flask, render_template, request, redirect, flash, jsonify
 from flask_mail import Mail, Message
+
+# Cargar variables de entorno desde .env
+from dotenv import load_dotenv
+# Cargar el .env desde la raíz del proyecto (un nivel arriba de mysite)
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+load_dotenv(dotenv_path)
+
 sys.modules.setdefault('main', sys.modules.get('__main__'))
 
 from controladores.controlador_recompensas import otorgar_recompensas

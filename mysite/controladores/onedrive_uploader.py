@@ -17,6 +17,11 @@ CLIENT_ID = os.getenv('ONEDRIVE_CLIENT_ID')
 CLIENT_SECRET = os.getenv('ONEDRIVE_CLIENT_SECRET')
 REDIRECT_URI = os.getenv('ONEDRIVE_REDIRECT_URI', 'http://localhost:5001/onedrive/callback')
 
+# Debug: Verificar que las variables se cargaron
+print(f"🔑 CLIENT_ID cargado: {'✅ Sí' if CLIENT_ID else '❌ No'}")
+print(f"🔐 CLIENT_SECRET cargado: {'✅ Sí' if CLIENT_SECRET else '❌ No'}")
+print(f"🔗 REDIRECT_URI: {REDIRECT_URI}")
+
 # Ruta del archivo de tokens - buscar en la raíz del proyecto
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TOKEN_FILE = os.path.join(BASE_DIR, 'token_onedrive.json')
@@ -242,7 +247,7 @@ class OneDriveUploader:
                 'message': f'Error al subir archivo: {str(e)}'
             }
     
-    def subir_desde_memoria(self, contenido, nombre_archivo, folder_path='DogeHoot'):
+    def subir_desde_memoria(self, contenido, nombre_archivo, folder_path='DogeHoot', max_retries=3):
         """
         Sube un archivo desde memoria (bytes) a OneDrive
         
@@ -250,10 +255,13 @@ class OneDriveUploader:
             contenido (bytes): Contenido del archivo en bytes
             nombre_archivo (str): Nombre del archivo en OneDrive
             folder_path (str): Ruta de la carpeta en OneDrive
+            max_retries (int): Número máximo de reintentos en caso de error 423
             
         Returns:
             dict: Resultado de la subida
         """
+        import time
+        
         if not self.access_token:
             return {
                 'success': False,
@@ -263,42 +271,65 @@ class OneDriveUploader:
         # Construir la ruta del archivo en OneDrive
         upload_path = f"/{folder_path}/{nombre_archivo}" if folder_path else f"/{nombre_archivo}"
         
-        try:
-            url = f'https://graph.microsoft.com/v1.0/me/drive/root:{upload_path}:/content'
-            
-            headers = {
-                'Authorization': f'Bearer {self.access_token}',
-                'Content-Type': 'application/octet-stream'
-            }
-            
-            response = requests.put(url, headers=headers, data=contenido)
-            
-            if response.status_code in [200, 201]:
-                file_data = response.json()
-                return {
-                    'success': True,
-                    'message': f'Archivo subido exitosamente desde memoria: {nombre_archivo}',
-                    'file_id': file_data.get('id'),
-                    'file_name': file_data.get('name'),
-                    'web_url': file_data.get('webUrl'),
-                    'download_url': file_data.get('@microsoft.graph.downloadUrl')
-                }
-            elif response.status_code == 401:
-                # Token expirado, intentar refrescar
-                self._refresh_access_token()
-                # Reintentar la subida
-                return self.subir_desde_memoria(contenido, nombre_archivo, folder_path)
-            else:
-                return {
-                    'success': False,
-                    'message': f'Error al subir archivo: {response.status_code} - {response.text}'
+        for intento in range(max_retries):
+            try:
+                url = f'https://graph.microsoft.com/v1.0/me/drive/root:{upload_path}:/content'
+                
+                headers = {
+                    'Authorization': f'Bearer {self.access_token}',
+                    'Content-Type': 'application/octet-stream'
                 }
                 
-        except Exception as e:
-            return {
-                'success': False,
-                'message': f'Error al subir archivo desde memoria: {str(e)}'
-            }
+                response = requests.put(url, headers=headers, data=contenido)
+                
+                if response.status_code in [200, 201]:
+                    file_data = response.json()
+                    return {
+                        'success': True,
+                        'message': f'Archivo subido exitosamente desde memoria: {nombre_archivo}',
+                        'file_id': file_data.get('id'),
+                        'file_name': file_data.get('name'),
+                        'web_url': file_data.get('webUrl'),
+                        'download_url': file_data.get('@microsoft.graph.downloadUrl')
+                    }
+                elif response.status_code == 401:
+                    # Token expirado, intentar refrescar
+                    self._refresh_access_token()
+                    # Reintentar la subida (no cuenta como reintento)
+                    continue
+                elif response.status_code == 423:
+                    # Recurso bloqueado - esperar y reintentar
+                    if intento < max_retries - 1:
+                        wait_time = (intento + 1) * 2  # Espera incremental: 2s, 4s, 6s
+                        print(f"⚠️  Recurso bloqueado (423). Reintentando en {wait_time}s... (intento {intento + 1}/{max_retries})")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        return {
+                            'success': False,
+                            'message': f'Error: El archivo está bloqueado en OneDrive después de {max_retries} intentos. Intenta con un nombre diferente o espera unos minutos.'
+                        }
+                else:
+                    return {
+                        'success': False,
+                        'message': f'Error al subir archivo: {response.status_code} - {response.text}'
+                    }
+                    
+            except Exception as e:
+                if intento < max_retries - 1:
+                    print(f"⚠️  Error en intento {intento + 1}: {str(e)}. Reintentando...")
+                    time.sleep(2)
+                    continue
+                else:
+                    return {
+                        'success': False,
+                        'message': f'Error al subir archivo desde memoria: {str(e)}'
+                    }
+        
+        return {
+            'success': False,
+            'message': 'No se pudo subir el archivo después de varios intentos.'
+        }
     
     def crear_carpeta(self, nombre_carpeta, parent_path=''):
         """
@@ -357,18 +388,20 @@ class OneDriveUploader:
                 'message': f'Error al crear carpeta: {str(e)}'
             }
     
-    def compartir_archivo(self, file_id, email, role='read', send_notification=True):
+    def compartir_archivo(self, file_id, email, role='read', send_notification=True, file_name='archivo'):
         """
-        Comparte un archivo de OneDrive con un usuario específico
+        Comparte un archivo de OneDrive directamente con un usuario vía OneDrive
+        El usuario recibirá un correo de Microsoft/OneDrive con el archivo compartido
         
         Args:
             file_id (str): ID del archivo en OneDrive
             email (str): Correo electrónico del destinatario
-            role (str): Permisos ('read', 'write', 'owner')
-            send_notification (bool): Enviar notificación por correo
+            role (str): Permisos ('read' o 'write')
+            send_notification (bool): Enviar notificación por correo desde OneDrive
+            file_name (str): Nombre del archivo (usado en el mensaje)
             
         Returns:
-            dict: {'success': bool, 'message': str, 'permission_id': str}
+            dict: {'success': bool, 'message': str, 'share_link': str, 'email_sent': bool}
         """
         if not self.access_token:
             return {
@@ -377,75 +410,68 @@ class OneDriveUploader:
             }
         
         try:
-            # Primero intentamos con createLink (enlace de solo lectura)
-            url = f'https://graph.microsoft.com/v1.0/me/drive/items/{file_id}/createLink'
+            print(f"📤 Compartiendo archivo con {email} vía OneDrive...")
+            
+            # Usar la API de invite para compartir directamente con el usuario
+            invite_url = f'https://graph.microsoft.com/v1.0/me/drive/items/{file_id}/invite'
             
             headers = {
                 'Authorization': f'Bearer {self.access_token}',
                 'Content-Type': 'application/json'
             }
             
-            # Crear un enlace compartido
-            data = {
-                'type': 'view',  # 'view' para solo lectura, 'edit' para edición
-                'scope': 'anonymous'  # Cualquiera con el enlace puede verlo
+            # Datos de la invitación
+            invite_data = {
+                'requireSignIn': False,  # No requiere inicio de sesión
+                'sendInvitation': send_notification,  # OneDrive envía el correo
+                'roles': [role],  # 'read' o 'write'
+                'recipients': [
+                    {
+                        'email': email
+                    }
+                ],
+                'message': f'Te comparto el reporte de DogeHoot: {file_name}'
             }
             
-            response = requests.post(url, headers=headers, json=data)
+            print(f"� Enviando invitación de OneDrive a {email}...")
+            response = requests.post(invite_url, headers=headers, json=invite_data)
             
             if response.status_code in [200, 201]:
-                link_data = response.json()
-                share_link = link_data.get('link', {}).get('webUrl')
+                permission_data = response.json()
+                print(f"✅ Archivo compartido exitosamente con {email} vía OneDrive")
                 
-                # Ahora intentamos invitar al usuario específico
-                invite_url = f'https://graph.microsoft.com/v1.0/me/drive/items/{file_id}/invite'
+                # Obtener el enlace compartido
+                share_link = None
+                if 'value' in permission_data and len(permission_data['value']) > 0:
+                    share_link = permission_data['value'][0].get('link', {}).get('webUrl')
                 
-                invite_data = {
-                    'requireSignIn': False,  # Cambiado a False para evitar problemas de permisos
-                    'sendInvitation': send_notification,
-                    'roles': [role],
-                    'recipients': [
-                        {
-                            'email': email
-                        }
-                    ],
-                    'message': 'Te comparto este reporte de DogeHoot'
+                return {
+                    'success': True,
+                    'message': f'Archivo compartido exitosamente con {email}. OneDrive envió la notificación.',
+                    'shared_with': email,
+                    'share_link': share_link,
+                    'email_sent': send_notification,
+                    'role': role,
+                    'via': 'OneDrive'
                 }
-                
-                invite_response = requests.post(invite_url, headers=headers, json=invite_data)
-                
-                if invite_response.status_code in [200, 201]:
-                    permission_data = invite_response.json()
-                    return {
-                        'success': True,
-                        'message': f'Archivo compartido exitosamente con {email}',
-                        'permission_id': permission_data.get('value', [{}])[0].get('id') if permission_data.get('value') else None,
-                        'shared_with': email,
-                        'share_link': share_link,
-                        'role': role
-                    }
-                else:
-                    # Si falla la invitación, al menos devolvemos el enlace
-                    return {
-                        'success': True,
-                        'message': f'Archivo subido. Se creó un enlace compartido (no se pudo enviar invitación directa a {email})',
-                        'shared_with': email,
-                        'share_link': share_link,
-                        'warning': f'No se pudo enviar invitación: {invite_response.text}'
-                    }
-                    
             elif response.status_code == 401:
                 # Token expirado, intentar refrescar
+                print(f"⚠️  Token expirado, refrescando...")
                 self._refresh_access_token()
                 # Reintentar compartir
-                return self.compartir_archivo(file_id, email, role, send_notification)
+                return self.compartir_archivo(file_id, email, role, send_notification, file_name)
             else:
+                error_message = response.text
+                print(f"❌ Error al compartir: {response.status_code} - {error_message}")
                 return {
                     'success': False,
-                    'message': f'Error al compartir archivo: {response.status_code} - {response.text}'
+                    'message': f'Error al compartir archivo con OneDrive: {response.status_code} - {error_message}'
                 }
                 
         except Exception as e:
+            print(f"❌ Excepción al compartir: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return {
                 'success': False,
                 'message': f'Error al compartir archivo: {str(e)}'
