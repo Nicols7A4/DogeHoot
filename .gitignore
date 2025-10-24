@@ -1,5 +1,7 @@
 
+# Credenciales y tokens de Google
 mysite/token.json
+mysite/token_drive.json
 mysite/old-token.json
 mysite/credentials.json
 mysite/pruebas/token_drive.json

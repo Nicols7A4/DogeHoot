@@ -2,6 +2,17 @@
 SCRIPT DE PRUEBA - Google Drive Uploader
 =========================================
 Prueba la subida de archivos a Google Drive
+Compatible con PC Local y PythonAnywhere
+
+INSTRUCCIONES:
+1. PRIMERA VEZ EN PC LOCAL:
+   - Ejecuta este script
+   - Se abrirá navegador para autenticarte
+   - Se generará token_drive.json
+   
+2. PARA PYTHONANYWHERE:
+   - Sube credentials.json y token_drive.json a /home/usuario/DogeHoot-2/mysite/
+   - Ejecuta este mismo script (detecta automáticamente el entorno)
 
 Autor: DogeHoot Team
 Fecha: 23 de octubre de 2025
@@ -10,10 +21,93 @@ Fecha: 23 de octubre de 2025
 import sys
 import os
 
-# Agregar el directorio padre al path para importar módulos
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# ==================== DETECCIÓN DE ENTORNO ====================
+
+def es_pythonanywhere():
+    """Detecta si estamos ejecutando en PythonAnywhere"""
+    # PythonAnywhere tiene estas variables de entorno
+    return (
+        'PYTHONANYWHERE_SITE' in os.environ or 
+        'PYTHONANYWHERE_DOMAIN' in os.environ or
+        '/home/' in os.path.abspath(__file__)
+    )
+
+def obtener_configuracion():
+    """Obtiene la configuración según el entorno"""
+    if es_pythonanywhere():
+        # Configuración para PythonAnywhere
+        user = os.environ.get('USER', 'tu_usuario')
+        base_dir = f'/home/{user}/DogeHoot-2/mysite'
+        
+        config = {
+            'entorno': 'PythonAnywhere',
+            'icono': '🌐',
+            'base_dir': base_dir,
+            'credentials_file': os.path.join(base_dir, 'credentials.json'),
+            'token_file': os.path.join(base_dir, 'token_drive.json'),
+            'usar_rutas_absolutas': True
+        }
+    else:
+        # Configuración para PC Local
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        
+        config = {
+            'entorno': 'PC Local',
+            'icono': '💻',
+            'base_dir': base_dir,
+            'credentials_file': os.path.join(base_dir, 'credentials.json'),
+            'token_file': os.path.join(base_dir, 'token_drive.json'),
+            'usar_rutas_absolutas': False
+        }
+    
+    return config
+
+# Obtener configuración del entorno
+CONFIG = obtener_configuracion()
+
+# Agregar el directorio base al path
+sys.path.insert(0, CONFIG['base_dir'])
 
 from controladores.google_drive_uploader import GoogleDriveUploader, subir_archivo_rapido
+
+
+# ==================== VERIFICACIÓN DE ARCHIVOS ====================
+
+def verificar_archivos_necesarios():
+    """Verifica que existan credentials.json y token_drive.json"""
+    print(f"\n{CONFIG['icono']} Entorno detectado: {CONFIG['entorno']}")
+    print(f"📂 Directorio base: {CONFIG['base_dir']}\n")
+    
+    archivos_faltantes = []
+    
+    # Verificar credentials.json
+    if os.path.exists(CONFIG['credentials_file']):
+        print(f"✅ credentials.json encontrado")
+    else:
+        print(f"❌ credentials.json NO encontrado en: {CONFIG['credentials_file']}")
+        archivos_faltantes.append('credentials.json')
+    
+    # Verificar token_drive.json
+    if os.path.exists(CONFIG['token_file']):
+        print(f"✅ token_drive.json encontrado")
+    else:
+        print(f"⚠️  token_drive.json NO encontrado en: {CONFIG['token_file']}")
+        if es_pythonanywhere():
+            print(f"   → Debes generarlo en tu PC local primero y subirlo aquí")
+            archivos_faltantes.append('token_drive.json')
+        else:
+            print(f"   → Se generará automáticamente al autenticarte")
+    
+    if archivos_faltantes and es_pythonanywhere():
+        print(f"\n❌ Archivos faltantes: {', '.join(archivos_faltantes)}")
+        print(f"\n📋 Pasos para resolver:")
+        print(f"   1. Ejecuta este script en tu PC local primero")
+        print(f"   2. Sube credentials.json y token_drive.json a PythonAnywhere")
+        print(f"   3. Colócalos en: {CONFIG['base_dir']}/")
+        return False
+    
+    print()
+    return True
 
 
 def probar_subida_basica():
@@ -22,12 +116,17 @@ def probar_subida_basica():
     print("🚀 PRUEBA 1: Subida Básica de Archivo")
     print("="*60)
     
-    # Crear un archivo de prueba
-    archivo_prueba = "test_drive.txt"
+    # Crear un archivo de prueba en ubicación apropiada
+    if CONFIG['usar_rutas_absolutas']:
+        archivo_prueba = os.path.join(CONFIG['base_dir'], 'pruebas', 'test_drive.txt')
+    else:
+        archivo_prueba = "test_drive.txt"
+    
     with open(archivo_prueba, 'w', encoding='utf-8') as f:
-        f.write("¡Hola desde DogeHoot! 🐕\n")
-        f.write("Este es un archivo de prueba para Google Drive\n")
-        f.write("Fecha: 23 de octubre de 2025\n")
+        f.write(f"¡Hola desde DogeHoot! 🐕\n")
+        f.write(f"Este es un archivo de prueba para Google Drive\n")
+        f.write(f"Entorno: {CONFIG['entorno']}\n")
+        f.write(f"Fecha: 23 de octubre de 2025\n")
     
     print(f"📄 Archivo de prueba creado: {archivo_prueba}")
     
@@ -36,7 +135,7 @@ def probar_subida_basica():
         resultado = subir_archivo_rapido(
             ruta_archivo=archivo_prueba,
             nombre_drive="DogeHoot_Test.txt",
-            credentials_file='../credentials.json'
+            credentials_file=CONFIG['credentials_file']
         )
         
         if resultado['success']:
@@ -53,6 +152,8 @@ def probar_subida_basica():
             
     except Exception as e:
         print(f"❌ EXCEPCIÓN: {str(e)}")
+        import traceback
+        traceback.print_exc()
     
     print("="*60 + "\n")
 
@@ -82,12 +183,21 @@ def probar_subida_excel():
         ws['B3'] = "Jugador 2"
         ws['C3'] = 85
         
-        archivo_excel = "reporte_prueba_dogehoot.xlsx"
+        # Guardar en ubicación apropiada
+        if CONFIG['usar_rutas_absolutas']:
+            archivo_excel = os.path.join(CONFIG['base_dir'], 'pruebas', 'reporte_prueba_dogehoot.xlsx')
+        else:
+            archivo_excel = "reporte_prueba_dogehoot.xlsx"
+        
         wb.save(archivo_excel)
         print(f"📊 Archivo Excel creado: {archivo_excel}")
         
         # Subir a Drive
-        uploader = GoogleDriveUploader(credentials_file='../credentials.json')
+        uploader = GoogleDriveUploader(
+            credentials_file=CONFIG['credentials_file'],
+            token_file=CONFIG['token_file']
+        )
+        
         resultado = uploader.subir_archivo(
             ruta_archivo=archivo_excel,
             nombre_drive="DogeHoot_Reporte_Prueba.xlsx"
@@ -109,6 +219,8 @@ def probar_subida_excel():
         print("❌ ERROR: Instala openpyxl con: pip install openpyxl")
     except Exception as e:
         print(f"❌ EXCEPCIÓN: {str(e)}")
+        import traceback
+        traceback.print_exc()
     
     print("="*60 + "\n")
 
@@ -120,7 +232,10 @@ def probar_crear_carpeta():
     print("="*60)
     
     try:
-        uploader = GoogleDriveUploader(credentials_file='../credentials.json')
+        uploader = GoogleDriveUploader(
+            credentials_file=CONFIG['credentials_file'],
+            token_file=CONFIG['token_file']
+        )
         resultado = uploader.crear_carpeta("DogeHoot Reportes")
         
         if resultado['success']:
@@ -135,6 +250,8 @@ def probar_crear_carpeta():
             
     except Exception as e:
         print(f"❌ EXCEPCIÓN: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
     
     print("="*60 + "\n")
@@ -147,7 +264,10 @@ def probar_listar_archivos():
     print("="*60)
     
     try:
-        uploader = GoogleDriveUploader(credentials_file='../credentials.json')
+        uploader = GoogleDriveUploader(
+            credentials_file=CONFIG['credentials_file'],
+            token_file=CONFIG['token_file']
+        )
         resultado = uploader.listar_archivos(max_resultados=5)
         
         if resultado['success']:
@@ -167,6 +287,8 @@ def probar_listar_archivos():
             
     except Exception as e:
         print(f"❌ EXCEPCIÓN: {str(e)}")
+        import traceback
+        traceback.print_exc()
     
     print("="*60 + "\n")
 
@@ -210,10 +332,23 @@ def menu_principal():
 
 
 if __name__ == "__main__":
-    print("\n🎮 IMPORTANTE:")
-    print("   1. Asegúrate de tener credentials.json en la carpeta mysite/")
-    print("   2. La primera vez se abrirá un navegador para autenticarte")
-    print("   3. Se creará un archivo token_drive.json con tus credenciales")
+    # Verificar archivos necesarios antes de empezar
+    if not verificar_archivos_necesarios():
+        print("\n⚠️  No se puede continuar sin los archivos necesarios")
+        exit(1)
+    
+    print(f"\n{CONFIG['icono']} DOGEHOOT - PRUEBA DE GOOGLE DRIVE UPLOADER")
+    print(f"🌍 Entorno: {CONFIG['entorno']}")
+    
+    if es_pythonanywhere():
+        print("\n✅ Ejecutando en PythonAnywhere")
+        print("   → Los tokens ya deben estar configurados")
+    else:
+        print("\n💻 Ejecutando en PC Local")
+        print("   → La primera vez se abrirá un navegador para autenticarte")
+        print("   → Se creará token_drive.json automáticamente")
+        print("   → ¡Recuerda subir token_drive.json a PythonAnywhere después!")
+    
     print()
     
     continuar = True

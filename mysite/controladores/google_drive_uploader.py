@@ -32,9 +32,15 @@ class GoogleDriveUploader:
         """
         Inicializa el uploader de Google Drive
         
+        IMPORTANTE PARA PYTHONANYWHERE:
+        - Ejecuta este script EN TU PC LOCAL primero para generar token_drive.json
+        - Luego sube credentials.json y token_drive.json a PythonAnywhere
+        - Usa rutas ABSOLUTAS en PythonAnywhere, ejemplo:
+          '/home/usuario/DogeHoot-2/mysite/credentials.json'
+        
         Args:
             credentials_file (str): Ruta al archivo credentials.json
-            token_file (str): Ruta al archivo token.json para Drive
+            token_file (str): Ruta al archivo token_drive.json
         """
         self.credentials_file = credentials_file
         self.token_file = token_file
