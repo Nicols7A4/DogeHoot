@@ -5,103 +5,385 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reporte de Partida</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <style>
+        /* ===================== */
+        /* Variables             */
+        /* ===================== */
+        :root {
+            --btn-pending-bg: #FFECD1;
+            --btn-pending-text: #F77F00;
+            --btn-inprogress-bg: #E6F2FF;
+            --btn-inprogress-text: #1E88E5;
+            --btn-submitted-bg: #F1E8FF;
+            --btn-submitted-text: #8E5CF6;
+            --btn-success-bg: #E8F9E9;
+            --btn-success-text: #2BB673;
+            --btn-failed-bg: #FFE6E6;
+            --btn-failed-text: #E53935;
+            --btn-expired-bg: #F5F5F5;
+            --btn-expired-text: #9E9E9E;
+            --main-bg: #FFF9ED;
+            --panel-bg: #FFFFFF;
+            --border-soft: #E0E0E0;
+            --text-color: #333333;
+            --text-muted: #6c757d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ===================== */
+        /* Layout Base           */
+        /* ===================== */
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Poppins', sans-serif;
+            background: var(--main-bg);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ===================== */
+        /* Header                */
+        /* ===================== */
+        .page-header {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 2px solid var(--border-soft);
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        #header-info {
+            background: var(--btn-inprogress-bg);
+            border: 2px solid var(--btn-inprogress-text);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        #header-info p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        #header-info strong {
+            color: var(--btn-inprogress-text);
+        }
+
+        /* ===================== */
+        /* Loading               */
+        /* ===================== */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--btn-inprogress-text);
+        }
+
+        /* ===================== */
+        /* Buttons               */
+        /* ===================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border: none;
+            border-radius: 8px;
+            padding: 0.875rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+            position: relative;
+            top: 0;
+            font-family: 'Poppins', sans-serif;
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn:hover:not(:disabled) {
+            top: 2px;
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active:not(:disabled) {
+            top: 4px;
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-back {
+            background: var(--btn-expired-bg);
+            color: var(--text-color);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-excel {
+            background: var(--btn-success-text);
+        }
+
+        .btn-onedrive {
+            background: var(--btn-inprogress-text);
+        }
+
+        .btn-drive {
+            background: var(--btn-failed-text);
+        }
+
+        /* ===================== */
+        /* Sections              */
+        /* ===================== */
+        .section {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 2px solid var(--border-soft);
+        }
+
+        .section h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #resumen-global p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+            line-height: 1.8;
+        }
+
+        /* ===================== */
+        /* Tables                */
+        /* ===================== */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1rem;
         }
 
         table {
             border-collapse: collapse;
             width: 100%;
-            margin: 20px 0;
+            min-width: 600px;
         }
 
         th,
         td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            padding: 0.875rem;
             text-align: left;
+            border-bottom: 1px solid var(--border-soft);
         }
 
         th {
-            background-color: #926a36;
+            background: var(--btn-submitted-text);
             color: white;
+            font-weight: 800;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
-        .section {
-            margin: 30px 0;
+        tbody tr {
+            transition: background-color 0.2s ease;
         }
 
-        .btn {
-            padding: 10px 20px;
-            background-color: #926936;
-            color: white;
-            border: none;
-            cursor: pointer;
-            margin: 10px 5px;
+        tbody tr:hover {
+            background: var(--btn-submitted-bg);
         }
 
-        .btn:hover {
-            background-color: #6f3c2a;
+        td {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-color);
         }
 
-        .loading {
-            display: none;
-            color: #366092;
-            font-weight: bold;
+        /* Destacar primera fila (1er lugar) */
+        tbody tr:first-child {
+            background: linear-gradient(135deg, #FFE082, #FFD54F);
+        }
+
+        tbody tr:first-child:hover {
+            background: linear-gradient(135deg, #FFD54F, #FFC107);
+        }
+
+        /* ===================== */
+        /* Media Queries         */
+        /* ===================== */
+
+        /* Tablets (768px+) */
+        @media (min-width: 768px) {
+            body {
+                padding: 2rem;
+            }
+
+            .page-header {
+                padding: 2rem;
+            }
+
+            .page-header h1 {
+                font-size: 2rem;
+            }
+
+            .header-actions {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                width: auto;
+                min-width: 200px;
+            }
+
+            .section {
+                padding: 2rem;
+            }
+
+            .section h2 {
+                font-size: 1.5rem;
+            }
+
+            th,
+            td {
+                padding: 1rem;
+            }
+
+            th {
+                font-size: 0.9rem;
+            }
+
+            td {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Desktop (1024px+) */
+        @media (min-width: 1024px) {
+            .page-header h1 {
+                font-size: 2.25rem;
+            }
+
+            .section h2 {
+                font-size: 1.75rem;
+            }
+
+            #header-info p,
+            #resumen-global p {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
 
 <body>
-    <h1>Reporte de Partida</h1>
-    <div class="loading" id="loading">Cargando datos...</div>
+    <div class="container">
+        <div class="page-header">
+            <h1>Reporte de Partida</h1>
 
-    <div id="header-info"></div>
+            <div class="loading" id="loading">Cargando datos...</div>
 
-    <button class="btn" onclick="exportarExcel()">Descargar Excel Completo</button>
-    <button class="btn" onclick="exportarOneDrive()">Exportar a OneDrive</button>
-    <button class="btn" onclick="exportarDrive()">Exportar a Drive</button>
+            <div id="header-info"></div>
 
-    <div class="section">
-        <h2>Resumen Global</h2>
-        <div id="resumen-global"></div>
-    </div>
+            <div class="header-actions">
+                <button class="btn btn-back" onclick="window.history.back()">Volver</button>
+                <button class="btn btn-excel" onclick="exportarExcel()">Descargar Excel</button>
+                <button class="btn btn-onedrive" onclick="exportarOneDrive()">Exportar a OneDrive</button>
+                <button class="btn btn-drive" onclick="exportarDrive()">Exportar a Drive</button>
+            </div>
+        </div>
 
-    <div class="section">
-        <h2>Ranking Final</h2>
-        <table id="tabla-ranking">
-            <thead>
-                <tr>
-                    <th>Posición</th>
-                    <th>Usuario/Grupo</th>
-                    <th>Puntaje Total</th>
-                    <th>Correctas</th>
-                    <th>Incorrectas</th>
-                    <th>% Acierto</th>
-                    <th>Tiempo Prom (s)</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
+        <div class="section">
+            <h2>Resumen Global</h2>
+            <div id="resumen-global"></div>
+        </div>
 
-    <div class="section">
-        <h2>Detalle por Pregunta</h2>
-        <table id="tabla-preguntas">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Pregunta</th>
-                    <th>Opción Correcta</th>
-                    <th>% Acierto</th>
-                    <th>Tiempo Prom (s)</th>
-                    <th>Respuestas</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div class="section">
+            <h2>Ranking Final</h2>
+            <div class="table-container">
+                <table id="tabla-ranking">
+                    <thead>
+                        <tr>
+                            <th>Posicion</th>
+                            <th>Usuario/Grupo</th>
+                            <th>Puntaje Total</th>
+                            <th>Correctas</th>
+                            <th>Incorrectas</th>
+                            <th>% Acierto</th>
+                            <th>Tiempo Prom (s)</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Detalle por Pregunta</h2>
+            <div class="table-container">
+                <table id="tabla-preguntas">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Pregunta</th>
+                            <th>Opcion Correcta</th>
+                            <th>% Acierto</th>
+                            <th>Tiempo Prom (s)</th>
+                            <th>Respuestas</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -109,7 +391,7 @@
 
         async function cargarReporte() {
             if (!PARTIDA_ID) {
-                alert('No se proporcionó un id_partida válido.');
+                alert('No se proporciono un id_partida valido.');
                 return;
             }
             document.getElementById('loading').style.display = 'block';
@@ -191,7 +473,7 @@
 
         function exportarExcel() {
             if (!PARTIDA_ID) {
-                alert('No se proporcionó un id_partida válido.');
+                alert('No se proporciono un id_partida valido.');
                 return;
             }
             window.location.href = `/api/report/partida/export?id_partida=${encodeURIComponent(PARTIDA_ID)}`;
@@ -201,48 +483,44 @@
             const btn = event.target;
             const textoOriginal = btn.textContent;
 
-            // Pedir el correo del destinatario
-            const correo = prompt('📧 Ingresa el correo con quien deseas compartir el reporte:\n\n(El archivo se subirá a OneDrive y se compartirá automáticamente con este correo)');
+            const correo = prompt('Ingresa el correo con quien deseas compartir el reporte:\n\n(El archivo se subira a OneDrive y se compartira automaticamente con este correo)');
 
             if (!correo || correo.trim() === '') {
-                alert('⚠️ Operación cancelada. Debes ingresar un correo electrónico válido');
+                alert('Operacion cancelada. Debes ingresar un correo electronico valido');
                 return;
             }
 
-            // Validación básica de correo
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(correo.trim())) {
-                alert('⚠️ El correo electrónico no tiene un formato válido');
+                alert('El correo electronico no tiene un formato valido');
                 return;
             }
 
             try {
                 btn.disabled = true;
-                btn.textContent = '📤 Subiendo a OneDrive...';
+                btn.textContent = 'Subiendo a OneDrive...';
 
                 const response = await fetch(`/api/report/partida/export-onedrive?id_partida=${PARTIDA_ID}&email=${encodeURIComponent(correo.trim())}`);
                 const result = await response.json();
 
                 if (result.ok) {
-                    let mensaje = `✅ ${result.msg}\n\n📄 Archivo: ${result.file_name}\n📧 Compartido con: ${result.shared_with || correo}`;
+                    let mensaje = `${result.msg}\n\nArchivo: ${result.file_name}\nCompartido con: ${result.shared_with || correo}`;
 
                     if (result.warning) {
-                        mensaje += `\n\n⚠️ Advertencia: ${result.warning}`;
+                        mensaje += `\n\nAdvertencia: ${result.warning}`;
                     }
 
-                    mensaje += `\n\n🔗 El archivo se abrirá en una nueva pestaña`;
+                    mensaje += `\n\nEl archivo se abrira en una nueva pestana`;
 
                     alert(mensaje);
-
-                    // Abrir el archivo en OneDrive
                     window.open(result.web_url, '_blank');
                 } else {
-                    alert(`❌ Error: ${result.msg}`);
+                    alert(`Error: ${result.msg}`);
                 }
 
             } catch (error) {
                 console.error('Error:', error);
-                alert('❌ Error al subir a OneDrive: ' + error.message);
+                alert('Error al subir a OneDrive: ' + error.message);
             } finally {
                 btn.disabled = false;
                 btn.textContent = textoOriginal;
@@ -253,55 +531,50 @@
             const btn = event.target;
             const textoOriginal = btn.textContent;
 
-            // Pedir el correo del destinatario
-            const correo = prompt('📧 Ingresa el correo de Gmail con quien deseas compartir el reporte:\n\n(El archivo se subirá a Google Drive y se compartirá automáticamente con este correo)');
+            const correo = prompt('Ingresa el correo de Gmail con quien deseas compartir el reporte:\n\n(El archivo se subira a Google Drive y se compartira automaticamente con este correo)');
 
             if (!correo || correo.trim() === '') {
-                alert('⚠️ Operación cancelada. Debes ingresar un correo electrónico válido');
+                alert('Operacion cancelada. Debes ingresar un correo electronico valido');
                 return;
             }
 
-            // Validación básica de correo
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(correo.trim())) {
-                alert('⚠️ El correo electrónico no tiene un formato válido');
+                alert('El correo electronico no tiene un formato valido');
                 return;
             }
 
             try {
                 btn.disabled = true;
-                btn.textContent = '📤 Subiendo a Drive...';
+                btn.textContent = 'Subiendo a Drive...';
 
                 const response = await fetch(`/api/report/partida/export-drive?id_partida=${PARTIDA_ID}&email=${encodeURIComponent(correo.trim())}`);
                 const result = await response.json();
 
                 if (result.ok) {
-                    let mensaje = `✅ ${result.msg}\n\n📄 Archivo: ${result.file_name}\n📧 Compartido con: ${result.shared_with || correo}`;
+                    let mensaje = `${result.msg}\n\nArchivo: ${result.file_name}\nCompartido con: ${result.shared_with || correo}`;
 
                     if (result.warning) {
-                        mensaje += `\n\n⚠️ Advertencia: ${result.warning}`;
+                        mensaje += `\n\nAdvertencia: ${result.warning}`;
                     }
 
-                    mensaje += `\n\n🔗 El archivo se abrirá en una nueva pestaña`;
+                    mensaje += `\n\nEl archivo se abrira en una nueva pestana`;
 
                     alert(mensaje);
-
-                    // Abrir el archivo en Drive
                     window.open(result.web_view_link, '_blank');
                 } else {
-                    alert(`❌ Error: ${result.msg}`);
+                    alert(`Error: ${result.msg}`);
                 }
 
             } catch (error) {
                 console.error('Error:', error);
-                alert('❌ Error al subir a Google Drive: ' + error.message);
+                alert('Error al subir a Google Drive: ' + error.message);
             } finally {
                 btn.disabled = false;
                 btn.textContent = textoOriginal;
             }
         }
 
-        // Cargar datos al inicio
         cargarReporte();
     </script>
 </body>
