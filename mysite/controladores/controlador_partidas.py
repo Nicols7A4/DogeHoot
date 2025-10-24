@@ -340,36 +340,49 @@ def _get_resumen_global(id_partida):
     """
     cx = obtener_conexion()
     try:
-        with cx.cursor() as c:
+        with cx.cursor(pymysql.cursors.DictCursor) as c:
             # participantes totales (en tabla PARTICIPANTE)
-            c.execute("SELECT COUNT(*) FROM PARTICIPANTE WHERE id_partida=%s", (id_partida,))
-            total_participantes = c.fetchone()[0]
+            c.execute(
+                "SELECT COUNT(*) AS total FROM PARTICIPANTE WHERE id_partida=%s",
+                (id_partida,),
+            )
+            total_participantes = c.fetchone()["total"]
 
             # preguntas distintas que recibieron respuesta
-            c.execute("""
-                SELECT COUNT(DISTINCT id_pregunta)
+            c.execute(
+                """
+                SELECT COUNT(DISTINCT id_pregunta) AS total
                     FROM RESPUESTA_PARTICIPANTE
                     WHERE id_partida=%s
-            """, (id_partida,))
-            preguntas_distintas = c.fetchone()[0]
+            """,
+                (id_partida,),
+            )
+            preguntas_distintas = c.fetchone()["total"]
 
             # respuestas totales
-            c.execute("""
-                SELECT COUNT(*)
+            c.execute(
+                """
+                SELECT COUNT(*) AS total
                     FROM RESPUESTA_PARTICIPANTE
                     WHERE id_partida=%s
-            """, (id_partida,))
-            respuestas_totales = c.fetchone()[0]
+            """,
+                (id_partida,),
+            )
+            respuestas_totales = c.fetchone()["total"]
 
             # acierto global y tiempo promedio
-            c.execute("""
-                SELECT AVG(es_correcta+0), AVG(TIME_TO_SEC(tiempo_respuesta))
+            c.execute(
+                """
+                SELECT AVG(es_correcta+0) AS acierto_prom,
+                       AVG(TIME_TO_SEC(tiempo_respuesta)) AS tiempo_prom
                     FROM RESPUESTA_PARTICIPANTE
                     WHERE id_partida=%s
-            """, (id_partida,))
+            """,
+                (id_partida,),
+            )
             row = c.fetchone()
-            acierto_global = float(row[0] or 0.0)  # 0..1
-            tiempo_prom_seg = float(row[1] or 0.0)
+            acierto_global = float(row["acierto_prom"] or 0.0)  # 0..1
+            tiempo_prom_seg = float(row["tiempo_prom"] or 0.0)
 
         return {
             "total_participantes": total_participantes,
