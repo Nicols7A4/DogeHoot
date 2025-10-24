@@ -1,9 +1,15 @@
-from flask import jsonify, request, url_for, session
+from flask import jsonify, request, url_for, session, Response, send_file
 import traceback
 import os
 import time
 from main import app
 from werkzeug.utils import secure_filename
+import csv          #usado para los reportes
+import io           #usado para los reportes
+import pymysql
+
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
 
 from bd import obtener_conexion
 from controladores import cuestionarios as cc
@@ -855,3 +861,214 @@ def api_solicitar_restablecimiento():
 
     return jsonify({"mensaje": "Si tu correo está en nuestro sistema, recibirás un enlace para restablecer tu contraseña."}), 200
 # --- FIN: NUEVO ENDPOINT ---
+
+# ---------------------------------- AGREGADO POR PAME - Reportes
+# --- GAME: submit answer ---
+@app.route("/api/game/submit", methods=["POST"])
+def api_game_submit():
+    try:
+        data = request.get_json() or {}
+        pin = data.get("pin")
+        id_opcion = data.get("id_opcion")
+        tiempo_restante = data.get("tiempo_restante")  # segundos restantes (int)
+
+        if not pin or not id_opcion:
+            return jsonify({"ok": False, "msg": "Faltan pin o id_opcion"}), 400
+
+        from ajax_game import submit_answer
+        ok = submit_answer(pin, id_opcion, tiempo_restante)
+        return jsonify({"ok": bool(ok)})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "msg": str(e)}), 500
+
+# ---------- REPORTES JSON ----------
+@app.route("/api/report/partida", methods=["GET"])
+def api_report_partida():
+    """
+    Uso:
+        /api/report/partida?pin=AB12CD
+    ó  /api/report/partida?id_partida=123
+    Devuelve JSON con header, resumen, preguntas, participantes.
+    """
+    try:
+        pin = request.args.get("pin")
+        id_partida = request.args.get("id_partida", type=int)
+
+        if not pin and not id_partida:
+            return jsonify({"ok": False, "msg": "Proporcione pin o id_partida"}), 400
+
+        from controladores import controlador_partidas as c_part
+
+        if pin:
+            data = c_part.reporte_por_pin(pin)
+        else:
+            data = c_part.reporte_por_partida_id(id_partida)
+
+        if not data:
+            return jsonify({"ok": False, "msg": "Partida no encontrada"}), 404
+
+        return jsonify({"ok": True, "data": data})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "msg": str(e)}), 500
+
+
+# ---------- REPORTES CSV (descarga) ----------
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
+from flask import send_file
+import io
+
+@app.route("/api/report/partida/export", methods=["GET"])
+def api_report_partida_export():
+    """
+    Exporta Excel con múltiples hojas: Resumen, Detalle por participante, Detalle por pregunta
+    Uso: /api/report/partida/export?pin=AB12CD o /api/report/partida/export?id_partida=123
+    """
+    try:
+        pin = request.args.get("pin")
+        id_partida = request.args.get("id_partida", type=int)
+
+        from controladores import controlador_partidas as c_part
+        
+        # Obtener datos completos del reporte
+        if pin:
+            data = c_part.reporte_por_pin(pin)
+        elif id_partida:
+            data = c_part.reporte_por_partida_id(id_partida)
+        else:
+            return jsonify({"ok": False, "msg": "Proporcione pin o id_partida"}), 400
+
+        if not data:
+            return jsonify({"ok": False, "msg": "Partida no encontrada"}), 404
+
+        # Crear libro Excel
+        wb = Workbook()
+        wb.remove(wb.active)  # Eliminar hoja por defecto
+
+        # --- HOJA 1: RESUMEN (Ranking Final) ---
+        ws_resumen = wb.create_sheet("Resumen")
+        ws_resumen.append(["Posición", "Usuario/Grupo", "PuntajeTotal", "RespuestasCorrectas", 
+                          "RespuestasIncorrectas", "%Acierto", "TiempoPromedioResp (s)"])
+        
+        # Estilo para encabezados
+        for cell in ws_resumen[1]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        
+        # Llenar datos del ranking
+        for idx, part in enumerate(data['participantes'], start=1):
+            total_resp = int(part['correctas']) + int(part['incorrectas'])
+            pct_acierto = round((int(part['correctas']) / total_resp * 100), 2) if total_resp > 0 else 0
+            ws_resumen.append([
+                idx,
+                part['nombre'],
+                int(part['puntaje_total']),
+                int(part['correctas']),
+                int(part['incorrectas']),
+                pct_acierto,
+                round(float(part['tiempo_prom_seg'] or 0), 2)
+            ])
+
+        # --- HOJA 2: DETALLE POR PARTICIPANTE ---
+        ws_detalle_part = wb.create_sheet("Detalle por participante")
+        ws_detalle_part.append(["Usuario", "Grupo(opc)", "PreguntaN", "Correcta(0/1)", 
+                                "TiempoRestante", "PuntosOtorgados", "PuntajeAcumulado"])
+        
+        for cell in ws_detalle_part[1]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+
+        # Obtener respuestas detalladas por participante
+        cx = obtener_conexion()
+        try:
+            with cx.cursor(pymysql.cursors.DictCursor) as c:
+                c.execute("""
+                    SELECT pa.nombre, pa.id_grupo, rp.id_pregunta, rp.es_correcta,
+                           TIME_TO_SEC(rp.tiempo_respuesta) AS tiempo_seg, rp.puntaje,
+                           (SELECT SUM(rp2.puntaje) 
+                            FROM RESPUESTA_PARTICIPANTE rp2 
+                            WHERE rp2.id_participante = rp.id_participante 
+                            AND rp2.id_respuesta <= rp.id_respuesta) AS puntaje_acum
+                    FROM RESPUESTA_PARTICIPANTE rp
+                    JOIN PARTICIPANTE pa ON pa.id_participante = rp.id_participante
+                    WHERE rp.id_partida=%s
+                    ORDER BY pa.nombre, rp.id_pregunta
+                """, (id_partida if id_partida else data['header']['id_partida'],))
+                rows_part = c.fetchall()
+                
+                for r in rows_part:
+                    ws_detalle_part.append([
+                        r['nombre'],
+                        r['id_grupo'] or "",
+                        r['id_pregunta'],
+                        int(r['es_correcta']),
+                        int(r['tiempo_seg'] or 0),
+                        int(r['puntaje']),
+                        int(r['puntaje_acum'] or 0)
+                    ])
+        finally:
+            cx.close()
+
+        # --- HOJA 3: DETALLE POR PREGUNTA ---
+        ws_detalle_preg = wb.create_sheet("Detalle por pregunta")
+        ws_detalle_preg.append(["#Pregunta", "TextoPregunta", "Opción", "EsCorrecta(0/1)", 
+                               "RespuestasRecibidas", "Aciertos", "%Aciertos", "TiempoPromedioRestante"])
+        
+        for cell in ws_detalle_preg[1]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+
+        # Obtener detalle de opciones por pregunta
+        cx = obtener_conexion()
+        try:
+            with cx.cursor(pymysql.cursors.DictCursor) as c:
+                c.execute("""
+                    SELECT rp.id_pregunta, 
+                           MIN(rp.pregunta_texto) AS pregunta_texto,
+                           rp.opcion_texto,
+                           MAX(rp.es_correcta) AS es_correcta,
+                           COUNT(*) AS respuestas_recibidas,
+                           SUM(rp.es_correcta) AS aciertos,
+                           ROUND(AVG(TIME_TO_SEC(rp.tiempo_respuesta)), 2) AS tiempo_prom
+                    FROM RESPUESTA_PARTICIPANTE rp
+                    WHERE rp.id_partida=%s
+                    GROUP BY rp.id_pregunta, rp.opcion_texto
+                    ORDER BY rp.id_pregunta, rp.opcion_texto
+                """, (id_partida if id_partida else data['header']['id_partida'],))
+                rows_preg = c.fetchall()
+                
+                for r in rows_preg:
+                    pct_aciertos = round((int(r['aciertos']) / int(r['respuestas_recibidas']) * 100), 2) if r['respuestas_recibidas'] > 0 else 0
+                    ws_detalle_preg.append([
+                        r['id_pregunta'],
+                        r['pregunta_texto'],
+                        r['opcion_texto'],
+                        int(r['es_correcta']),
+                        int(r['respuestas_recibidas']),
+                        int(r['aciertos']),
+                        pct_aciertos,
+                        float(r['tiempo_prom'] or 0)
+                    ])
+        finally:
+            cx.close()
+
+        # Guardar en memoria
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        filename = f"reporte_partida_{pin if pin else id_partida}.xlsx"
+        
+        return send_file(
+            output,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "msg": str(e)}), 500
+

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Partida</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #366092; color: white; }
+        .section { margin: 30px 0; }
+        .btn { padding: 10px 20px; background-color: #366092; color: white; 
+               border: none; cursor: pointer; margin: 10px 5px; }
+        .btn:hover { background-color: #2a4a6f; }
+        .loading { display: none; color: #366092; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Partida</h1>
+    <div class="loading" id="loading">Cargando datos...</div>
+    
+    <div id="header-info"></div>
+    
+    <button class="btn" onclick="exportarExcel()">Descargar Excel Completo</button>
+    
+    <div class="section">
+        <h2>Resumen Global</h2>
+        <div id="resumen-global"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Ranking Final</h2>
+        <table id="tabla-ranking">
+            <thead>
+                <tr>
+                    <th>Posición</th>
+                    <th>Usuario/Grupo</th>
+                    <th>Puntaje Total</th>
+                    <th>Correctas</th>
+                    <th>Incorrectas</th>
+                    <th>% Acierto</th>
+                    <th>Tiempo Prom (s)</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <div class="section">
+        <h2>Detalle por Pregunta</h2>
+        <table id="tabla-preguntas">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Pregunta</th>
+                    <th>Opción Correcta</th>
+                    <th>% Acierto</th>
+                    <th>Tiempo Prom (s)</th>
+                    <th>Respuestas</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        const PIN = "{{ pin }}";
+        
+        async function cargarReporte() {
+            document.getElementById('loading').style.display = 'block';
+            
+            try {
+                const response = await fetch(`/api/report/partida?pin=${PIN}`);
+                const result = await response.json();
+                
+                if (!result.ok) {
+                    alert('Error: ' + result.msg);
+                    return;
+                }
+                
+                const data = result.data;
+                mostrarDatos(data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar el reporte');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        function mostrarDatos(data) {
+            // Header
+            const header = data.header;
+            document.getElementById('header-info').innerHTML = `
+                <p><strong>PIN:</strong> ${header.pin} | 
+                   <strong>Cuestionario:</strong> ${header.cuestionario_titulo} | 
+                   <strong>Estado:</strong> ${header.estado}</p>
+            `;
+            
+            // Resumen global
+            const resumen = data.resumen;
+            document.getElementById('resumen-global').innerHTML = `
+                <p>Participantes: ${resumen.total_participantes} | 
+                   Preguntas: ${resumen.preguntas_distintas} | 
+                   Respuestas totales: ${resumen.respuestas_totales} | 
+                   Acierto global: ${resumen.acierto_global}% | 
+                   Tiempo promedio: ${resumen.tiempo_promedio_seg}s</p>
+            `;
+            
+            // Ranking
+            const tbodyRanking = document.querySelector('#tabla-ranking tbody');
+            tbodyRanking.innerHTML = '';
+            data.participantes.forEach((p, idx) => {
+                const total = parseInt(p.correctas) + parseInt(p.incorrectas);
+                const pct = total > 0 ? ((p.correctas / total) * 100).toFixed(2) : 0;
+                tbodyRanking.innerHTML += `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${p.nombre}</td>
+                        <td>${p.puntaje_total}</td>
+                        <td>${p.correctas}</td>
+                        <td>${p.incorrectas}</td>
+                        <td>${pct}%</td>
+                        <td>${parseFloat(p.tiempo_prom_seg || 0).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            // Preguntas
+            const tbodyPreguntas = document.querySelector('#tabla-preguntas tbody');
+            tbodyPreguntas.innerHTML = '';
+            data.preguntas.forEach(preg => {
+                tbodyPreguntas.innerHTML += `
+                    <tr>
+                        <td>${preg.id_pregunta}</td>
+                        <td>${preg.pregunta_texto}</td>
+                        <td>${preg.opcion_correcta || 'N/A'}</td>
+                        <td>${preg.porcentaje_acierto}%</td>
+                        <td>${preg.tiempo_promedio_seg}</td>
+                        <td>${preg.respuestas}</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        function exportarExcel() {
+            window.location.href = `/api/report/partida/export?pin=${PIN}`;
+        }
+        
+        // Cargar datos al inicio
+        cargarReporte();
+    </script>
+</body>
+</html>

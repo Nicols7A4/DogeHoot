@@ -1191,7 +1191,10 @@
                 `;
             });
             rankingDiv.innerHTML += '</div>';
-            extraDiv.innerHTML = `<a href="{{ url_for('cuestionarios') }}" class="btn btn-primary">Volver a mis cuestionarios</a>`;
+            extraDiv.innerHTML = `
+                                <a href="{{ url_for('cuestionarios') }}" class="btn btn-primary">Volver a mis cuestionarios</a>
+                                <a href="/reportes/partida/{{ pin }}" class="btn btn-secondary" style="margin-left:10px;">Ver Reporte</a>
+                                `; <!-- Para reportes - Agregado por Pame-->
         }
 
         function startGamePolling() {
