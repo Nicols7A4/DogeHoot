@@ -27,7 +27,7 @@ def obtener_conexion():
         host='127.0.0.1',
         user='root',
         password='',
-        db='daw_db_dogehoot_pame',
+        db='dogehoot',
         cursorclass=pymysql.cursors.DictCursor
     )    
     
