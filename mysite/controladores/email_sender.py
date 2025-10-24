@@ -212,4 +212,61 @@ def enviar_correo_restablecimiento(destinatario, url_restablecimiento):
     """
     # Llama a la función genérica que ya tienes para hacer el envío
     return _enviar_correo(destinatario, asunto, cuerpo)
+
+
+def enviar_correo_con_link_onedrive(email_destinatario, nombre_archivo, link_onedrive):
+    """
+    Prepara y envía el correo con el enlace de descarga de OneDrive.
+    
+    Args:
+        email_destinatario (str): Correo del destinatario
+        nombre_archivo (str): Nombre del archivo compartido
+        link_onedrive (str): URL del archivo en OneDrive
+        
+    Returns:
+        dict: {'success': bool, 'message': str}
+    """
+    print(f"📧 Intentando enviar correo a: {email_destinatario}")
+    print(f"📄 Archivo: {nombre_archivo}")
+    print(f"🔗 Link: {link_onedrive}")
+    
+    asunto = f"📊 Reporte DogeHoot - {nombre_archivo}"
+    cuerpo = f"""
+    <body>
+        <div class="container">
+            <h2>🐕 Tu Reporte está Listo!</h2>
+            <p>Hola! Tu reporte de DogeHoot ha sido generado exitosamente y está disponible para descargar.</p>
+            <p><strong>Archivo:</strong> {nombre_archivo}</p>
+            <a href="{link_onedrive}" class="btn-email" target="_blank">📥 Descargar Reporte</a>
+            <hr>
+            <p class="footer-text">Este enlace te permite ver y descargar el archivo desde OneDrive.</p>
+            <p class="footer-text">Si no solicitaste este reporte, puedes ignorar este correo.</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    try:
+        success, message = _enviar_correo(email_destinatario, asunto, cuerpo)
+        
+        if success:
+            print(f"✅ Correo enviado exitosamente a {email_destinatario}")
+        else:
+            print(f"❌ Error al enviar correo: {message}")
+        
+        return {
+            'success': success,
+            'message': message,
+            'email_sent_to': email_destinatario
+        }
+    except Exception as e:
+        print(f"❌ Excepción al enviar correo: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {
+            'success': False,
+            'message': f'Error al enviar correo: {str(e)}',
+            'email_sent_to': email_destinatario
+        }
+
 # --- FIN: FUNCIÓN AÑADIDA ---

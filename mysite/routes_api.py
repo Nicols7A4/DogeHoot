@@ -1526,8 +1526,9 @@ def api_report_partida_export_onedrive():
         wb.save(output)
         excel_bytes = output.getvalue()
         
-        # Nombre del archivo
-        filename = f'DogeHoot_Reporte_{pin if pin else id_partida}.xlsx'
+        # Nombre del archivo con timestamp único para evitar conflictos
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'DogeHoot_Reporte_{pin if pin else id_partida}_{timestamp}.xlsx'
         
         # === PASO 4: Subir a OneDrive ===
         uploader = OneDriveUploader()
@@ -1547,22 +1548,33 @@ def api_report_partida_export_onedrive():
         
         # === PASO 5: Compartir el archivo con el correo proporcionado ===
         file_id = resultado['file_id']
+        file_name = resultado['file_name']
+        
         resultado_compartir = uploader.compartir_archivo(
             file_id=file_id,
             email=email,
             role='read',  # Solo lectura
-            send_notification=True  # Enviar notificación por correo
+            send_notification=True,  # Enviar notificación por correo
+            file_name=file_name  # Nombre del archivo para el correo
         )
         
         if resultado_compartir['success']:
+            mensaje_exito = f'Reporte subido y enviado exitosamente a {email}'
+            if resultado_compartir.get('email_sent'):
+                mensaje_exito += ' (correo enviado)'
+            else:
+                mensaje_exito += ' (enlace creado, revisar correo)'
+                
             return jsonify({
                 'ok': True,
-                'msg': f'Reporte subido y compartido exitosamente con {email}',
+                'msg': mensaje_exito,
                 'file_name': resultado['file_name'],
                 'file_id': resultado['file_id'],
                 'web_url': resultado['web_url'],  # URL para ver el archivo en OneDrive
                 'download_url': resultado.get('download_url'),  # URL de descarga directa
-                'shared_with': email
+                'share_link': resultado_compartir.get('share_link'),  # Enlace compartido
+                'shared_with': email,
+                'email_sent': resultado_compartir.get('email_sent', False)
             }), 200
         else:
             # El archivo se subió pero no se pudo compartir
