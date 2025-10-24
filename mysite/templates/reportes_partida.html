@@ -196,15 +196,15 @@
         async function exportarDrive() {
             const btn = event.target;
             const textoOriginal = btn.textContent;
-            
+
             // Pedir el correo del destinatario
             const correo = prompt('📧 Ingresa el correo de Gmail con quien deseas compartir el reporte:\n\n(El archivo se subirá a Google Drive y se compartirá automáticamente con este correo)');
-            
+
             if (!correo || correo.trim() === '') {
                 alert('⚠️ Operación cancelada. Debes ingresar un correo electrónico válido');
                 return;
             }
-            
+
             // Validación básica de correo
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(correo.trim())) {
@@ -221,13 +221,13 @@
 
                 if (result.ok) {
                     let mensaje = `✅ ${result.msg}\n\n📄 Archivo: ${result.file_name}\n📧 Compartido con: ${result.shared_with || correo}`;
-                    
+
                     if (result.warning) {
                         mensaje += `\n\n⚠️ Advertencia: ${result.warning}`;
                     }
-                    
+
                     mensaje += `\n\n🔗 El archivo se abrirá en una nueva pestaña`;
-                    
+
                     alert(mensaje);
 
                     // Abrir el archivo en Drive
