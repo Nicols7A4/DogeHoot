@@ -364,7 +364,7 @@
                         </span>
                         <a href="{{ url_for('partida_panel', pin = partida.pin) }}" class="btn-panel">Ver panel</a>
                         {% else %}
-                        <a target="_blank" href="{{ url_for('reporte_partida_page', pin = partida.pin)}}"
+                        <a target="_blank" href="{{ url_for('reporte_partida_page', id_partida = partida.id_partida)}}"
                             class="btn-reporte">Ver Reporte</a>
                         {% endif %}
                     </div>
@@ -409,7 +409,7 @@
                 </div>
                 <a href="{{ url_for('partida_panel', pin = partida.pin) }}" class="btn-panel">Ver panel</a>
                 {% else %}
-                <a target="_blank" href="{{ url_for('reporte_partida_page', pin = partida.pin)}}"
+                <a target="_blank" href="{{ url_for('reporte_partida_page', id_partida = partida.id_partida)}}"
                     class="btn-reporte">Ver Reporte</a>
                 {% endif %}
             </div>
