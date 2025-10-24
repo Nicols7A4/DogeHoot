@@ -65,13 +65,17 @@
     </div>
 
     <script>
-        const PIN = "{{ pin }}";
+        const PARTIDA_ID = "{{ id_partida }}";
         
         async function cargarReporte() {
+            if (!PARTIDA_ID) {
+                alert('No se proporcionó un id_partida válido.');
+                return;
+            }
             document.getElementById('loading').style.display = 'block';
             
             try {
-                const response = await fetch(`/api/report/partida?pin=${PIN}`);
+                const response = await fetch(`/api/report/partida?id_partida=${encodeURIComponent(PARTIDA_ID)}`);
                 const result = await response.json();
                 
                 if (!result.ok) {
@@ -146,7 +150,11 @@
         }
         
         function exportarExcel() {
-            window.location.href = `/api/report/partida/export?pin=${PIN}`;
+            if (!PARTIDA_ID) {
+                alert('No se proporcionó un id_partida válido.');
+                return;
+            }
+            window.location.href = `/api/report/partida/export?id_partida=${encodeURIComponent(PARTIDA_ID)}`;
         }
         
         // Cargar datos al inicio

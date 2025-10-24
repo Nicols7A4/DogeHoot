@@ -894,7 +894,9 @@
             rankingDiv.innerHTML += '</div>';
             extraDiv.innerHTML = `
                                 <a href="{{ url_for('cuestionarios') }}" class="btn btn-primary">Volver a mis cuestionarios</a>
-                                <a href="/reportes/partida/{{ pin }}" class="btn btn-secondary" style="margin-left:10px;">Ver Reporte</a>
+                                {% if id_partida %}
+                                <a href="{{ url_for('reporte_partida_page', id_partida=id_partida) }}" class="btn btn-secondary" style="margin-left:10px;">Ver Reporte</a>
+                                {% endif %}
                                 `; <!-- Para reportes - Agregado por Pame-->
         }
 

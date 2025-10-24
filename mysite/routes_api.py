@@ -970,7 +970,7 @@ def api_report_partida_export():
 
         # --- HOJA 2: DETALLE POR PARTICIPANTE ---
         ws_detalle_part = wb.create_sheet("Detalle por participante")
-        ws_detalle_part.append(["Usuario", "Grupo(opc)", "PreguntaN", "Correcta(0/1)", 
+        ws_detalle_part.append(["Usuario", "Grupo(opc)", "Correcta", 
                                 "TiempoRestante", "PuntosOtorgados", "PuntajeAcumulado"])
         
         for cell in ws_detalle_part[1]:
@@ -996,11 +996,11 @@ def api_report_partida_export():
                 rows_part = c.fetchall()
                 
                 for r in rows_part:
+                    grupo = r['id_grupo']
                     ws_detalle_part.append([
                         r['nombre'],
-                        r['id_grupo'] or "",
-                        r['id_pregunta'],
-                        int(r['es_correcta']),
+                        grupo if grupo not in (None, "") else "No",
+                        "Sí" if int(r['es_correcta']) == 1 else "No",
                         int(r['tiempo_seg'] or 0),
                         int(r['puntaje']),
                         int(r['puntaje_acum'] or 0)
@@ -1010,8 +1010,8 @@ def api_report_partida_export():
 
         # --- HOJA 3: DETALLE POR PREGUNTA ---
         ws_detalle_preg = wb.create_sheet("Detalle por pregunta")
-        ws_detalle_preg.append(["#Pregunta", "TextoPregunta", "Opción", "EsCorrecta(0/1)", 
-                               "RespuestasRecibidas", "Aciertos", "%Aciertos", "TiempoPromedioRestante"])
+        ws_detalle_preg.append(["#Pregunta", "Pregunta", "Opción", "Correcta", 
+                               "RespuestasRecibidas", "Aciertos", "%Aciertos"])
         
         for cell in ws_detalle_preg[1]:
             cell.font = Font(bold=True)
@@ -1042,11 +1042,10 @@ def api_report_partida_export():
                         r['id_pregunta'],
                         r['pregunta_texto'],
                         r['opcion_texto'],
-                        int(r['es_correcta']),
+                        "Sí" if int(r['es_correcta']) == 1 else "No",
                         int(r['respuestas_recibidas']),
                         int(r['aciertos']),
                         pct_aciertos,
-                        float(r['tiempo_prom'] or 0)
                     ])
         finally:
             cx.close()

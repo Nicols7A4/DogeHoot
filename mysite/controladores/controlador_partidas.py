@@ -341,9 +341,13 @@ def _get_resumen_global(id_partida):
     cx = obtener_conexion()
     try:
         with cx.cursor(pymysql.cursors.DictCursor) as c:
-            # participantes totales (en tabla PARTICIPANTE)
+            # participantes que respondieron al menos una pregunta
             c.execute(
-                "SELECT COUNT(*) AS total FROM PARTICIPANTE WHERE id_partida=%s",
+                """
+                SELECT COUNT(DISTINCT id_participante) AS total
+                    FROM RESPUESTA_PARTICIPANTE
+                    WHERE id_partida=%s
+            """,
                 (id_partida,),
             )
             total_participantes = c.fetchone()["total"]

@@ -612,8 +612,15 @@ def lanzar_partida():
 def partida_panel(pin):
     if 'user_id' not in session:
         return redirect(url_for('auth'))
-    # return f"panel {pin}"
-    return render_template('partida/panel_anfitrion.html', pin=pin)
+    partida = ctrl_partidas.obtener_partida_por_pin(pin)
+    if not partida:
+        flash('La partida indicada no existe.', 'warning')
+        return redirect(url_for('dashboard'))
+    return render_template(
+        'partida/panel_anfitrion.html',
+        pin=pin,
+        id_partida=partida.get('id_partida'),
+    )
 
 # -----------
 
@@ -814,7 +821,7 @@ def restablecer_con_token(token):
     return render_template('restablecer_contrasena.html')
 
 # ---------------------------------- AGREGADO POR PAME - Reportes
-@app.route('/reportes/partida/<pin>')
-def reporte_partida_page(pin):
+@app.route('/reportes/partida/<int:id_partida>')
+def reporte_partida_page(id_partida):
     # Página HTML que consumirá el endpoint JSON /api/report/partida
-    return render_template('reportes_partida.html', pin=pin)
+    return render_template('reportes_partida.html', id_partida=id_partida)
