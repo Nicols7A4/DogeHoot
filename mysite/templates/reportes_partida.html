@@ -424,10 +424,16 @@
         function mostrarDatos(data) {
             // Header
             const header = data.header;
+            const estadoMap = {
+                'F': 'Finalizado',
+                'E': 'En espera',
+                'P': 'En progreso'
+            };
+            const estadoTexto = estadoMap[header.estado] || header.estado;
             document.getElementById('header-info').innerHTML = `
                 <p><strong>PIN:</strong> ${header.pin} | 
                    <strong>Cuestionario:</strong> ${header.cuestionario_titulo} | 
-                   <strong>Estado:</strong> ${header.estado}</p>
+                   <strong>Estado:</strong> ${estadoTexto}</p>
             `;
 
             // Resumen global
