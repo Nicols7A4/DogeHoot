@@ -1072,3 +1072,229 @@ def api_report_partida_export():
         traceback.print_exc()
         return jsonify({"ok": False, "msg": str(e)}), 500
 
+
+@app.route("/api/report/partida/export-drive", methods=["GET"])
+def api_report_partida_export_drive():
+    """
+    Genera Excel y lo sube a Google Drive en la carpeta 'DogeHoot Reportes' y lo comparte con un correo
+    Uso: /api/report/partida/export-drive?pin=AB12CD&email=correo@ejemplo.com
+    """
+    try:
+        pin = request.args.get("pin")
+        id_partida = request.args.get("id_partida", type=int)
+        email = request.args.get("email")
+        
+        # Validar que se proporcione el correo
+        if not email:
+            return jsonify({"ok": False, "msg": "Debe proporcionar un correo electrónico (parámetro 'email')"}), 400
+
+        from controladores import controlador_partidas as c_part
+        from controladores.google_drive_uploader import GoogleDriveUploader
+        
+        # Obtener datos completos del reporte
+        if pin:
+            data = c_part.reporte_por_pin(pin)
+        elif id_partida:
+            data = c_part.reporte_por_partida_id(id_partida)
+        else:
+            return jsonify({"ok": False, "msg": "Proporcione pin o id_partida"}), 400
+
+        if not data:
+            return jsonify({"ok": False, "msg": "Partida no encontrada"}), 404
+
+        # Crear libro Excel (mismo código que export)
+        wb = Workbook()
+        wb.remove(wb.active)
+
+        # --- HOJA 1: RESUMEN (Ranking Final) ---
+        ws_resumen = wb.create_sheet("Resumen")
+        ws_resumen.append(["Posición", "Usuario/Grupo", "PuntajeTotal", "RespuestasCorrectas", 
+                          "RespuestasIncorrectas", "%Acierto", "TiempoPromedioResp (s)"])
+        
+        for cell in ws_resumen[1]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        
+        for idx, part in enumerate(data['participantes'], start=1):
+            total_resp = int(part['correctas']) + int(part['incorrectas'])
+            pct_acierto = round((int(part['correctas']) / total_resp * 100), 2) if total_resp > 0 else 0
+            ws_resumen.append([
+                idx,
+                part['nombre'],
+                int(part['puntaje_total']),
+                int(part['correctas']),
+                int(part['incorrectas']),
+                pct_acierto,
+                round(float(part['tiempo_prom_seg'] or 0), 2)
+            ])
+
+        # --- HOJA 2: DETALLE POR PARTICIPANTE ---
+        ws_detalle_part = wb.create_sheet("Detalle por participante")
+        ws_detalle_part.append(["Usuario", "Grupo(opc)", "PreguntaN", "Correcta(0/1)", 
+                                "TiempoRestante", "PuntosOtorgados", "PuntajeAcumulado"])
+        
+        for cell in ws_detalle_part[1]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+
+        cx = obtener_conexion()
+        try:
+            with cx.cursor(pymysql.cursors.DictCursor) as c:
+                c.execute("""
+                    SELECT pa.nombre, pa.id_grupo, rp.id_pregunta, rp.es_correcta,
+                           TIME_TO_SEC(rp.tiempo_respuesta) AS tiempo_seg, rp.puntaje,
+                           (SELECT SUM(rp2.puntaje) 
+                            FROM RESPUESTA_PARTICIPANTE rp2 
+                            WHERE rp2.id_participante = rp.id_participante 
+                            AND rp2.id_respuesta <= rp.id_respuesta) AS puntaje_acum
+                    FROM RESPUESTA_PARTICIPANTE rp
+                    JOIN PARTICIPANTE pa ON pa.id_participante = rp.id_participante
+                    WHERE rp.id_partida=%s
+                    ORDER BY pa.nombre, rp.id_pregunta
+                """, (id_partida if id_partida else data['header']['id_partida'],))
+                rows_part = c.fetchall()
+                
+                for r in rows_part:
+                    ws_detalle_part.append([
+                        r['nombre'],
+                        r['id_grupo'] or "",
+                        r['id_pregunta'],
+                        int(r['es_correcta']),
+                        int(r['tiempo_seg'] or 0),
+                        int(r['puntaje']),
+                        int(r['puntaje_acum'] or 0)
+                    ])
+        finally:
+            cx.close()
+
+        # --- HOJA 3: DETALLE POR PREGUNTA ---
+        ws_detalle_preg = wb.create_sheet("Detalle por pregunta")
+        ws_detalle_preg.append(["#Pregunta", "TextoPregunta", "Opción", "EsCorrecta(0/1)", 
+                               "RespuestasRecibidas", "Aciertos", "%Aciertos", "TiempoPromedioRestante"])
+        
+        for cell in ws_detalle_preg[1]:
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+
+        cx = obtener_conexion()
+        try:
+            with cx.cursor(pymysql.cursors.DictCursor) as c:
+                c.execute("""
+                    SELECT rp.id_pregunta, 
+                           MIN(rp.pregunta_texto) AS pregunta_texto,
+                           rp.opcion_texto,
+                           MAX(rp.es_correcta) AS es_correcta,
+                           COUNT(*) AS respuestas_recibidas,
+                           SUM(rp.es_correcta) AS aciertos,
+                           ROUND(AVG(TIME_TO_SEC(rp.tiempo_respuesta)), 2) AS tiempo_prom
+                    FROM RESPUESTA_PARTICIPANTE rp
+                    WHERE rp.id_partida=%s
+                    GROUP BY rp.id_pregunta, rp.opcion_texto
+                    ORDER BY rp.id_pregunta, rp.opcion_texto
+                """, (id_partida if id_partida else data['header']['id_partida'],))
+                rows_preg = c.fetchall()
+                
+                for r in rows_preg:
+                    pct_aciertos = round((int(r['aciertos']) / int(r['respuestas_recibidas']) * 100), 2) if r['respuestas_recibidas'] > 0 else 0
+                    ws_detalle_preg.append([
+                        r['id_pregunta'],
+                        r['pregunta_texto'],
+                        r['opcion_texto'],
+                        int(r['es_correcta']),
+                        int(r['respuestas_recibidas']),
+                        int(r['aciertos']),
+                        pct_aciertos,
+                        float(r['tiempo_prom'] or 0)
+                    ])
+        finally:
+            cx.close()
+
+        # Guardar en memoria
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        # Obtener contenido en bytes
+        excel_bytes = output.getvalue()
+        
+        filename = f"DogeHoot_Reporte_{pin if pin else id_partida}.xlsx"
+        
+        # Inicializar uploader de Google Drive
+        credentials_file = os.path.join(app.root_path, 'credentials.json')
+        token_file = os.path.join(app.root_path, 'token_drive.json')
+        
+        uploader = GoogleDriveUploader(
+            credentials_file=credentials_file,
+            token_file=token_file
+        )
+        
+        # Buscar o crear carpeta "DogeHoot Reportes"
+        carpetas = uploader.listar_archivos(max_resultados=100)
+        folder_id = None
+        
+        if carpetas['success']:
+            for archivo in carpetas['files']:
+                if archivo['name'] == 'DogeHoot Reportes' and archivo['mimeType'] == 'application/vnd.google-apps.folder':
+                    folder_id = archivo['id']
+                    break
+        
+        # Si no existe la carpeta, crearla
+        if not folder_id:
+            resultado_carpeta = uploader.crear_carpeta('DogeHoot Reportes')
+            if resultado_carpeta['success']:
+                folder_id = resultado_carpeta['folder_id']
+            else:
+                return jsonify({
+                    "ok": False, 
+                    "msg": f"Error al crear carpeta: {resultado_carpeta['message']}"
+                }), 500
+        
+        # Subir archivo desde memoria
+        resultado = uploader.subir_desde_memoria(
+            contenido=excel_bytes,
+            nombre_archivo=filename,
+            mime_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            folder_id=folder_id
+        )
+        
+        if not resultado['success']:
+            return jsonify({
+                "ok": False,
+                "msg": f"Error al subir a Drive: {resultado['message']}"
+            }), 500
+        
+        # Compartir el archivo con el correo proporcionado
+        file_id = resultado['file_id']
+        resultado_compartir = uploader.compartir_archivo(
+            file_id=file_id,
+            email=email,
+            role='reader',  # Solo lectura
+            tipo='user'
+        )
+        
+        if resultado_compartir['success']:
+            return jsonify({
+                "ok": True,
+                "msg": f"Reporte subido y compartido exitosamente con {email}",
+                "file_name": resultado['file_name'],
+                "file_id": resultado['file_id'],
+                "web_view_link": resultado['web_view_link'],
+                "download_link": resultado.get('download_link'),
+                "shared_with": email
+            }), 200
+        else:
+            # El archivo se subió pero no se pudo compartir
+            return jsonify({
+                "ok": True,
+                "msg": f"Reporte subido pero hubo un error al compartir: {resultado_compartir['message']}",
+                "file_name": resultado['file_name'],
+                "file_id": resultado['file_id'],
+                "web_view_link": resultado['web_view_link'],
+                "download_link": resultado.get('download_link'),
+                "warning": "No se pudo compartir con el correo especificado"
+            }), 200
+        
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "msg": str(e)}), 500
+
