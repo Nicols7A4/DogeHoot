@@ -334,7 +334,8 @@
             <div id="header-info"></div>
 
             <div class="header-actions">
-                <button class="btn btn-back" onclick="window.history.back()">Volver</button>
+                <!-- <button class="btn btn-back" onclick="window.history.back()">Volver</button> -->
+                <button class="btn btn-back" onclick="irADashboard()">Volver</button>
                 <button class="btn btn-excel" onclick="exportarExcel()">Descargar Excel</button>
                 <button class="btn btn-onedrive" onclick="exportarOneDrive()">Exportar a OneDrive</button>
                 <button class="btn btn-drive" onclick="exportarDrive()">Exportar a Drive</button>
@@ -414,6 +415,10 @@
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
+        }
+
+        function irADashboard() {
+            window.location.href = '/dashboard';
         }
 
         function mostrarDatos(data) {
