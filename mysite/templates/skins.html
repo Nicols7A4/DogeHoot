@@ -165,6 +165,24 @@
         height: 18px;
     }
 
+            /* --- Botón "Comprada" (Dorado, visual no accionable) --- */
+    .skin-card .btn-comprada {
+        background-color: var(--btn-pending-bg);
+        color: var(--btn-pending-text);
+        border: 2px solid transparent;
+        cursor: not-allowed;
+        opacity: 0.9;
+    }
+    .skin-card .btn-comprada:hover {
+        transform: none;
+        box-shadow: var(--btn-shadow);
+    }
+    .skin-card .btn-comprada svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+    }
+
 </style>
 {% endblock %}
 
@@ -173,7 +191,9 @@
     <div class="store-header">
         <h1>Tienda de Skins</h1>
         <div class="currency-display">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20ZM12,9a3,3,0,1,0,3,3A3,3,0,0,0,12,9Zm0,4a1,1,0,1,1,1-1A1,1,0,0,1,12,13Z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20ZM12,9a3,3,0,1,0,3,3A3,3,0,0,0,12,9Zm0,4a1,1,0,1,1,1-1A1,1,0,0,1,12,13Z"/>
+            </svg>
             <span>{{ user.monedas|default(0, true) }}</span>
         </div>
     </div>
@@ -186,19 +206,19 @@
                 </div>
                 <div class="skin-card__body">
                     {% if skin.ya_comprada %}
-                        {% if skin.id_skin == user.id_skin_activa %}
-                            <button class="btn btn-usando" disabled>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"></path></svg>
-                                <span>Usando</span>
-                            </button>
-                        {% else %}
-                            <button class="btn btn-usar cambiar-btn" data-id="{{ skin.id_skin }}">Usar</button>
-                        {% endif %}
+                        <button class="btn btn-comprada" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"></path>
+                            </svg>
+                            <span>Comprada</span>
+                        </button>
                     {% else %}
                         <button class="btn btn-comprar comprar-btn" data-id="{{ skin.id_skin }}">
                             <span>Comprar por</span>
                             <span style="font-weight: bold; margin-left: 4px;">100</span>
-                            <svg class="icon-coin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20ZM12,9a3,3,0,1,0,3,3A3,3,0,0,0,12,9Zm0,4a1,1,0,1,1,1-1A1,1,0,0,1,12,13Z"/></svg>
+                            <svg class="icon-coin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20ZM12,9a3,3,0,1,0,3,3A3,3,0,0,0,12,9Zm0,4a1,1,0,1,1,1-1A1,1,0,0,1,12,13Z"/>
+                            </svg>
                         </button>
                     {% endif %}
                 </div>
@@ -213,14 +233,14 @@
 {% endblock %}
 
 {% block scripts %}
-{{ super() }} {# Importante para heredar los scripts de modales del layout padre #}
+{{ super() }} {# Hereda modales del layout padre #}
 
 <script>
     document.querySelectorAll(".comprar-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
             const idSkin = btn.dataset.id;
 
-            // Usando el modal de confirmación global
+            // Confirmar compra
             const confirmado = await window.showConfirm("Confirmar Compra", "¿Deseas comprar esta skin por 100 monedas?");
             if (!confirmado) return;
 
@@ -228,30 +248,9 @@
                 const resp = await fetch(`/api/skins/comprar/${idSkin}`, { method: "POST" });
                 const data = await resp.json();
 
-                // Usando el modal de alerta global
                 window.showModal(resp.ok ? '¡Compra Exitosa!' : 'Error', data.mensaje || data.error);
                 if (resp.ok) {
-                    // Recarga la página solo si la compra fue exitosa
                     document.getElementById('modal-close').addEventListener('click', () => location.reload(), { once: true });
-                }
-            } catch (err) {
-                window.showModal('Error de Conexión', 'No se pudo conectar con el servidor.');
-            }
-        });
-    });
-
-    document.querySelectorAll(".cambiar-btn").forEach(btn => {
-        btn.addEventListener("click", async () => {
-            const idSkin = btn.dataset.id;
-            try {
-                const resp = await fetch(`/api/skins/cambiar/${idSkin}`, { method: "POST" });
-                const data = await resp.json();
-
-                if (resp.ok) {
-                    window.showModal('¡Skin Cambiada!', data.mensaje || 'Tu skin ha sido actualizada.');
-                    document.getElementById('modal-close').addEventListener('click', () => location.reload(), { once: true });
-                } else {
-                    window.showModal('Error', data.error);
                 }
             } catch (err) {
                 window.showModal('Error de Conexión', 'No se pudo conectar con el servidor.');

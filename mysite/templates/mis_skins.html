@@ -168,17 +168,72 @@
         font-size: 1rem;
     }
 
+        /* Estilo base para ambos botones */
+    .skin-card .btn {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 10px 16px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border-radius: var(--btn-radius);
+        border: 2px solid transparent;
+        box-shadow: var(--btn-shadow);
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* --- Botón "Usar" (Azul) --- */
+    .skin-card .btn-usar {
+        background-color: transparent;
+        color: var(--btn-inprogress-text);
+        border-color: var(--btn-inprogress-text);
+    }
+    .skin-card .btn-usar:hover {
+        background-color: var(--btn-inprogress-bg);
+    }
+
+    /* --- Botón "Usando" (Verde, deshabilitado) --- */
+    .skin-card .btn-usando {
+        background-color: var(--btn-success-bg);
+        color: var(--btn-success-text);
+        border-color: transparent;
+        opacity: 0.85;
+        cursor: not-allowed;
+    }
+    .skin-card .btn-usando:hover {
+        transform: none;
+        box-shadow: var(--btn-shadow);
+    }
+    .skin-card .btn-usando svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Animación al cambiar de botón */
+    .cambiar-btn {
+        animation: fadeIn 0.25s ease-in-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="my-skins-container">
     <div class="skins-header">
-        <h1>
-            Mis Skins
-        </h1>
+        <h1>Mis Skins</h1>
         <div class="currency-display">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20ZM12,9a3,3,0,1,0,3,3A3,3,0,0,0,12,9Zm0,4a1,1,0,1,1,1-1A1,1,0,0,1,12,13Z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20ZM12,9a3,3,0,1,0,3,3A3,3,0,0,0,12,9Zm0,4a1,1,0,1,1,1-1A1,1,0,0,1,12,13Z"/>
+            </svg>
             <span>{{ user.monedas|default(0, true) }}</span>
         </div>
     </div>
@@ -191,10 +246,16 @@
                         <img src="{{ url_for('static', filename=skin.ruta) }}" alt="Skin {{ skin.id_skin }}">
                     </div>
                     <div class="skin-card__body">
-                        <div class="btn-owned">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"></path></svg>
-                            <span>Obtenida</span>
-                        </div>
+                        {% if skin.id_skin == user.id_skin_activa %}
+                            <button class="btn btn-usando" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"></path>
+                                </svg>
+                                <span>Usando</span>
+                            </button>
+                        {% else %}
+                            <button class="btn btn-usar cambiar-btn" data-id="{{ skin.id_skin }}">Usar</button>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
@@ -202,7 +263,12 @@
     {% else %}
         <div class="empty-state">
             <div class="empty-state__icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
             </div>
             <h2>Aún no tienes skins</h2>
             <p>Visita la tienda para explorar y adquirir nuevos diseños para personalizar tu experiencia de juego.</p>
@@ -212,4 +278,29 @@
         </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }} {# Importante para heredar los scripts de modales del layout padre #}
+
+<script>
+    document.querySelectorAll(".cambiar-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const idSkin = btn.dataset.id;
+            try {
+                const resp = await fetch(`/api/skins/cambiar/${idSkin}`, { method: "POST" });
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    window.showModal('¡Skin Cambiada!', data.mensaje || 'Tu skin ha sido actualizada.');
+                    document.getElementById('modal-close').addEventListener('click', () => location.reload(), { once: true });
+                } else {
+                    window.showModal('Error', data.error);
+                }
+            } catch (err) {
+                window.showModal('Error de Conexión', 'No se pudo conectar con el servidor.');
+            }
+        });
+    });
+</script>
 {% endblock %}
