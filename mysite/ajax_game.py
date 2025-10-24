@@ -374,6 +374,24 @@ def _compute_results(partida):
     }
 
 
+def _todos_han_respondido(partida):
+    """Verifica si todos los participantes o grupos ya respondieron la pregunta actual"""
+    if partida['modalidad_grupal']:
+        # En modo grupal: verificar que todos los grupos con miembros hayan respondido
+        for grupo in partida['grupos']:
+            # Solo contar grupos que tienen miembros
+            if len(grupo['miembros']) > 0:
+                if not grupo.get('respondio_pregunta', False):
+                    return False
+        return True
+    else:
+        # En modo individual: verificar que todos los participantes hayan respondido
+        for nombre, participante in partida['participantes'].items():
+            if not participante.get('respondio_esta_pregunta', False):
+                return False
+        return True
+
+
 def advance_state_if_needed(pin):
     partida = partidas_en_juego.get(pin)
     if not partida:
@@ -381,15 +399,19 @@ def advance_state_if_needed(pin):
 
     now = time.time()
     
-    # Avanzar de pregunta a resultados cuando se acaba el tiempo
+    # Avanzar de pregunta a resultados cuando se acaba el tiempo O cuando todos ya respondieron
     if partida['estado'] == 'J' and partida['fase'] == 'question':
         if partida['question_started_at'] is not None and partida['question_duration'] is not None:
-            if now >= partida['question_started_at'] + float(partida['question_duration']):
+            tiempo_agotado = now >= partida['question_started_at'] + float(partida['question_duration'])
+            todos_respondieron = _todos_han_respondido(partida)
+            
+            if tiempo_agotado or todos_respondieron:
                 # pasar a resultados
                 partida['fase'] = 'results'
                 partida['results_started_at'] = now
                 partida['ultimo_resultado'] = _compute_results(partida)
-                print(f"[DEBUG] PIN {pin}: Pasando a RESULTS en pregunta {partida['pregunta_actual_index']}")
+                razon = "tiempo agotado" if tiempo_agotado else "todos respondieron"
+                print(f"[DEBUG] PIN {pin}: Pasando a RESULTS en pregunta {partida['pregunta_actual_index']} ({razon})")
 
     # Avanzar de resultados a la siguiente pregunta
     if partida['estado'] == 'J' and partida['fase'] == 'results':
