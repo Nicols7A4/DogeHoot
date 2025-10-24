@@ -203,9 +203,115 @@ def guardar_o_actualizar_completo(data):
                     data['titulo'], data['descripcion'], data['es_publico'], data['id_categoria'], id_cuestionario
                 ))
 
-                # Estrategia "Demoler y Reconstruir": Borramos las preguntas antiguas.
-                # ON DELETE CASCADE se encargará de borrar las opciones automáticamente.
-                cursor.execute("DELETE FROM PREGUNTAS WHERE id_cuestionario = %s", (id_cuestionario,))
+                # ESTRATEGIA DE MERGE: Actualizar/Insertar/Eliminar preguntas y opciones
+                # Obtener IDs de preguntas actuales en BD
+                cursor.execute("SELECT id_pregunta FROM PREGUNTAS WHERE id_cuestionario = %s", (id_cuestionario,))
+                ids_preguntas_bd = {row['id_pregunta'] for row in cursor.fetchall()}
+                ids_preguntas_data = set()
+
+                # Procesar cada pregunta del formulario
+                for index, pregunta_data in enumerate(data.get('preguntas', [])):
+                    id_pregunta = pregunta_data.get('id_pregunta')
+
+                    if id_pregunta and id_pregunta in ids_preguntas_bd:
+                        # ACTUALIZAR pregunta existente
+                        ids_preguntas_data.add(id_pregunta)
+                        sql_update_pregunta = """
+                            UPDATE PREGUNTAS SET
+                                pregunta = %s, num_pregunta = %s, puntaje_base = %s, tiempo = %s
+                            WHERE id_pregunta = %s
+                        """
+                        cursor.execute(sql_update_pregunta, (
+                            pregunta_data['pregunta'], index + 1,
+                            pregunta_data['puntaje_base'], pregunta_data['tiempo'], id_pregunta
+                        ))
+
+                        # Procesar imagen si cambió
+                        ruta_img_final = _guardar_imagen_base64(id_cuestionario, id_pregunta, pregunta_data.get('adjunto'))
+                        if ruta_img_final:
+                            cursor.execute("UPDATE PREGUNTAS SET adjunto = %s WHERE id_pregunta = %s", (ruta_img_final, id_pregunta))
+                        elif pregunta_data.get('adjunto') is None:
+                            # Si adjunto es None, limpiamos la imagen
+                            cursor.execute("UPDATE PREGUNTAS SET adjunto = NULL WHERE id_pregunta = %s", (id_pregunta,))
+
+                        # MERGE de opciones para esta pregunta
+                        cursor.execute("SELECT id_opcion FROM OPCIONES WHERE id_pregunta = %s", (id_pregunta,))
+                        ids_opciones_bd = {row['id_opcion'] for row in cursor.fetchall()}
+                        ids_opciones_data = set()
+
+                        for opcion_data in pregunta_data.get('opciones', []):
+                            id_opcion = opcion_data.get('id_opcion')
+
+                            if id_opcion and id_opcion in ids_opciones_bd:
+                                # ACTUALIZAR opción existente
+                                ids_opciones_data.add(id_opcion)
+                                sql_update_opcion = """
+                                    UPDATE OPCIONES SET
+                                        opcion = %s, es_correcta_bool = %s, descripcion = %s, adjunto = %s
+                                    WHERE id_opcion = %s
+                                """
+                                cursor.execute(sql_update_opcion, (
+                                    opcion_data['opcion'], opcion_data['es_correcta_bool'],
+                                    opcion_data.get('descripcion'), opcion_data.get('adjunto'), id_opcion
+                                ))
+                            else:
+                                # INSERTAR nueva opción
+                                sql_insert_opcion = """
+                                    INSERT INTO OPCIONES (id_pregunta, opcion, es_correcta_bool, descripcion, adjunto)
+                                    VALUES (%s, %s, %s, %s, %s)
+                                """
+                                cursor.execute(sql_insert_opcion, (
+                                    id_pregunta, opcion_data['opcion'], opcion_data['es_correcta_bool'],
+                                    opcion_data.get('descripcion'), opcion_data.get('adjunto')
+                                ))
+
+                        # ELIMINAR opciones que ya no existen (solo si no tienen respuestas)
+                        ids_opciones_eliminar = ids_opciones_bd - ids_opciones_data
+                        for id_opcion_eliminar in ids_opciones_eliminar:
+                            # Verificar si tiene respuestas asociadas
+                            cursor.execute("SELECT COUNT(*) as count FROM RESPUESTA_PARTICIPANTE WHERE id_opcion = %s", (id_opcion_eliminar,))
+                            result = cursor.fetchone()
+                            if result['count'] == 0:
+                                cursor.execute("DELETE FROM OPCIONES WHERE id_opcion = %s", (id_opcion_eliminar,))
+
+                    else:
+                        # INSERTAR nueva pregunta
+                        sql_insert_pregunta = """
+                            INSERT INTO PREGUNTAS (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo)
+                            VALUES (%s, %s, %s, %s, %s)
+                        """
+                        cursor.execute(sql_insert_pregunta, (
+                            id_cuestionario, pregunta_data['pregunta'], index + 1,
+                            pregunta_data['puntaje_base'], pregunta_data['tiempo']
+                        ))
+                        id_pregunta_nueva = cursor.lastrowid
+                        ids_preguntas_data.add(id_pregunta_nueva)
+
+                        # Guardar imagen si existe
+                        ruta_img_final = _guardar_imagen_base64(id_cuestionario, id_pregunta_nueva, pregunta_data.get('adjunto'))
+                        if ruta_img_final:
+                            cursor.execute("UPDATE PREGUNTAS SET adjunto = %s WHERE id_pregunta = %s", (ruta_img_final, id_pregunta_nueva))
+
+                        # Insertar opciones de la nueva pregunta
+                        for opcion_data in pregunta_data.get('opciones', []):
+                            sql_insert_opcion = """
+                                INSERT INTO OPCIONES (id_pregunta, opcion, es_correcta_bool, descripcion, adjunto)
+                                VALUES (%s, %s, %s, %s, %s)
+                            """
+                            cursor.execute(sql_insert_opcion, (
+                                id_pregunta_nueva, opcion_data['opcion'], opcion_data['es_correcta_bool'],
+                                opcion_data.get('descripcion'), opcion_data.get('adjunto')
+                            ))
+
+                # ELIMINAR preguntas que ya no existen (solo si no tienen respuestas)
+                ids_preguntas_eliminar = ids_preguntas_bd - ids_preguntas_data
+                for id_pregunta_eliminar in ids_preguntas_eliminar:
+                    # Verificar si tiene respuestas asociadas
+                    cursor.execute("SELECT COUNT(*) as count FROM RESPUESTA_PARTICIPANTE WHERE id_pregunta = %s", (id_pregunta_eliminar,))
+                    result = cursor.fetchone()
+                    if result['count'] == 0:
+                        # ON DELETE CASCADE eliminará las opciones automáticamente
+                        cursor.execute("DELETE FROM PREGUNTAS WHERE id_pregunta = %s", (id_pregunta_eliminar,))
 
             else:  # Si no tiene ID, es un NUEVO CUESTIONARIO
                 sql_insert_cuestionario = """
@@ -219,38 +325,33 @@ def guardar_o_actualizar_completo(data):
                 ))
                 id_cuestionario = cursor.lastrowid
 
-            # --- 2. Reconstruir las PREGUNTAS y OPCIONES ---
-            for index, pregunta_data in enumerate(data.get('preguntas', [])):
-                # Insertamos la pregunta SIN la imagen primero
-                sql_pregunta = """
-                    INSERT INTO PREGUNTAS (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo)
-                    VALUES (%s, %s, %s, %s, %s)
-                """
-                cursor.execute(sql_pregunta, (
-                    id_cuestionario, pregunta_data['pregunta'], index + 1,
-                    pregunta_data['puntaje_base'], pregunta_data['tiempo']
-                ))
-                id_pregunta_nueva = cursor.lastrowid
-
-                # Si la pregunta tiene una imagen (en Base64), la guardamos y actualizamos la fila
-                ruta_img_final = _guardar_imagen_base64(id_cuestionario, id_pregunta_nueva, pregunta_data.get('adjunto'))
-
-                # if pregunta_data.get('adjunto'):
-                #     ruta_img_final = _guardar_imagen_base64(id_cuestionario, id_pregunta_nueva, pregunta_data['adjunto'])
-
-                if ruta_img_final:
-                    cursor.execute("UPDATE PREGUNTAS SET adjunto = %s WHERE id_pregunta = %s", (ruta_img_final, id_pregunta_nueva))
-
-                # Insertamos sus opciones
-                for opcion_data in pregunta_data.get('opciones', []):
-                    sql_opcion = """
-                        INSERT INTO OPCIONES (id_pregunta, opcion, es_correcta_bool, descripcion, adjunto)
+                # --- Insertar preguntas y opciones para cuestionario nuevo ---
+                for index, pregunta_data in enumerate(data.get('preguntas', [])):
+                    sql_pregunta = """
+                        INSERT INTO PREGUNTAS (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo)
                         VALUES (%s, %s, %s, %s, %s)
                     """
-                    cursor.execute(sql_opcion, (
-                        id_pregunta_nueva, opcion_data['opcion'], opcion_data['es_correcta_bool'],
-                        opcion_data.get('descripcion'), opcion_data.get('adjunto')
+                    cursor.execute(sql_pregunta, (
+                        id_cuestionario, pregunta_data['pregunta'], index + 1,
+                        pregunta_data['puntaje_base'], pregunta_data['tiempo']
                     ))
+                    id_pregunta_nueva = cursor.lastrowid
+
+                    # Guardar imagen si existe
+                    ruta_img_final = _guardar_imagen_base64(id_cuestionario, id_pregunta_nueva, pregunta_data.get('adjunto'))
+                    if ruta_img_final:
+                        cursor.execute("UPDATE PREGUNTAS SET adjunto = %s WHERE id_pregunta = %s", (ruta_img_final, id_pregunta_nueva))
+
+                    # Insertar opciones
+                    for opcion_data in pregunta_data.get('opciones', []):
+                        sql_opcion = """
+                            INSERT INTO OPCIONES (id_pregunta, opcion, es_correcta_bool, descripcion, adjunto)
+                            VALUES (%s, %s, %s, %s, %s)
+                        """
+                        cursor.execute(sql_opcion, (
+                            id_pregunta_nueva, opcion_data['opcion'], opcion_data['es_correcta_bool'],
+                            opcion_data.get('descripcion'), opcion_data.get('adjunto')
+                        ))
 
         conexion.commit()
         return id_cuestionario

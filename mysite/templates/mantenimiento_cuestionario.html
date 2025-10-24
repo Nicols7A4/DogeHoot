@@ -1340,7 +1340,8 @@
     function agregarPregunta() {
         if (MODO_VISUALIZACION) return;
         const cant = cuestionarioData.preguntas.length;
-        cuestionarioData.preguntas.push({ id_pregunta: 'temp_' + Date.now(), pregunta: `Nueva Pregunta ${cant + 1}`, num_pregunta: cant + 1, puntaje_base: 1000, tiempo: 15, opciones: [] });
+        // No incluir id_pregunta para preguntas nuevas (el servidor lo generará)
+        cuestionarioData.preguntas.push({ pregunta: `Nueva Pregunta ${cant + 1}`, num_pregunta: cant + 1, puntaje_base: 1000, tiempo: 15, adjunto: null, opciones: [] });
         agregarOpcion(cuestionarioData.preguntas.length - 1);
         currentIndex = cuestionarioData.preguntas.length - 1;
         onAnyChange(); renderQuestionsUI(true);
@@ -1360,7 +1361,8 @@
         if (MODO_VISUALIZACION) return;
         const opts = cuestionarioData.preguntas[indexPregunta].opciones;
         if (opts.length >= 6) return await mostrarAlerta("Límite de 6 opciones por pregunta alcanzado.");
-        opts.push({ id_opcion: 'temp_opt_' + Date.now(), opcion: `Nueva Opción ${opts.length + 1}`, es_correcta_bool: opts.length === 0 });
+        // No incluir id_opcion para opciones nuevas (el servidor lo generará)
+        opts.push({ opcion: `Nueva Opción ${opts.length + 1}`, es_correcta_bool: opts.length === 0, descripcion: null, adjunto: null });
         onAnyChange(); renderQuestionsUI(false);
     }
     function actualizarOpcion(indexPregunta, indexOpcion, campo, valor) { if (!MODO_VISUALIZACION) { cuestionarioData.preguntas[indexPregunta].opciones[indexOpcion][campo] = valor; onAnyChange(); } }
