@@ -1,74 +1,34 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reporte de Partida</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin: 20px 0;
-        }
-
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #366092;
-            color: white;
-        }
-
-        .section {
-            margin: 30px 0;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            background-color: #366092;
-            color: white;
-            border: none;
-            cursor: pointer;
-            margin: 10px 5px;
-        }
-
-        .btn:hover {
-            background-color: #2a4a6f;
-        }
-
-        .loading {
-            display: none;
-            color: #366092;
-            font-weight: bold;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #926a36; color: white; }
+        .section { margin: 30px 0; }
+        .btn { padding: 10px 20px; background-color: #926936; color: white; 
+               border: none; cursor: pointer; margin: 10px 5px; }
+        .btn:hover { background-color: #6f3c2a; }
+        .loading { display: none; color: #366092; font-weight: bold; }
     </style>
 </head>
-
 <body>
     <h1>Reporte de Partida</h1>
     <div class="loading" id="loading">Cargando datos...</div>
-
+    
     <div id="header-info"></div>
-
-    <button class="btn" onclick="exportarExcel()">📥 Descargar Excel Completo</button>
-    <button class="btn" onclick="exportarOneDrive()">☁️ Exportar a OneDrive</button>
-    <button class="btn" onclick="exportarDrive()">📤 Subir y Compartir en Google Drive</button>
-
+    
+    <button class="btn" onclick="exportarExcel()">Descargar Excel Completo</button>
+    
     <div class="section">
         <h2>Resumen Global</h2>
         <div id="resumen-global"></div>
     </div>
-
+    
     <div class="section">
         <h2>Ranking Final</h2>
         <table id="tabla-ranking">
@@ -86,7 +46,7 @@
             <tbody></tbody>
         </table>
     </div>
-
+    
     <div class="section">
         <h2>Detalle por Pregunta</h2>
         <table id="tabla-preguntas">
@@ -105,23 +65,27 @@
     </div>
 
     <script>
-        const PIN = "{{ pin }}";
-
+        const PARTIDA_ID = "{{ id_partida }}";
+        
         async function cargarReporte() {
+            if (!PARTIDA_ID) {
+                alert('No se proporcionó un id_partida válido.');
+                return;
+            }
             document.getElementById('loading').style.display = 'block';
-
+            
             try {
-                const response = await fetch(`/api/report/partida?pin=${PIN}`);
+                const response = await fetch(`/api/report/partida?id_partida=${encodeURIComponent(PARTIDA_ID)}`);
                 const result = await response.json();
-
+                
                 if (!result.ok) {
                     alert('Error: ' + result.msg);
                     return;
                 }
-
+                
                 const data = result.data;
                 mostrarDatos(data);
-
+                
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error al cargar el reporte');
@@ -129,7 +93,7 @@
                 document.getElementById('loading').style.display = 'none';
             }
         }
-
+        
         function mostrarDatos(data) {
             // Header
             const header = data.header;
@@ -138,7 +102,7 @@
                    <strong>Cuestionario:</strong> ${header.cuestionario_titulo} | 
                    <strong>Estado:</strong> ${header.estado}</p>
             `;
-
+            
             // Resumen global
             const resumen = data.resumen;
             document.getElementById('resumen-global').innerHTML = `
@@ -148,7 +112,7 @@
                    Acierto global: ${resumen.acierto_global}% | 
                    Tiempo promedio: ${resumen.tiempo_promedio_seg}s</p>
             `;
-
+            
             // Ranking
             const tbodyRanking = document.querySelector('#tabla-ranking tbody');
             tbodyRanking.innerHTML = '';
@@ -167,7 +131,7 @@
                     </tr>
                 `;
             });
-
+            
             // Preguntas
             const tbodyPreguntas = document.querySelector('#tabla-preguntas tbody');
             tbodyPreguntas.innerHTML = '';
@@ -184,70 +148,17 @@
                 `;
             });
         }
-
+        
         function exportarExcel() {
-            window.location.href = `/api/report/partida/export?pin=${PIN}`;
-        }
-
-        function exportarOneDrive() {
-            //window.location.href = `/api/report/partida/export?pin=${PIN}`;
-        }
-
-        async function exportarDrive() {
-            const btn = event.target;
-            const textoOriginal = btn.textContent;
-
-            // Pedir el correo del destinatario
-            const correo = prompt('📧 Ingresa el correo de Gmail con quien deseas compartir el reporte:\n\n(El archivo se subirá a Google Drive y se compartirá automáticamente con este correo)');
-
-            if (!correo || correo.trim() === '') {
-                alert('⚠️ Operación cancelada. Debes ingresar un correo electrónico válido');
+            if (!PARTIDA_ID) {
+                alert('No se proporcionó un id_partida válido.');
                 return;
             }
-
-            // Validación básica de correo
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(correo.trim())) {
-                alert('⚠️ El correo electrónico no tiene un formato válido');
-                return;
-            }
-
-            try {
-                btn.disabled = true;
-                btn.textContent = '📤 Subiendo a Drive...';
-
-                const response = await fetch(`/api/report/partida/export-drive?pin=${PIN}&email=${encodeURIComponent(correo.trim())}`);
-                const result = await response.json();
-
-                if (result.ok) {
-                    let mensaje = `✅ ${result.msg}\n\n📄 Archivo: ${result.file_name}\n📧 Compartido con: ${result.shared_with || correo}`;
-
-                    if (result.warning) {
-                        mensaje += `\n\n⚠️ Advertencia: ${result.warning}`;
-                    }
-
-                    mensaje += `\n\n🔗 El archivo se abrirá en una nueva pestaña`;
-
-                    alert(mensaje);
-
-                    // Abrir el archivo en Drive
-                    window.open(result.web_view_link, '_blank');
-                } else {
-                    alert(`❌ Error: ${result.msg}`);
-                }
-
-            } catch (error) {
-                console.error('Error:', error);
-                alert('❌ Error al subir a Google Drive: ' + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = textoOriginal;
-            }
+            window.location.href = `/api/report/partida/export?id_partida=${encodeURIComponent(PARTIDA_ID)}`;
         }
-
+        
         // Cargar datos al inicio
         cargarReporte();
     </script>
 </body>
-
 </html>
