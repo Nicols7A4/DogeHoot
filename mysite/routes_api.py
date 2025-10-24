@@ -1,4 +1,4 @@
-from flask import jsonify, request, url_for, session, Response, send_file
+from flask import jsonify, request, url_for, session, Response, send_file, current_app
 import traceback
 import os
 import time
@@ -7,9 +7,11 @@ from werkzeug.utils import secure_filename
 import csv          #usado para los reportes
 import io           #usado para los reportes
 import pymysql
+from datetime import datetime
 
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
+from openpyxl.utils import get_column_letter
 
 from bd import obtener_conexion
 from controladores import cuestionarios as cc
@@ -940,9 +942,37 @@ def api_report_partida_export():
         else:
             return jsonify({"ok": False, "msg": "Proporcione pin o id_partida"}), 400
 
+        target_partida_id = id_partida if id_partida else data['header']['id_partida']
+
+        # existing_report = None
+        # cx_lookup = obtener_conexion()
+        # try:
+        #     with cx_lookup.cursor() as c_lookup:
+        #         c_lookup.execute(
+        #             """
+        #             SELECT id_reporte, ruta
+        #                 FROM REPORTE
+        #                 WHERE id_partida=%s AND tipo='excel' AND subido_a='local'
+        #                 ORDER BY creado_en DESC
+        #                 LIMIT 1
+        #         """,
+        #             (target_partida_id,)
+        #         )
+        #         existing_report = c_lookup.fetchone()
+        # finally:
+        #     cx_lookup.close()
+
         # Crear libro Excel
         wb = Workbook()
         wb.remove(wb.active)  # Eliminar hoja por defecto
+
+        def _set_dimensions(sheet):
+            max_col = sheet.max_column or 1
+            max_row = sheet.max_row or 1
+            for col_idx in range(1, max_col + 1):
+                sheet.column_dimensions[get_column_letter(col_idx)].width = 20
+            for row_idx in range(1, max_row + 1):
+                sheet.row_dimensions[row_idx].height = 20
 
         # --- HOJA 1: RESUMEN (Ranking Final) ---
         ws_resumen = wb.create_sheet("Resumen")
@@ -967,6 +997,7 @@ def api_report_partida_export():
                 pct_acierto,
                 round(float(part['tiempo_prom_seg'] or 0), 2)
             ])
+        _set_dimensions(ws_resumen)
 
         # --- HOJA 2: DETALLE POR PARTICIPANTE ---
         ws_detalle_part = wb.create_sheet("Detalle por participante")
@@ -992,7 +1023,7 @@ def api_report_partida_export():
                     JOIN PARTICIPANTE pa ON pa.id_participante = rp.id_participante
                     WHERE rp.id_partida=%s
                     ORDER BY pa.nombre, rp.id_pregunta
-                """, (id_partida if id_partida else data['header']['id_partida'],))
+                """, (target_partida_id,))
                 rows_part = c.fetchall()
                 
                 for r in rows_part:
@@ -1007,6 +1038,7 @@ def api_report_partida_export():
                     ])
         finally:
             cx.close()
+        _set_dimensions(ws_detalle_part)
 
         # --- HOJA 3: DETALLE POR PREGUNTA ---
         ws_detalle_preg = wb.create_sheet("Detalle por pregunta")
@@ -1033,7 +1065,7 @@ def api_report_partida_export():
                     WHERE rp.id_partida=%s
                     GROUP BY rp.id_pregunta, rp.opcion_texto
                     ORDER BY rp.id_pregunta, rp.opcion_texto
-                """, (id_partida if id_partida else data['header']['id_partida'],))
+                """, (target_partida_id,))
                 rows_preg = c.fetchall()
                 
                 for r in rows_preg:
@@ -1049,14 +1081,61 @@ def api_report_partida_export():
                     ])
         finally:
             cx.close()
+        _set_dimensions(ws_detalle_preg)
 
-        # Guardar en memoria
+        # timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        # filename = f"reporte_partida_{target_partida_id}_{timestamp}.xlsx"
+        #
+        # reports_dir = os.path.join(current_app.root_path, 'static', 'reportes', 'partidas')
+        # os.makedirs(reports_dir, exist_ok=True)
+        # abs_path = os.path.join(reports_dir, filename)
+        #
+        # wb.save(abs_path)
+        #
+        # rel_path = os.path.relpath(abs_path, os.path.join(current_app.root_path, 'static'))
+        # rel_path = rel_path.replace("\\", "/")
+        #
+        # if existing_report and existing_report.get('ruta'):
+        #     old_path = os.path.join(current_app.root_path, 'static', existing_report['ruta'].lstrip('/'))
+        #     if os.path.isfile(old_path):
+        #         try:
+        #             os.remove(old_path)
+        #         except OSError:
+        #             pass
+        #
+        # cx_db = obtener_conexion()
+        # try:
+        #     with cx_db.cursor() as cdb:
+        #         if existing_report:
+        #             cdb.execute(
+        #                 """
+        #                 UPDATE REPORTE
+        #                     SET ruta=%s,
+        #                         tipo='excel',
+        #                         subido_a='local',
+        #                         link_externo=NULL,
+        #                         creado_en=NOW()
+        #                 WHERE id_reporte=%s
+        #             """,
+        #                 (rel_path, existing_report['id_reporte'])
+        #             )
+        #         else:
+        #             cdb.execute(
+        #                 """
+        #                 INSERT INTO REPORTE (id_partida, ruta, tipo, subido_a)
+        #                 VALUES (%s, %s, %s, %s)
+        #             """,
+        #                 (target_partida_id, rel_path, 'excel', 'local')
+        #             )
+        #     cx_db.commit()
+        # finally:
+        #     cx_db.close()
+
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)
-        
-        filename = f"reporte_partida_{pin if pin else id_partida}.xlsx"
-        
+        filename = f"reporte_partida_{target_partida_id}.xlsx"
+
         return send_file(
             output,
             mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
