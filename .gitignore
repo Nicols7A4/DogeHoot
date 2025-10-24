@@ -2,6 +2,7 @@
 mysite/token.json
 mysite/old-token.json
 mysite/credentials.json
+mysite/pruebas/token_drive.json
 
 .venv/
 __pycache__/
