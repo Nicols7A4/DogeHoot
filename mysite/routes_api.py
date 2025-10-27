@@ -310,6 +310,80 @@ def api_guardar_cuestionario_completo():
 
     return jsonify({"mensaje": "Cuestionario guardado con éxito", "id_cuestionario": id_cuestionario_guardado})
 
+# TEST api Importar Excel
+@app.route("/api/cuestionarios/guardar-basico", methods=['POST'])
+def api_guardar_cuestionario_basico():
+    """
+    Crea un nuevo registro de CUESTIONARIO solo con los datos básicos
+    y devuelve el ID generado. Usado antes de importar preguntas a un cuestionario nuevo.
+    """
+    if 'user_id' not in session:
+        return jsonify({"success": False, "error": "No autorizado. Debes iniciar sesión."}), 401
+
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"success": False, "error": "No se recibieron datos."}), 400
+
+        # Obtener datos del JSON
+        titulo = data.get('titulo', '').strip()
+        id_categoria = data.get('id_categoria') # Dejar que el controlador valide si es None o inválido
+        descripcion = data.get('descripcion', '').strip()
+        es_publico = data.get('es_publico', False) # Default a False si no viene
+
+        # Validar campos obligatorios
+        if not titulo:
+            return jsonify({"success": False, "error": "El título es obligatorio."}), 400
+        if id_categoria is None: # Chequeo explícito por None
+             return jsonify({"success": False, "error": "La categoría es obligatoria."}), 400
+        try:
+             id_categoria = int(id_categoria) # Asegurar que sea entero
+        except (ValueError, TypeError):
+             return jsonify({"success": False, "error": "La categoría seleccionada es inválida."}), 400
+
+
+        # Datos fijos y de sesión
+        id_usuario = session['user_id']
+        vigente = 1 # Asumir que siempre se crea vigente
+        fecha_creacion = datetime.now() # Fecha actual del servidor
+
+        # --- Llamada al Controlador ---
+        # Asumimos que tienes (o crearás) una función en 'controladores/cuestionarios.py'
+        # llamada 'crear_solo_cuestionario' que recibe estos datos, inserta en la tabla
+        # CUESTIONARIO y devuelve el ID insertado o None/lanza excepción si falla.
+        # Debe manejar su propia conexión y commit/rollback.
+
+        # Ejemplo de cómo podría ser la llamada (ajusta según tu controlador real):
+        try:
+            nuevo_id = cc.crear_solo_cuestionario(
+                titulo=titulo,
+                descripcion=descripcion,
+                es_publico=bool(es_publico), # Asegurar booleano
+                fecha_hora_creacion=fecha_creacion,
+                id_usuario=id_usuario,
+                id_categoria=id_categoria,
+                vigente=vigente
+            )
+
+            if nuevo_id:
+                return jsonify({"success": True, "id_cuestionario": nuevo_id}), 201 # 201 Created
+            else:
+                # Si el controlador devuelve None sin lanzar excepción (raro pero posible)
+                return jsonify({"success": False, "error": "No se pudo crear el cuestionario en la base de datos."}), 500
+
+        except pymysql.Error as db_err: # Capturar errores específicos de la BD
+            print(f"Error DB al crear cuestionario básico: {db_err}")
+            # Puedes ser más específico con el mensaje si quieres
+            return jsonify({"success": False, "error": f"Error en base de datos: {db_err}"}), 500
+        except Exception as ctrl_err: # Capturar otros errores del controlador
+            print(f"Error en controlador al crear cuestionario básico: {ctrl_err}")
+            return jsonify({"success": False, "error": f"Error al procesar la solicitud: {ctrl_err}"}), 500
+
+    except Exception as e:
+        # Captura errores generales (ej. JSON malformado)
+        print(f"Error general en /guardar-basico: {e}")
+        return jsonify({"success": False, "error": "Error interno del servidor."}), 500
+
 
 @app.route("/api/preguntas/<int:id_pregunta>/imagen", methods=['POST'])
 def api_upload_pregunta_imagen(id_pregunta):
@@ -923,6 +997,232 @@ from openpyxl.styles import Font, PatternFill
 from flask import send_file
 import io
 
+# @app.route("/api/report/partida/export", methods=["GET"])
+# def api_report_partida_export():
+#     """
+#     Exporta Excel con múltiples hojas: Resumen, Detalle por participante, Detalle por pregunta
+#     Uso: /api/report/partida/export?pin=AB12CD o /api/report/partida/export?id_partida=123
+#     """
+#     try:
+#         pin = request.args.get("pin")
+#         id_partida = request.args.get("id_partida", type=int)
+
+#         from controladores import controlador_partidas as c_part
+
+#         # Obtener datos completos del reporte
+#         if pin:
+#             data = c_part.reporte_por_pin(pin)
+#         elif id_partida:
+#             data = c_part.reporte_por_partida_id(id_partida)
+#         else:
+#             return jsonify({"ok": False, "msg": "Proporcione pin o id_partida"}), 400
+
+#         target_partida_id = id_partida if id_partida else data['header']['id_partida']
+
+#         # existing_report = None
+#         # cx_lookup = obtener_conexion()
+#         # try:
+#         #     with cx_lookup.cursor() as c_lookup:
+#         #         c_lookup.execute(
+#         #             """
+#         #             SELECT id_reporte, ruta
+#         #                 FROM REPORTE
+#         #                 WHERE id_partida=%s AND tipo='excel' AND subido_a='local'
+#         #                 ORDER BY creado_en DESC
+#         #                 LIMIT 1
+#         #         """,
+#         #             (target_partida_id,)
+#         #         )
+#         #         existing_report = c_lookup.fetchone()
+#         # finally:
+#         #     cx_lookup.close()
+
+#         # Crear libro Excel
+#         wb = Workbook()
+#         wb.remove(wb.active)  # Eliminar hoja por defecto
+
+#         def _set_dimensions(sheet):
+#             max_col = sheet.max_column or 1
+#             max_row = sheet.max_row or 1
+#             for col_idx in range(1, max_col + 1):
+#                 sheet.column_dimensions[get_column_letter(col_idx)].width = 20
+#             for row_idx in range(1, max_row + 1):
+#                 sheet.row_dimensions[row_idx].height = 20
+
+#         # --- HOJA 1: RESUMEN (Ranking Final) ---
+#         ws_resumen = wb.create_sheet("Resumen")
+#         ws_resumen.append(["Posición", "Usuario/Grupo", "PuntajeTotal", "RespuestasCorrectas",
+#                           "RespuestasIncorrectas", "%Acierto", "TiempoPromedioResp (s)"])
+
+#         # Estilo para encabezados
+#         for cell in ws_resumen[1]:
+#             cell.font = Font(bold=True)
+#             cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+
+#         # Llenar datos del ranking
+#         for idx, part in enumerate(data['participantes'], start=1):
+#             total_resp = int(part['correctas']) + int(part['incorrectas'])
+#             pct_acierto = round((int(part['correctas']) / total_resp * 100), 2) if total_resp > 0 else 0
+#             ws_resumen.append([
+#                 idx,
+#                 part['nombre'],
+#                 int(part['puntaje_total']),
+#                 int(part['correctas']),
+#                 int(part['incorrectas']),
+#                 pct_acierto,
+#                 round(float(part['tiempo_prom_seg'] or 0), 2)
+#             ])
+#         _set_dimensions(ws_resumen)
+
+#         # --- HOJA 2: DETALLE POR PARTICIPANTE ---
+#         ws_detalle_part = wb.create_sheet("Detalle por participante")
+#         ws_detalle_part.append(["Usuario", "Grupo(opc)", "Correcta",
+#                                 "TiempoRestante", "PuntosOtorgados", "PuntajeAcumulado"])
+
+#         for cell in ws_detalle_part[1]:
+#             cell.font = Font(bold=True)
+#             cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+
+#         # Obtener respuestas detalladas por participante
+#         cx = obtener_conexion()
+#         try:
+#             with cx.cursor(pymysql.cursors.DictCursor) as c:
+#                 c.execute("""
+#                     SELECT pa.nombre, pa.id_grupo, rp.id_pregunta, rp.es_correcta,
+#                           TIME_TO_SEC(rp.tiempo_respuesta) AS tiempo_seg, rp.puntaje,
+#                           (SELECT SUM(rp2.puntaje)
+#                             FROM RESPUESTA_PARTICIPANTE rp2
+#                             WHERE rp2.id_participante = rp.id_participante
+#                             AND rp2.id_respuesta <= rp.id_respuesta) AS puntaje_acum
+#                     FROM RESPUESTA_PARTICIPANTE rp
+#                     JOIN PARTICIPANTE pa ON pa.id_participante = rp.id_participante
+#                     WHERE rp.id_partida=%s
+#                     ORDER BY pa.nombre, rp.id_pregunta
+#                 """, (target_partida_id,))
+#                 rows_part = c.fetchall()
+
+#                 for r in rows_part:
+#                     grupo = r['id_grupo']
+#                     ws_detalle_part.append([
+#                         r['nombre'],
+#                         grupo if grupo not in (None, "") else "No",
+#                         "Sí" if int(r['es_correcta']) == 1 else "No",
+#                         int(r['tiempo_seg'] or 0),
+#                         int(r['puntaje']),
+#                         int(r['puntaje_acum'] or 0)
+#                     ])
+#         finally:
+#             cx.close()
+#         _set_dimensions(ws_detalle_part)
+
+#         # --- HOJA 3: DETALLE POR PREGUNTA ---
+#         ws_detalle_preg = wb.create_sheet("Detalle por pregunta")
+#         ws_detalle_preg.append(["#Pregunta", "Pregunta", "Opción", "Correcta",
+#                               "RespuestasRecibidas", "Aciertos", "%Aciertos"])
+
+#         for cell in ws_detalle_preg[1]:
+#             cell.font = Font(bold=True)
+#             cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+
+#         # Obtener detalle de opciones por pregunta
+#         cx = obtener_conexion()
+#         try:
+#             with cx.cursor(pymysql.cursors.DictCursor) as c:
+#                 c.execute("""
+#                     SELECT rp.id_pregunta,
+#                           MIN(rp.pregunta_texto) AS pregunta_texto,
+#                           rp.opcion_texto,
+#                           MAX(rp.es_correcta) AS es_correcta,
+#                           COUNT(*) AS respuestas_recibidas,
+#                           SUM(rp.es_correcta) AS aciertos,
+#                           ROUND(AVG(TIME_TO_SEC(rp.tiempo_respuesta)), 2) AS tiempo_prom
+#                     FROM RESPUESTA_PARTICIPANTE rp
+#                     WHERE rp.id_partida=%s
+#                     GROUP BY rp.id_pregunta, rp.opcion_texto
+#                     ORDER BY rp.id_pregunta, rp.opcion_texto
+#                 """, (target_partida_id,))
+#                 rows_preg = c.fetchall()
+
+#                 for r in rows_preg:
+#                     pct_aciertos = round((int(r['aciertos']) / int(r['respuestas_recibidas']) * 100), 2) if r['respuestas_recibidas'] > 0 else 0
+#                     ws_detalle_preg.append([
+#                         r['id_pregunta'],
+#                         r['pregunta_texto'],
+#                         r['opcion_texto'],
+#                         "Sí" if int(r['es_correcta']) == 1 else "No",
+#                         int(r['respuestas_recibidas']),
+#                         int(r['aciertos']),
+#                         pct_aciertos,
+#                     ])
+#         finally:
+#             cx.close()
+#         _set_dimensions(ws_detalle_preg)
+
+#         # timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+#         # filename = f"reporte_partida_{target_partida_id}_{timestamp}.xlsx"
+#         #
+#         # reports_dir = os.path.join(current_app.root_path, 'static', 'reportes', 'partidas')
+#         # os.makedirs(reports_dir, exist_ok=True)
+#         # abs_path = os.path.join(reports_dir, filename)
+#         #
+#         # wb.save(abs_path)
+#         #
+#         # rel_path = os.path.relpath(abs_path, os.path.join(current_app.root_path, 'static'))
+#         # rel_path = rel_path.replace("\\", "/")
+#         #
+#         # if existing_report and existing_report.get('ruta'):
+#         #     old_path = os.path.join(current_app.root_path, 'static', existing_report['ruta'].lstrip('/'))
+#         #     if os.path.isfile(old_path):
+#         #         try:
+#         #             os.remove(old_path)
+#         #         except OSError:
+#         #             pass
+#         #
+#         # cx_db = obtener_conexion()
+#         # try:
+#         #     with cx_db.cursor() as cdb:
+#         #         if existing_report:
+#         #             cdb.execute(
+#         #                 """
+#         #                 UPDATE REPORTE
+#         #                     SET ruta=%s,
+#         #                         tipo='excel',
+#         #                         subido_a='local',
+#         #                         link_externo=NULL,
+#         #                         creado_en=NOW()
+#         #                 WHERE id_reporte=%s
+#         #             """,
+#         #                 (rel_path, existing_report['id_reporte'])
+#         #             )
+#         #         else:
+#         #             cdb.execute(
+#         #                 """
+#         #                 INSERT INTO REPORTE (id_partida, ruta, tipo, subido_a)
+#         #                 VALUES (%s, %s, %s, %s)
+#         #             """,
+#         #                 (target_partida_id, rel_path, 'excel', 'local')
+#         #             )
+#         #     cx_db.commit()
+#         # finally:
+#         #     cx_db.close()
+
+#         output = io.BytesIO()
+#         wb.save(output)
+#         output.seek(0)
+#         filename = f"reporte_partida_{target_partida_id}.xlsx"
+
+#         return send_file(
+#             output,
+#             mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+#             as_attachment=True,
+#             download_name=filename
+#         )
+
+#     except Exception as e:
+#         traceback.print_exc()
+#         return jsonify({"ok": False, "msg": str(e)}), 500
+
+
 @app.route("/api/report/partida/export", methods=["GET"])
 def api_report_partida_export():
     """
@@ -1028,10 +1328,12 @@ def api_report_partida_export():
                 rows_part = c.fetchall()
                 
                 for r in rows_part:
-                    grupo = r['id_grupo']
+                    grupo_raw = r['numero_grupo']
+                    grupo_num = int(grupo_raw) if grupo_raw not in (None, "", 0) else 0
+                    grupo_texto = grupo_num if grupo_num > 0 else "No"
                     ws_detalle_part.append([
                         r['nombre'],
-                        grupo if grupo not in (None, "") else "No",
+                        grupo_texto,
                         "Sí" if int(r['es_correcta']) == 1 else "No",
                         int(r['tiempo_seg'] or 0),
                         int(r['puntaje']),
@@ -1147,6 +1449,7 @@ def api_report_partida_export():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"ok": False, "msg": str(e)}), 500
+
 
 
 @app.route("/api/report/partida/export-drive", methods=["GET"])

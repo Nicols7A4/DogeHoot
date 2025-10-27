@@ -230,6 +230,22 @@ def obtener_opcion_por_id(id_opcion):
             conexion.close()
     return opcion
 
+def _extraer_numero_grupo(nombre_grupo):
+    """
+    Devuelve el número de grupo (entero) detectado en el nombre del grupo.
+    Si no hay número, regresa 0.
+    """
+    if not nombre_grupo:
+        return 0
+
+    match = re.search(r"\d+", str(nombre_grupo))
+    if match:
+        try:
+            return int(match.group())
+        except ValueError:
+            return 0
+    return 0
+
 # ---------------------------------- AGREGADO POR PAME - Reportes
 def log_respuesta_en_bd(partida, participante, pregunta, opcion_db, puntos, tiempo_restante, nombre_usuario):
     conexion = None
