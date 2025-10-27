@@ -557,15 +557,41 @@ def submit_answer(pin, id_opcion, tiempo_restante):
 def _final_ranking(partida):
     if partida['modalidad_grupal']:
         ranking_final = sorted(partida['grupos'], key=lambda g: g['puntaje'], reverse=True)
-        return [{'nombre': g['nombre'], 'puntaje': g['puntaje']} for g in ranking_final]
+        ranking_data = []
+        for i, grupo in enumerate(ranking_final, start=1):
+            # Calcular monedas para cada grupo
+            base_por_puesto = {1: 100, 2: 75, 3: 50}
+            base = base_por_puesto.get(i, 20)
+            extra = grupo['puntaje'] // 50
+            monedas = base + extra
+            ranking_data.append({
+                'nombre': grupo['nombre'], 
+                'puntaje': grupo['puntaje'],
+                'monedas': monedas,
+                'posicion': i
+            })
+        return ranking_data
     else:
         ranking_ordenado = sorted(partida['participantes'].values(), key=lambda p: p['puntaje'], reverse=True)
         ranking_data, usados = [], set()
+        posicion = 1
         for p_data in ranking_ordenado:
             for nombre, data in partida['participantes'].items():
                 if data == p_data and nombre not in usados:
-                    ranking_data.append({'nombre': nombre, 'puntaje': data['puntaje']})
+                    # Calcular monedas para este jugador
+                    base_por_puesto = {1: 100, 2: 75, 3: 50}
+                    base = base_por_puesto.get(posicion, 20)
+                    extra = data['puntaje'] // 50
+                    monedas = base + extra
+                    
+                    ranking_data.append({
+                        'nombre': nombre, 
+                        'puntaje': data['puntaje'],
+                        'monedas': monedas,
+                        'posicion': posicion
+                    })
                     usados.add(nombre)
+                    posicion += 1
                     break
         return ranking_data
 

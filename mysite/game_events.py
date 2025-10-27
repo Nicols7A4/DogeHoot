@@ -10,6 +10,7 @@ import random
 from controladores import controlador_partidas as ctrl_partidas
 from controladores import preguntas_opciones as cpo 
 from controladores import usuarios as ctrl_usuarios # Para actualizar puntos al final
+from controladores import controlador_recompensas as c_rec
 
 partidas_en_juego = {} # Nuestro "cerebro" en memoria
 
@@ -359,7 +360,18 @@ def finalizar_juego(pin):
 
     if partida['modalidad_grupal']:
         ranking_final = sorted(partida['grupos'], key=lambda g: g['puntaje'], reverse=True)
-        ranking_data = [{'nombre': g['nombre'], 'puntaje': g['puntaje']} for g in ranking_final]
+        # Calcular monedas para cada grupo
+        for i, grupo in enumerate(ranking_final, start=1):
+            base_por_puesto = {1: 100, 2: 75, 3: 50}
+            base = base_por_puesto.get(i, 20)
+            extra = grupo['puntaje'] // 50
+            monedas = base + extra
+            ranking_data.append({
+                'nombre': grupo['nombre'], 
+                'puntaje': grupo['puntaje'],
+                'monedas': monedas,
+                'posicion': i
+            })
         
         # --- LÓGICA DE GUARDADO GRUPAL (DESCOMENTADA) ---
         for grupo in ranking_final:
@@ -373,16 +385,31 @@ def finalizar_juego(pin):
     else: # Modo individual
         ranking_final = sorted(partida['participantes'].values(), key=lambda p: p['puntaje'], reverse=True)
         
+        posicion = 1
         for p_data in ranking_final:
             for nombre, data in partida['participantes'].items():
                 if data == p_data and nombre not in nombres_usados: 
-                    ranking_data.append({'nombre': nombre, 'puntaje': data['puntaje']})
+                    # Calcular monedas para este jugador
+                    base_por_puesto = {1: 100, 2: 75, 3: 50}
+                    base = base_por_puesto.get(posicion, 20)
+                    extra = data['puntaje'] // 50
+                    monedas = base + extra
+                    
+                    print(f"DEBUG: Jugador {nombre} - Posición {posicion} - Puntaje {data['puntaje']} - Monedas {monedas}")
+                    
+                    ranking_data.append({
+                        'nombre': nombre, 
+                        'puntaje': data['puntaje'],
+                        'monedas': monedas,
+                        'posicion': posicion
+                    })
                     
                     # --- LÓGICA DE GUARDADO INDIVIDUAL (DESCOMENTADA) ---
                     if data['id_usuario']:
                         ctrl_usuarios.sumar_puntos(data['id_usuario'], data['puntaje'])
                     
                     nombres_usados.add(nombre)
+                    posicion += 1
                     break # Pasa al siguiente p_data
 
     # Marcamos la partida como finalizada en la BD
@@ -390,7 +417,7 @@ def finalizar_juego(pin):
 
      # --- OTORGAR RECOMPENSAS AUTOMÁTICAMENTE ---
     try:
-
+        print(f"DEBUG: Enviando ranking_data al cliente: {ranking_data}")
         recompensas_ok = c_rec.otorgar_recompensas(partida['id_partida'])
         if recompensas_ok:
             print(f"Recompensas otorgadas automáticamente para la partida {partida['id_partida']}")
