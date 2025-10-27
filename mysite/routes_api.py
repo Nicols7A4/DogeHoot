@@ -977,7 +977,7 @@ def api_report_partida_export():
 
         # --- HOJA 1: RESUMEN (Ranking Final) ---
         ws_resumen = wb.create_sheet("Resumen")
-        ws_resumen.append(["Posición", "Usuario/Grupo", "PuntajeTotal", "RespuestasCorrectas", 
+        ws_resumen.append(["Posición", "Usuario", "Grupo", "PuntajeTotal", "RespuestasCorrectas", 
                           "RespuestasIncorrectas", "%Acierto", "TiempoPromedioResp (s)"])
         
         # Estilo para encabezados
@@ -989,9 +989,12 @@ def api_report_partida_export():
         for idx, part in enumerate(data['participantes'], start=1):
             total_resp = int(part['correctas']) + int(part['incorrectas'])
             pct_acierto = round((int(part['correctas']) / total_resp * 100), 2) if total_resp > 0 else 0
+            grupo_val = int(part.get('grupo') or 0)
+            grupo_texto = grupo_val if grupo_val > 0 else "No"
             ws_resumen.append([
                 idx,
                 part['nombre'],
+                grupo_texto,
                 int(part['puntaje_total']),
                 int(part['correctas']),
                 int(part['incorrectas']),
@@ -1002,7 +1005,7 @@ def api_report_partida_export():
 
         # --- HOJA 2: DETALLE POR PARTICIPANTE ---
         ws_detalle_part = wb.create_sheet("Detalle por participante")
-        ws_detalle_part.append(["Usuario", "Grupo(opc)", "Correcta", 
+        ws_detalle_part.append(["Usuario", "Grupo", "Correcta", 
                                 "TiempoRestante", "PuntosOtorgados", "PuntajeAcumulado"])
         
         for cell in ws_detalle_part[1]:
@@ -1015,6 +1018,7 @@ def api_report_partida_export():
             with cx.cursor(pymysql.cursors.DictCursor) as c:
                 c.execute("""
                     SELECT pa.nombre, pa.id_grupo, rp.id_pregunta, rp.es_correcta,
+                           pa.grupo AS numero_grupo,
                            TIME_TO_SEC(rp.tiempo_respuesta) AS tiempo_seg, rp.puntaje,
                            (SELECT SUM(rp2.puntaje) 
                             FROM RESPUESTA_PARTICIPANTE rp2 
@@ -1028,10 +1032,11 @@ def api_report_partida_export():
                 rows_part = c.fetchall()
                 
                 for r in rows_part:
-                    grupo = r['id_grupo']
+                    grupo_val = int(r.get('numero_grupo') or 0)
+                    grupo_texto = grupo_val if grupo_val > 0 else "No"
                     ws_detalle_part.append([
                         r['nombre'],
-                        grupo if grupo not in (None, "") else "No",
+                        grupo_texto,
                         "Sí" if int(r['es_correcta']) == 1 else "No",
                         int(r['tiempo_seg'] or 0),
                         int(r['puntaje']),
@@ -1184,7 +1189,7 @@ def api_report_partida_export_drive():
 
         # --- HOJA 1: RESUMEN (Ranking Final) ---
         ws_resumen = wb.create_sheet("Resumen")
-        ws_resumen.append(["Posición", "Usuario/Grupo", "PuntajeTotal", "RespuestasCorrectas", 
+        ws_resumen.append(["Posición", "Usuario", "Grupo", "PuntajeTotal", "RespuestasCorrectas", 
                           "RespuestasIncorrectas", "%Acierto", "TiempoPromedioResp (s)"])
         
         for cell in ws_resumen[1]:
@@ -1194,9 +1199,12 @@ def api_report_partida_export_drive():
         for idx, part in enumerate(data['participantes'], start=1):
             total_resp = int(part['correctas']) + int(part['incorrectas'])
             pct_acierto = round((int(part['correctas']) / total_resp * 100), 2) if total_resp > 0 else 0
+            grupo_val = int(part.get('grupo') or 0)
+            grupo_texto = grupo_val if grupo_val > 0 else "No"
             ws_resumen.append([
                 idx,
                 part['nombre'],
+                grupo_texto,
                 int(part['puntaje_total']),
                 int(part['correctas']),
                 int(part['incorrectas']),
@@ -1206,7 +1214,7 @@ def api_report_partida_export_drive():
 
         # --- HOJA 2: DETALLE POR PARTICIPANTE ---
         ws_detalle_part = wb.create_sheet("Detalle por participante")
-        ws_detalle_part.append(["Usuario", "Grupo(opc)", "PreguntaN", "Correcta(0/1)", 
+        ws_detalle_part.append(["Usuario", "Grupo", "PreguntaN", "Correcta(0/1)", 
                                 "TiempoRestante", "PuntosOtorgados", "PuntajeAcumulado"])
         
         for cell in ws_detalle_part[1]:
@@ -1218,6 +1226,7 @@ def api_report_partida_export_drive():
             with cx.cursor(pymysql.cursors.DictCursor) as c:
                 c.execute("""
                     SELECT pa.nombre, pa.id_grupo, rp.id_pregunta, rp.es_correcta,
+                           pa.grupo AS numero_grupo,
                            TIME_TO_SEC(rp.tiempo_respuesta) AS tiempo_seg, rp.puntaje,
                            (SELECT SUM(rp2.puntaje) 
                             FROM RESPUESTA_PARTICIPANTE rp2 
@@ -1233,7 +1242,7 @@ def api_report_partida_export_drive():
                 for r in rows_part:
                     ws_detalle_part.append([
                         r['nombre'],
-                        r['id_grupo'] or "",
+                        (int(r.get('numero_grupo') or 0) or "No"),
                         r['id_pregunta'],
                         int(r['es_correcta']),
                         int(r['tiempo_seg'] or 0),
@@ -1419,7 +1428,7 @@ def api_report_partida_export_onedrive():
         
         # --- HOJA 1: RESUMEN ---
         ws_resumen = wb.create_sheet("Resumen")
-        ws_resumen.append(['Posición', 'Usuario/Grupo', 'Puntaje Total', 'Respuestas Correctas', 
+        ws_resumen.append(['Posición', 'Usuario', 'Grupo', 'Puntaje Total', 'Respuestas Correctas', 
                           'Respuestas Incorrectas', '% Acierto', 'Tiempo Promedio (seg)'])
         
         # Estilo del header
@@ -1431,9 +1440,12 @@ def api_report_partida_export_onedrive():
         for idx, part in enumerate(data['participantes'], start=1):
             total_resp = int(part['correctas']) + int(part['incorrectas'])
             pct_acierto = round(int(part['correctas']) / total_resp * 100, 2) if total_resp > 0 else 0
+            grupo_val = int(part.get('grupo') or 0)
+            grupo_texto = grupo_val if grupo_val > 0 else "No"
             ws_resumen.append([
                 idx,
                 part['nombre'],
+                grupo_texto,
                 int(part['puntaje_total']),
                 int(part['correctas']),
                 int(part['incorrectas']),
@@ -1455,7 +1467,7 @@ def api_report_partida_export_onedrive():
         try:
             with cx.cursor(pymysql.cursors.DictCursor) as c:
                 c.execute("""
-                    SELECT pa.nombre, pa.id_grupo, rp.id_pregunta, rp.es_correcta,
+                    SELECT pa.nombre, pa.id_grupo, pa.grupo AS numero_grupo, rp.id_pregunta, rp.es_correcta,
                            TIME_TO_SEC(rp.tiempo_respuesta) AS tiempo_seg,
                            rp.puntaje,
                            (SELECT SUM(rp2.puntaje) FROM RESPUESTA_PARTICIPANTE rp2
@@ -1471,7 +1483,7 @@ def api_report_partida_export_onedrive():
                 for r in rows_part:
                     ws_detalle_part.append([
                         r['nombre'],
-                        r['id_grupo'] or '',
+                        (int(r.get('numero_grupo') or 0) or 'No'),
                         r['id_pregunta'],
                         int(r['es_correcta']),
                         int(r['tiempo_seg'] or 0),

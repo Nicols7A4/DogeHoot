@@ -4,6 +4,7 @@ from datetime import datetime
 import random
 import string
 import pymysql
+import re
 from datetime import datetime
 
 def _generar_pin():
@@ -230,22 +231,54 @@ def obtener_opcion_por_id(id_opcion):
             conexion.close()
     return opcion
 
+# ---------------------------------- Helpers
+def _extraer_numero_grupo(nombre_grupo):
+    """
+    Devuelve el número de grupo detectado en el nombre del grupo (ej: 'Grupo 2' -> 2).
+    Si no hay número, retorna 0.
+    """
+    if not nombre_grupo:
+        return 0
+    match = re.search(r"\d+", str(nombre_grupo))
+    if match:
+        try:
+            return int(match.group())
+        except ValueError:
+            return 0
+    return 0
+
 # ---------------------------------- AGREGADO POR PAME - Reportes
 def log_respuesta_en_bd(partida, participante, pregunta, opcion_db, puntos, tiempo_restante, nombre_usuario):
     conexion = None
     try:
         conexion = obtener_conexion()
         with conexion.cursor(pymysql.cursors.DictCursor) as c:
+            modalidad_grupal = bool(partida.get('modalidad_grupal'))
+            numero_grupo = 0
+            if modalidad_grupal:
+                numero_grupo = int(participante.get('grupo_numero') or 0)
+                if not numero_grupo:
+                    numero_grupo = _extraer_numero_grupo(participante.get('grupo'))
+                    if not numero_grupo:
+                        grupos = partida.get('grupos') or []
+                        for grupo in grupos:
+                            if grupo.get('nombre') == participante.get('grupo'):
+                                numero_grupo = int(grupo.get('numero') or 0)
+                                break
+            numero_grupo = numero_grupo or 0
+
             # UPSERT (dispara por uniq_partida_usuario o uniq_partida_nombre)
             c.execute("""
-                INSERT INTO PARTICIPANTE (id_partida, id_usuario, nombre, id_grupo, puntaje, registrado)
-                VALUES (%s, %s, %s, %s, 0, %s)
-                ON DUPLICATE KEY UPDATE id_grupo = VALUES(id_grupo)
+                INSERT INTO PARTICIPANTE (id_partida, id_usuario, nombre, id_grupo, grupo, puntaje, registrado)
+                VALUES (%s, %s, %s, %s, %s, 0, %s)
+                ON DUPLICATE KEY UPDATE id_grupo = VALUES(id_grupo),
+                                        grupo = VALUES(grupo)
             """, (
                 partida['id_partida'],
                 participante.get('id_usuario'),
                 nombre_usuario,
                 None,
+                numero_grupo,
                 1 if participante.get('id_usuario') else 0
             ))
 
@@ -408,6 +441,7 @@ def _get_ranking_final(id_partida):
         with cx.cursor(pymysql.cursors.DictCursor) as c:
             c.execute("""
                 SELECT pa.nombre,
+                        COALESCE(pa.grupo, 0) AS grupo,
                         SUM(rp.puntaje) AS puntaje_total,
                         SUM(rp.es_correcta+0) AS correctas,
                         COUNT(*) - SUM(rp.es_correcta+0) AS incorrectas,
@@ -415,7 +449,7 @@ def _get_ranking_final(id_partida):
                     FROM RESPUESTA_PARTICIPANTE rp
                     JOIN PARTICIPANTE pa ON pa.id_participante = rp.id_participante
                     WHERE rp.id_partida=%s
-                    GROUP BY pa.nombre
+                    GROUP BY pa.id_participante, pa.nombre, pa.grupo
                     ORDER BY puntaje_total DESC, correctas DESC
             """, (id_partida,))
             return c.fetchall()

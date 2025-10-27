@@ -42,6 +42,7 @@ def al_iniciar_panel(data):
         if partida_db['modalidad']:
             for i in range(partida_db.get('cant_grupos', 2)):
                 grupos.append({
+                    "numero": i + 1,
                     "nombre": f"Grupo {i + 1}", 
                     "miembros": [], 
                     "puntaje": 0, 
@@ -85,7 +86,13 @@ def al_unirse_jugador(data):
         grupos = []
         if partida_db['modalidad']:
             for i in range(partida_db.get('cant_grupos', 2)):
-                grupos.append({"nombre": f"Grupo {i + 1}", "miembros": [], "puntaje": 0, "respondio_pregunta": False})
+                grupos.append({
+                    "numero": i + 1,
+                    "nombre": f"Grupo {i + 1}", 
+                    "miembros": [], 
+                    "puntaje": 0, 
+                    "respondio_pregunta": False
+                })
 
         partidas_en_juego[pin] = {
             "id_partida": partida_db['id_partida'],
@@ -105,11 +112,11 @@ def al_unirse_jugador(data):
     # El resto de la lógica para añadir al jugador no cambia...
     jugador_ya_existe = nombre_usuario in partida['participantes']
     if not jugador_ya_existe:
-        partida['participantes'][nombre_usuario] = {'grupo': None, 'puntaje': 0, 'id_usuario': id_usuario}
+        partida['participantes'][nombre_usuario] = {'grupo': None, 'grupo_numero': 0, 'puntaje': 0, 'id_usuario': id_usuario}
         if partida['modalidad_grupal']:
             partida['participantes_sin_grupo'].append(nombre_usuario)
         else:
-             if not partida['grupos']: partida['grupos'].append({'nombre':'Individual', 'miembros':[], 'puntaje':0, 'respondio_pregunta':False})
+             if not partida['grupos']: partida['grupos'].append({'numero': 0, 'nombre':'Individual', 'miembros':[], 'puntaje':0, 'respondio_pregunta':False})
              partida['grupos'][0]['miembros'].append(nombre_usuario)
 
     
@@ -152,12 +159,14 @@ def al_seleccionar_grupo(data):
     for g in partida['grupos']:
         if nombre_usuario in g['miembros']:
             g['miembros'].remove(nombre_usuario)
+            partida['participantes'][nombre_usuario]['grupo_numero'] = 0
 
     # Añadir al nuevo grupo
     for g in partida['grupos']:
         if g['nombre'] == nombre_grupo:
             g['miembros'].append(nombre_usuario)
             partida['participantes'][nombre_usuario]['grupo'] = nombre_grupo
+            partida['participantes'][nombre_usuario]['grupo_numero'] = g.get('numero', 0)
             break
             
     # emit('actualizar_estado_lobby', partida, room=pin)
