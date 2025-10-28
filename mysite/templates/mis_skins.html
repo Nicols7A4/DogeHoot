@@ -222,6 +222,70 @@
         to { opacity: 1; transform: scale(1); }
     }
 
+        /* --- Modal de Vista Previa de Skin --- */
+    .preview-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        backdrop-filter: blur(4px);
+    }
+
+    .preview-content {
+        max-width: 90%;
+        max-height: 80%;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        border: 3px solid var(--border-soft);
+        animation: zoomIn 0.25s ease-out;
+    }
+
+    .close-preview {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: white;
+        font-size: 2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .close-preview:hover {
+        transform: scale(1.1);
+    }
+
+    /* Animación de aparición */
+    @keyframes zoomIn {
+        from {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+        /* --- Botón "Dejar de usar" (Rojo) --- */
+    .skin-card .btn-dejar {
+        background-color: transparent;
+        color: var(--btn-expired-text);
+        border-color: var(--btn-expired-text);
+        margin-top: 0.5rem;
+    }
+    .skin-card .btn-dejar:hover {
+        background-color: var(--btn-expired-bg);
+    }
+
+
 
 </style>
 {% endblock %}
@@ -243,8 +307,12 @@
             {% for skin in skins %}
                 <div class="skin-card">
                     <div class="skin-card__image">
-                        <img src="{{ url_for('static', filename=skin.ruta) }}" alt="Skin {{ skin.id_skin }}">
+                        <img src="{{ url_for('static', filename=skin.ruta) }}"
+                             alt="Skin {{ skin.id_skin }}"
+                             class="img-preview"
+                             data-img="{{ url_for('static', filename=skin.ruta) }}">
                     </div>
+
                     <div class="skin-card__body">
                         {% if skin.id_skin == user.id_skin_activa %}
                             <button class="btn btn-usando" disabled>
@@ -252,6 +320,9 @@
                                     <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"></path>
                                 </svg>
                                 <span>Usando</span>
+                            </button>
+                            <button class="btn btn-dejar" id="btn-dejar-{{ skin.id_skin }}" data-id="{{ skin.id_skin }}">
+                                    Dejar de usar
                             </button>
                         {% else %}
                             <button class="btn btn-usar cambiar-btn" data-id="{{ skin.id_skin }}">Usar</button>
@@ -278,6 +349,10 @@
         </div>
     {% endif %}
 </div>
+<div id="previewModal" class="preview-modal">
+    <span class="close-preview">&times;</span>
+    <img class="preview-content" id="previewImage">
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -301,6 +376,48 @@
                 window.showModal('Error de Conexión', 'No se pudo conectar con el servidor.');
             }
         });
+    });
+
+
+
+   document.querySelectorAll(".btn-dejar").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            try {
+                const resp = await fetch("/api/skins/quitar", { method: "POST" });
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    window.showModal('Skin desactivada', data.mensaje || 'Has dejado de usar la skin.');
+                    document.getElementById('modal-close').addEventListener('click', () => location.reload(), { once: true });
+                } else {
+                    window.showModal('Error', data.error || 'No se pudo desactivar la skin.');
+                }
+            } catch {
+                window.showModal('Error de Conexión', 'No se pudo conectar con el servidor.');
+            }
+        });
+    });
+
+
+    // --- Vista previa de skins ---
+    const previewModal = document.getElementById("previewModal");
+    const previewImage = document.getElementById("previewImage");
+    const closePreview = document.querySelector(".close-preview");
+
+    document.querySelectorAll(".img-preview").forEach(img => {
+        img.addEventListener("click", () => {
+            previewImage.src = img.dataset.img;
+            previewModal.style.display = "flex";
+        });
+    });
+
+
+    closePreview.addEventListener("click", () => {
+        previewModal.style.display = "none";
+    });
+
+    previewModal.addEventListener("click", e => {
+        if (e.target === previewModal) previewModal.style.display = "none";
     });
 </script>
 {% endblock %}

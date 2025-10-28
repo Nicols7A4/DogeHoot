@@ -183,6 +183,58 @@
         fill: currentColor;
     }
 
+            /* --- Modal de Vista Previa de Skin --- */
+    .preview-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        backdrop-filter: blur(4px);
+    }
+
+    .preview-content {
+        max-width: 90%;
+        max-height: 80%;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        border: 3px solid var(--border-soft);
+        animation: zoomIn 0.25s ease-out;
+    }
+
+    .close-preview {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: white;
+        font-size: 2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .close-preview:hover {
+        transform: scale(1.1);
+    }
+
+    /* Animación de aparición */
+    @keyframes zoomIn {
+        from {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
 </style>
 {% endblock %}
 
@@ -202,7 +254,13 @@
         {% for skin in skins %}
             <div class="skin-card">
                 <div class="skin-card__image">
-                    <img src="{{ url_for('static', filename=skin.ruta) }}" alt="Skin {{ skin.id_skin }}">
+                    <img
+                        src="{{ url_for('static', filename=skin.ruta) }}"
+                        alt="Skin {{ skin.id_skin }}"
+                        class="img-preview"
+                        data-img="{{ url_for('static', filename=skin.ruta) }}"
+                        style="cursor: zoom-in;"
+                    >
                 </div>
                 <div class="skin-card__body">
                     {% if skin.ya_comprada %}
@@ -230,6 +288,10 @@
         {% endfor %}
     </div>
 </div>
+<div id="previewModal" class="preview-modal">
+    <span class="close-preview">&times;</span>
+    <img class="preview-content" id="previewImage">
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -256,6 +318,27 @@
                 window.showModal('Error de Conexión', 'No se pudo conectar con el servidor.');
             }
         });
+    });
+
+    // --- Vista previa de skins ---
+    const previewModal = document.getElementById("previewModal");
+    const previewImage = document.getElementById("previewImage");
+    const closePreview = document.querySelector(".close-preview");
+
+    document.querySelectorAll(".img-preview").forEach(img => {
+        img.addEventListener("click", () => {
+            previewImage.src = img.dataset.img;
+            previewModal.style.display = "flex";
+        });
+    });
+
+
+    closePreview.addEventListener("click", () => {
+        previewModal.style.display = "none";
+    });
+
+    previewModal.addEventListener("click", e => {
+        if (e.target === previewModal) previewModal.style.display = "none";
     });
 </script>
 {% endblock %}

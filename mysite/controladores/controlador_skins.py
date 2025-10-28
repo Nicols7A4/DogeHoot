@@ -87,3 +87,23 @@ def cambiar_skin_activa(id_usuario, id_skin):
     finally:
         conexion.close()
 
+def quitar_skin_activa(id_usuario):
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            # Quitar skin activa (poner NULL o valor por defecto)
+            cursor.execute("""
+                UPDATE USUARIO
+                SET id_skin_activa = NULL
+                WHERE id_usuario = %s
+            """, (id_usuario,))
+            conexion.commit()
+
+        return True, "Has quitado tu skin actual."
+    except Exception as e:
+        print("Error al quitar skin activa:", e)
+        traceback.print_exc()
+        return False, "Error al quitar la skin."
+    finally:
+        conexion.close()
+

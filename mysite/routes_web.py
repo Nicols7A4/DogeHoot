@@ -762,6 +762,19 @@ def cambiar_skin(id_skin):
         return jsonify({"mensaje": mensaje, "ruta": ruta})
     else:
         return jsonify({"error": mensaje}), 400
+    
+@app.route("/api/skins/quitar", methods=["POST"])
+def quitar_skin():
+    id_usuario = session.get('user_id')
+    if not id_usuario:
+        return jsonify({"error": "No autorizado"}), 401
+
+    ok, mensaje = ctrl_skins.quitar_skin_activa(id_usuario)
+    if ok:
+        g.user['skin_ruta'] = None  # Actualizamos la skin activa en sesión
+        return jsonify({"mensaje": mensaje}), 200
+    else:
+        return jsonify({"error": mensaje}), 400
 
 
 #-----------------CODIGO PARA ACCESO A SESION EN MODO VISUALIZACION V1---------------------
