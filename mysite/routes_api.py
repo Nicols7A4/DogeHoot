@@ -19,7 +19,7 @@ from controladores import preguntas_opciones as cpo
 from controladores import controlador_partidas as c_part
 from controladores import controlador_recompensas as c_rec
 from controladores import usuarios as ctrl
-from controladores import email_sender
+from controladores import outlook_email_sender as email_sender
 from controladores.onedrive_uploader import OneDriveUploader
 from ajax_game import (
     partidas_en_juego,

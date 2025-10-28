@@ -6,11 +6,32 @@ mysite/old-token.json
 mysite/credentials.json
 mysite/pruebas/token_drive.json
 
-.venv/
-__pycache__/
-respaldos/
-*.pyc
-.envtoken_onedrive.json
+# Archivos de base de datos con credenciales
+mysite/bd.py
 
+# Archivos con credenciales de Azure/Microsoft
+mysite/controladores/onedrive_uploader.py
+mysite/controladores/outlook_email_sender.py
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Respaldos
+respaldos/
+
+# Tokens y credenciales
 token_onedrive.json
 .env
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,47 @@
+import pymysql
+import pymysql.cursors
+import certifi
+
+# INSTRUCCIONES:
+# 1. Copia este archivo a bd.py: cp bd.py.example bd.py
+# 2. Configura tus credenciales reales en bd.py
+# 3. bd.py NO se subirá a Git (está en .gitignore)
+
+# Ejemplo de configuración para TiDB Cloud
+# DB_HOST = "gateway01.us-east-1.prod.aws.tidbcloud.com"
+# DB_PORT = 4000
+# DB_USER = "TU_USUARIO_AQUI"
+# DB_PASS = "TU_CONTRASEÑA_AQUI"
+# DB_NAME = "dogehoot"
+
+# def obtener_conexion():
+#     return pymysql.connect(
+#         host=DB_HOST,
+#         user=DB_USER,
+#         password=DB_PASS,
+#         db=DB_NAME,
+#         port=int(DB_PORT),
+#         charset='utf8mb4',
+#         cursorclass=pymysql.cursors.DictCursor,
+#         ssl={'ca': certifi.where()}
+#     )
+
+# Ejemplo de configuración local
+def obtener_conexion():
+    return pymysql.connect(
+        host='127.0.0.1',
+        user='root',
+        password='TU_CONTRASEÑA',
+        db='dogehoot',
+        cursorclass=pymysql.cursors.DictCursor
+    )    
+    
+# Ejemplo de configuración para PythonAnywhere
+# def obtener_conexion():
+#     return pymysql.connect(
+#         host='TU_HOST.mysql.pythonanywhere-services.com',
+#         user='TU_USUARIO',
+#         password='TU_CONTRASEÑA',
+#         db='TU_USUARIO$TU_BASE_DE_DATOS',
+#         cursorclass=pymysql.cursors.DictCursor
+#     )

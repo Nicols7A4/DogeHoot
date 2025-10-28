@@ -7,7 +7,7 @@ from controladores import usuarios as ctrl_usuarios
 from controladores import cuestionarios as cc
 from controladores import preguntas_opciones as cpo
 from controladores import categorias as ctrl_cat
-from controladores import email_sender
+from controladores import outlook_email_sender as email_sender
 from controladores import controlador_skins as ctrl_skins
 from controladores import controlador_partidas as ctrl_partidas
 # ------------------------------------------------------------------------------
@@ -138,15 +138,15 @@ def auth():
                     codigo_verificacion = resultado
 
                     # ===== ¡CAMBIO FINAL AQUÍ! =====
-                    # Llamamos al nuevo controlador que usa la API de Gmail
+                    # Llamamos al nuevo controlador que usa la API de Outlook/Microsoft Graph
                     enviado, mensaje_email = email_sender.enviar_correo_verificacion(correo, codigo_verificacion)
 
                     if enviado:
                         flash('Registro casi listo. Te enviamos un código a tu correo para activar tu cuenta.', 'info')
                         return redirect(url_for('verificar', email=correo))
                     else:
-                        # Si la API de Gmail falla, mostramos el error que nos da
-                        flash(f'No se pudo enviar el correo de verificación. Error de la API: {mensaje_email}', 'danger')
+                        # Si la API falla, mostramos el error
+                        flash(f'No se pudo enviar el correo de verificación. Error: {mensaje_email}', 'danger')
                         return redirect(url_for('verificar',email=correo))
 
                 else:
@@ -154,7 +154,10 @@ def auth():
 
 
             except Exception as e:
-                flash("Ha ocurrido un error con el registro", "danger")
+                import traceback
+                print(f"❌ ERROR EN REGISTRO: {str(e)}")
+                traceback.print_exc()
+                flash(f"Ha ocurrido un error con el registro: {str(e)}", "danger")
 
 
 
