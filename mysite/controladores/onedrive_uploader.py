@@ -21,10 +21,10 @@ CLIENT_ID = os.getenv('AZURE_CLIENT_ID')
 CLIENT_SECRET = os.getenv('AZURE_CLIENT_SECRET')
 REDIRECT_URI = os.getenv('AZURE_REDIRECT_URI', 'http://localhost:5001/onedrive/callback')
 
-# Debug: Verificar que las variables se cargaron
-print(f"🔑 CLIENT_ID cargado: {'✅ Sí' if CLIENT_ID else '❌ No'}")
-print(f"🔐 CLIENT_SECRET cargado: {'✅ Sí' if CLIENT_SECRET else '❌ No'}")
-print(f"🔗 REDIRECT_URI: {REDIRECT_URI}")
+# Debug: Verificar que las variables se cargaron (sin emojis para compatibilidad)
+print(f"CLIENT_ID cargado: {'OK' if CLIENT_ID else 'NO'}")
+print(f"CLIENT_SECRET cargado: {'OK' if CLIENT_SECRET else 'NO'}")
+print(f"REDIRECT_URI: {REDIRECT_URI}")
 
 # Ruta del archivo de tokens - buscar en la raíz del proyecto
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

@@ -10,7 +10,7 @@ import pymysql
 from datetime import datetime
 
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, Border, Side
 from openpyxl.utils import get_column_letter
 
 from bd import obtener_conexion
@@ -993,7 +993,7 @@ def api_report_partida():
 
 # ---------- REPORTES CSV (descarga) ----------
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, Border, Side
 from flask import send_file
 import io
 
@@ -1281,30 +1281,108 @@ def api_report_partida_export():
 
         # --- HOJA 1: RESUMEN (Ranking Final) ---
         ws_resumen = wb.create_sheet("Resumen")
-        ws_resumen.append(["Posición", "Usuario", "Grupo", "PuntajeTotal", "RespuestasCorrectas", 
-                          "RespuestasIncorrectas", "%Acierto", "TiempoPromedioResp (s)"])
-        
-        # Estilo para encabezados
-        for cell in ws_resumen[1]:
+
+        header_data = data.get("header") or {}
+        estado_map = {"F": "Finalizado", "E": "En espera", "P": "En progreso"}
+        estado_texto = estado_map.get(header_data.get("estado"), header_data.get("estado") or "")
+
+        def _to_text(value):
+            if value is None:
+                return ""
+            if isinstance(value, datetime):
+                return value.strftime("%Y-%m-%d %H:%M:%S")
+            return str(value)
+
+        ws_resumen["B1"] = "Datos de la PARTIDA:"
+        ws_resumen["B1"].font = Font(bold=True)
+        ws_resumen["B1"].alignment = Alignment(horizontal="left", vertical="center")
+
+        info_rows = []
+        if header_data:
+            info_rows.extend([
+                ("ID Partida", _to_text(header_data.get("id_partida"))),
+                ("PIN", _to_text(header_data.get("pin"))),
+                ("Cuestionario", _to_text(header_data.get("cuestionario_titulo"))),
+                ("Estado", estado_texto),
+            ])
+            inicio = _to_text(header_data.get("fecha_hora_inicio"))
+            if inicio:
+                info_rows.append(("Fecha de inicio", inicio))
+            fin = _to_text(header_data.get("fecha_hora_fin"))
+            if fin:
+                info_rows.append(("Fecha de finalizacion", fin))
+
+        thin_side = Side(style="thin", color="000000")
+        table_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
+        for row_offset, (label, value) in enumerate(info_rows, start=2):
+            label_cell = ws_resumen.cell(row=row_offset, column=2, value=label)
+            value_cell = ws_resumen.cell(row=row_offset, column=3, value=value)
+            label_cell.font = Font(bold=True)
+            label_cell.border = table_border
+            value_cell.border = table_border
+
+        resumen_data = data.get("resumen") or {}
+        current_row = len(info_rows) + 3
+
+        if resumen_data:
+            resumen_title = ws_resumen.cell(row=current_row, column=2, value="Resumen global:")
+            resumen_title.font = Font(bold=True)
+            resumen_title.alignment = Alignment(horizontal="left", vertical="center")
+            current_row += 1
+
+            resumen_rows = [
+                ("Participantes", _to_text(resumen_data.get("total_participantes"))),
+                ("Preguntas distintas", _to_text(resumen_data.get("preguntas_distintas"))),
+                ("Respuestas totales", _to_text(resumen_data.get("respuestas_totales"))),
+                ("% Acierto global", f"{resumen_data.get('acierto_global')}%" if resumen_data.get("acierto_global") is not None else ""),
+                ("Tiempo promedio (s)", _to_text(resumen_data.get("tiempo_promedio_seg"))),
+            ]
+
+            for label, value in resumen_rows:
+                label_cell = ws_resumen.cell(row=current_row, column=2, value=label)
+                value_cell = ws_resumen.cell(row=current_row, column=3, value=value)
+                label_cell.font = Font(bold=True)
+                label_cell.border = table_border
+                value_cell.border = table_border
+                current_row += 1
+
+            current_row += 1  # Leave a blank row before the ranking table
+
+        header_row_idx = current_row
+        resumen_headers = [
+            "Posicion",
+            "Usuario",
+            "Grupo",
+            "PuntajeTotal",
+            "RespuestasCorrectas",
+            "RespuestasIncorrectas",
+            "%Acierto",
+            "TiempoPromedioResp (s)",
+        ]
+
+        for col_idx, value in enumerate(resumen_headers, start=1):
+            cell = ws_resumen.cell(row=header_row_idx, column=col_idx, value=value)
             cell.font = Font(bold=True)
             cell.fill = PatternFill(start_color="FFE400", end_color="FFE400", fill_type="solid")
-        
-        # Llenar datos del ranking
-        for idx, part in enumerate(data['participantes'], start=1):
-            total_resp = int(part['correctas']) + int(part['incorrectas'])
-            pct_acierto = round((int(part['correctas']) / total_resp * 100), 2) if total_resp > 0 else 0
-            grupo_val = int(part.get('grupo') or 0)
+
+        data_start_row = header_row_idx + 1
+        for position, part in enumerate(data["participantes"], start=1):
+            row = data_start_row + position - 1
+            total_resp = int(part["correctas"]) + int(part["incorrectas"])
+            pct_acierto = round((int(part["correctas"]) / total_resp * 100), 2) if total_resp > 0 else 0
+            grupo_val = int(part.get("grupo") or 0)
             grupo_texto = grupo_val if grupo_val > 0 else "No"
-            ws_resumen.append([
-                idx,
-                part['nombre'],
-                grupo_texto,
-                int(part['puntaje_total']),
-                int(part['correctas']),
-                int(part['incorrectas']),
-                pct_acierto,
-                round(float(part['tiempo_prom_seg'] or 0), 2)
-            ])
+            ws_resumen.cell(row=row, column=1, value=position)
+            ws_resumen.cell(row=row, column=2, value=part["nombre"])
+            ws_resumen.cell(row=row, column=3, value=grupo_texto)
+            ws_resumen.cell(row=row, column=4, value=int(part["puntaje_total"]))
+            ws_resumen.cell(row=row, column=5, value=int(part["correctas"]))
+            ws_resumen.cell(row=row, column=6, value=int(part["incorrectas"]))
+            ws_resumen.cell(row=row, column=7, value=pct_acierto)
+            ws_resumen.cell(row=row, column=8, value=round(float(part["tiempo_prom_seg"] or 0), 2))
+
+
         _apply_sheet_style(ws_resumen)
 
         # --- HOJA 2: DETALLE POR PARTICIPANTE ---
@@ -1506,28 +1584,81 @@ def api_report_partida_export_drive():
 
         # --- HOJA 1: RESUMEN (Ranking Final) ---
         ws_resumen = wb.create_sheet("Resumen")
-        ws_resumen.append(["Posición", "Usuario", "Grupo", "PuntajeTotal", "RespuestasCorrectas", 
-                          "RespuestasIncorrectas", "%Acierto", "TiempoPromedioResp (s)"])
-        
-        for cell in ws_resumen[1]:
+
+        header_data = data.get("header") or {}
+        estado_map = {"F": "Finalizado", "E": "En espera", "P": "En progreso"}
+        estado_texto = estado_map.get(header_data.get("estado"), header_data.get("estado") or "")
+
+        def _to_text(value):
+            if value is None:
+                return ""
+            if isinstance(value, datetime):
+                return value.strftime("%Y-%m-%d %H:%M:%S")
+            return str(value)
+
+        ws_resumen["B1"] = "Datos de la PARTIDA:"
+        ws_resumen["B1"].font = Font(bold=True)
+        ws_resumen["B1"].alignment = Alignment(horizontal="left", vertical="center")
+
+        info_rows = []
+        if header_data:
+            info_rows.extend([
+                ("ID Partida", _to_text(header_data.get("id_partida"))),
+                ("PIN", _to_text(header_data.get("pin"))),
+                ("Cuestionario", _to_text(header_data.get("cuestionario_titulo"))),
+                ("Estado", estado_texto),
+            ])
+            inicio = _to_text(header_data.get("fecha_hora_inicio"))
+            if inicio:
+                info_rows.append(("Fecha de inicio", inicio))
+            fin = _to_text(header_data.get("fecha_hora_fin"))
+            if fin:
+                info_rows.append(("Fecha de finalizacion", fin))
+
+        thin_side = Side(style="thin", color="000000")
+        table_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
+        for row_offset, (label, value) in enumerate(info_rows, start=2):
+            label_cell = ws_resumen.cell(row=row_offset, column=2, value=label)
+            value_cell = ws_resumen.cell(row=row_offset, column=3, value=value)
+            label_cell.font = Font(bold=True)
+            label_cell.border = table_border
+            value_cell.border = table_border
+
+        header_row_idx = len(info_rows) + 3
+        resumen_headers = [
+            "Posicion",
+            "Usuario",
+            "Grupo",
+            "PuntajeTotal",
+            "RespuestasCorrectas",
+            "RespuestasIncorrectas",
+            "%Acierto",
+            "TiempoPromedioResp (s)",
+        ]
+
+        for col_idx, value in enumerate(resumen_headers, start=1):
+            cell = ws_resumen.cell(row=header_row_idx, column=col_idx, value=value)
             cell.font = Font(bold=True)
             cell.fill = PatternFill(start_color="FFE400", end_color="FFE400", fill_type="solid")
-        
-        for idx, part in enumerate(data['participantes'], start=1):
-            total_resp = int(part['correctas']) + int(part['incorrectas'])
-            pct_acierto = round((int(part['correctas']) / total_resp * 100), 2) if total_resp > 0 else 0
-            grupo_val = int(part.get('grupo') or 0)
+
+        data_start_row = header_row_idx + 1
+        for position, part in enumerate(data["participantes"], start=1):
+            row = data_start_row + position - 1
+            total_resp = int(part["correctas"]) + int(part["incorrectas"])
+            pct_acierto = round((int(part["correctas"]) / total_resp * 100), 2) if total_resp > 0 else 0
+            grupo_val = int(part.get("grupo") or 0)
             grupo_texto = grupo_val if grupo_val > 0 else "No"
-            ws_resumen.append([
-                idx,
-                part['nombre'],
-                grupo_texto,
-                int(part['puntaje_total']),
-                int(part['correctas']),
-                int(part['incorrectas']),
-                pct_acierto,
-                round(float(part['tiempo_prom_seg'] or 0), 2)
-            ])
+            ws_resumen.cell(row=row, column=1, value=position)
+            ws_resumen.cell(row=row, column=2, value=part["nombre"])
+            ws_resumen.cell(row=row, column=3, value=grupo_texto)
+            ws_resumen.cell(row=row, column=4, value=int(part["puntaje_total"]))
+            ws_resumen.cell(row=row, column=5, value=int(part["correctas"]))
+            ws_resumen.cell(row=row, column=6, value=int(part["incorrectas"]))
+            ws_resumen.cell(row=row, column=7, value=pct_acierto)
+            ws_resumen.cell(row=row, column=8, value=round(float(part["tiempo_prom_seg"] or 0), 2))
+
+
         _apply_sheet_style(ws_resumen)
 
         # --- HOJA 2: DETALLE POR PARTICIPANTE ---
@@ -1740,7 +1871,7 @@ def api_report_partida_export_onedrive():
         
         # === PASO 2: Crear el archivo Excel (mismo código que ya tienes) ===
         from openpyxl import Workbook
-        from openpyxl.styles import Font, PatternFill, Alignment
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
         import io
         
         wb = Workbook()
@@ -1760,30 +1891,81 @@ def api_report_partida_export_onedrive():
 
         # --- HOJA 1: RESUMEN ---
         ws_resumen = wb.create_sheet("Resumen")
-        ws_resumen.append(['Posición', 'Usuario', 'Grupo', 'Puntaje Total', 'Respuestas Correctas', 
-                          'Respuestas Incorrectas', '% Acierto', 'Tiempo Promedio (seg)'])
-        
-        # Estilo del header
-        for cell in ws_resumen[1]:
-            cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color='FFE400', end_color='FFE400', fill_type='solid')
-        
-        # Llenar datos
-        for idx, part in enumerate(data['participantes'], start=1):
-            total_resp = int(part['correctas']) + int(part['incorrectas'])
-            pct_acierto = round(int(part['correctas']) / total_resp * 100, 2) if total_resp > 0 else 0
-            grupo_val = int(part.get('grupo') or 0)
-            grupo_texto = grupo_val if grupo_val > 0 else "No"
-            ws_resumen.append([
-                idx,
-                part['nombre'],
-                grupo_texto,
-                int(part['puntaje_total']),
-                int(part['correctas']),
-                int(part['incorrectas']),
-                pct_acierto,
-                round(float(part['tiempo_prom_seg'] or 0), 2)
+
+        header_data = data.get("header") or {}
+        estado_map = {"F": "Finalizado", "E": "En espera", "P": "En progreso"}
+        estado_texto = estado_map.get(header_data.get("estado"), header_data.get("estado") or "")
+
+        def _to_text(value):
+            if value is None:
+                return ""
+            if isinstance(value, datetime):
+                return value.strftime("%Y-%m-%d %H:%M:%S")
+            return str(value)
+
+        ws_resumen["B1"] = "Datos de la PARTIDA:"
+        ws_resumen["B1"].font = Font(bold=True)
+        ws_resumen["B1"].alignment = Alignment(horizontal="left", vertical="center")
+
+        info_rows = []
+        if header_data:
+            info_rows.extend([
+                ("ID Partida", _to_text(header_data.get("id_partida"))),
+                ("PIN", _to_text(header_data.get("pin"))),
+                ("Cuestionario", _to_text(header_data.get("cuestionario_titulo"))),
+                ("Estado", estado_texto),
             ])
+            inicio = _to_text(header_data.get("fecha_hora_inicio"))
+            if inicio:
+                info_rows.append(("Fecha de inicio", inicio))
+            fin = _to_text(header_data.get("fecha_hora_fin"))
+            if fin:
+                info_rows.append(("Fecha de finalizacion", fin))
+
+        thin_side = Side(style="thin", color="000000")
+        table_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
+        for row_offset, (label, value) in enumerate(info_rows, start=2):
+            label_cell = ws_resumen.cell(row=row_offset, column=2, value=label)
+            value_cell = ws_resumen.cell(row=row_offset, column=3, value=value)
+            label_cell.font = Font(bold=True)
+            label_cell.border = table_border
+            value_cell.border = table_border
+
+        header_row_idx = len(info_rows) + 3
+        resumen_headers = [
+            "Posicion",
+            "Usuario",
+            "Grupo",
+            "PuntajeTotal",
+            "RespuestasCorrectas",
+            "RespuestasIncorrectas",
+            "%Acierto",
+            "TiempoPromedioResp (s)",
+        ]
+
+        for col_idx, value in enumerate(resumen_headers, start=1):
+            cell = ws_resumen.cell(row=header_row_idx, column=col_idx, value=value)
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFE400", end_color="FFE400", fill_type="solid")
+
+        data_start_row = header_row_idx + 1
+        for position, part in enumerate(data["participantes"], start=1):
+            row = data_start_row + position - 1
+            total_resp = int(part["correctas"]) + int(part["incorrectas"])
+            pct_acierto = round((int(part["correctas"]) / total_resp * 100), 2) if total_resp > 0 else 0
+            grupo_val = int(part.get("grupo") or 0)
+            grupo_texto = grupo_val if grupo_val > 0 else "No"
+            ws_resumen.cell(row=row, column=1, value=position)
+            ws_resumen.cell(row=row, column=2, value=part["nombre"])
+            ws_resumen.cell(row=row, column=3, value=grupo_texto)
+            ws_resumen.cell(row=row, column=4, value=int(part["puntaje_total"]))
+            ws_resumen.cell(row=row, column=5, value=int(part["correctas"]))
+            ws_resumen.cell(row=row, column=6, value=int(part["incorrectas"]))
+            ws_resumen.cell(row=row, column=7, value=pct_acierto)
+            ws_resumen.cell(row=row, column=8, value=round(float(part["tiempo_prom_seg"] or 0), 2))
+
+
         _apply_sheet_style(ws_resumen)
         
         # --- HOJA 2: DETALLE POR PARTICIPANTE ---
@@ -2025,3 +2207,4 @@ def onedrive_test_upload():
             'success': False,
             'message': f'Error: {str(e)}'
         }), 500
+

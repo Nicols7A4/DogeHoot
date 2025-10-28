@@ -173,6 +173,96 @@
         }
 
         /* ===================== */
+        /* Modal                 */
+        /* ===================== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 999;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+
+        .modal-overlay.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-card {
+            width: min(420px, 100%);
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 1.75rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+            border: 2px solid var(--border-soft);
+        }
+
+        .modal-card h3 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            color: var(--text-color);
+        }
+
+        .modal-card p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-card input[type="email"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-soft);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-error {
+            font-size: 0.85rem;
+            color: var(--btn-failed-text);
+            min-height: 1.2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .modal-actions button {
+            padding: 0.7rem 1.4rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .modal-actions .btn-secondary {
+            background: var(--btn-expired-bg);
+            color: var(--btn-expired-text);
+        }
+
+        .modal-actions .btn-primary {
+            background: var(--btn-inprogress-text);
+            color: #ffffff;
+        }
+
+        .modal-actions button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ===================== */
         /* Sections              */
         /* ===================== */
         .section {
@@ -388,6 +478,19 @@
         </div>
     </div>
 
+    <div id="email-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="email-modal-title" aria-hidden="true">
+        <form class="modal-card">
+            <h3 id="email-modal-title">Compartir reporte</h3>
+            <p id="email-modal-message">Ingresa el correo con quien deseas compartir el reporte.</p>
+            <div class="modal-error" id="email-modal-error"></div>
+            <input type="email" id="email-modal-input" name="email" placeholder="correo@ejemplo.com" autocomplete="email" required>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-modal-cancel>Cancelar</button>
+                <button type="submit" class="btn-primary" data-modal-confirm>Compartir</button>
+            </div>
+        </form>
+    </div>
+
     <script>
         const PARTIDA_ID = "{{ id_partida }}";
 
@@ -486,6 +589,61 @@
             });
         }
 
+        function showEmailModal({ titulo, mensaje, placeholder, confirmText }) {
+            const overlay = document.getElementById('email-modal');
+            const form = overlay.querySelector('form');
+            const titleEl = document.getElementById('email-modal-title');
+            const messageEl = document.getElementById('email-modal-message');
+            const inputEl = document.getElementById('email-modal-input');
+            const errorEl = document.getElementById('email-modal-error');
+            const cancelBtn = overlay.querySelector('[data-modal-cancel]');
+            const confirmBtn = overlay.querySelector('[data-modal-confirm]');
+
+            titleEl.textContent = titulo;
+            messageEl.textContent = mensaje;
+            inputEl.placeholder = placeholder || 'correo@ejemplo.com';
+            confirmBtn.textContent = confirmText || 'Compartir';
+            inputEl.value = '';
+            errorEl.textContent = '';
+
+            return new Promise(resolve => {
+                const closeModal = (value) => {
+                    overlay.classList.remove('visible');
+                    overlay.setAttribute('aria-hidden', 'true');
+                    overlay.removeEventListener('click', onOverlayClick);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    form.removeEventListener('submit', onSubmit);
+                    resolve(value);
+                };
+
+                const onOverlayClick = (event) => {
+                    if (event.target === overlay) {
+                        closeModal(null);
+                    }
+                };
+
+                const onCancel = () => closeModal(null);
+
+                const onSubmit = (event) => {
+                    event.preventDefault();
+                    if (!inputEl.value.trim()) {
+                        errorEl.textContent = 'Debes ingresar un correo electronico valido.';
+                        inputEl.focus();
+                        return;
+                    }
+                    closeModal(inputEl.value.trim());
+                };
+
+                overlay.addEventListener('click', onOverlayClick);
+                cancelBtn.addEventListener('click', onCancel);
+                form.addEventListener('submit', onSubmit);
+
+                overlay.classList.add('visible');
+                overlay.setAttribute('aria-hidden', 'false');
+                setTimeout(() => inputEl.focus(), 50);
+            });
+        }
+
         function exportarExcel() {
             if (!PARTIDA_ID) {
                 alert('No se proporciono un id_partida valido.');
@@ -498,7 +656,12 @@
             const btn = event.target;
             const textoOriginal = btn.textContent;
 
-            const correo = prompt('Ingresa el correo con quien deseas compartir el reporte:\n\n(El archivo se subira a OneDrive y se compartira automaticamente con este correo)');
+            const correo = await showEmailModal({
+                titulo: 'Compartir en OneDrive',
+                mensaje: 'Ingresa el correo con quien deseas compartir el reporte. El archivo se subira a OneDrive y se compartira automaticamente con este correo.',
+                placeholder: 'usuario@ejemplo.com',
+                confirmText: 'Compartir'
+            });
 
             if (!correo || correo.trim() === '') {
                 alert('Operacion cancelada. Debes ingresar un correo electronico valido');
@@ -546,7 +709,12 @@
             const btn = event.target;
             const textoOriginal = btn.textContent;
 
-            const correo = prompt('Ingresa el correo de Gmail con quien deseas compartir el reporte:\n\n(El archivo se subira a Google Drive y se compartira automaticamente con este correo)');
+            const correo = await showEmailModal({
+                titulo: 'Compartir en Google Drive',
+                mensaje: 'Ingresa el correo de Gmail con quien deseas compartir el reporte. El archivo se subira a Google Drive y se compartira automaticamente con este correo.',
+                placeholder: 'usuario@gmail.com',
+                confirmText: 'Compartir'
+            });
 
             if (!correo || correo.trim() === '') {
                 alert('Operacion cancelada. Debes ingresar un correo electronico valido');
