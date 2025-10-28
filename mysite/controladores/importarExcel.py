@@ -7,11 +7,8 @@ from flask import (
 
 import sys
 import os
-# Obtiene la ruta del directorio actual (controladores)
 current_dir = os.path.dirname(os.path.abspath(__file__))
-# Obtiene la ruta del directorio padre (mysite)
 parent_dir = os.path.dirname(current_dir)
-# Si el directorio padre no está en las rutas de búsqueda de Python, lo añade
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
@@ -26,18 +23,14 @@ importar_bp = Blueprint('importarExcel', __name__,
 def descargar_plantilla():
     """
     Sirve el archivo de plantilla Excel para descargar.
-    Busca la plantilla en la carpeta 'static' principal (fuera de 'controladores').
     """
     try:
-        # Construye la ruta a la carpeta 'static' principal usando parent_dir
         static_dir = os.path.join(parent_dir, 'static')
-
-        print(f"Buscando plantilla en: {static_dir}") # Log para verificar la ruta
-
+        print(f"Buscando plantilla en: {static_dir}") 
         return send_from_directory(
             directory=static_dir,
             path='cuestionario_plantilla.xlsx',
-            as_attachment=True # Fuerza la descarga
+            as_attachment=True
         )
     except FileNotFoundError:
         print(f"ERROR: Archivo 'cuestionario_plantilla.xlsx' no encontrado en '{static_dir}'.")
@@ -51,7 +44,7 @@ def descargar_plantilla():
 def importar_preguntas_ajax():
     """
     Procesa la subida de un archivo Excel vía AJAX.
-    Añade las preguntas y opciones al cuestionario especificado.
+    Añade preguntas (CON URL DE IMAGEN) y opciones al cuestionario.
     Devuelve una respuesta JSON con la lista de preguntas actualizada.
     """
     connection = None
@@ -69,11 +62,11 @@ def importar_preguntas_ajax():
         except ValueError:
             return jsonify({'success': False, 'error': 'ID de cuestionario inválido.'}), 400
 
-        if not archivo or archivo.filename == '':
-            return jsonify({'success': False, 'error': 'No se seleccionó ningún archivo Excel.'}), 400
-        if not archivo.filename.endswith('.xlsx'):
-            return jsonify({'success': False, 'error': 'Archivo no válido. Solo se permite .xlsx'}), 400
+        # ... (otras validaciones de archivo) ...
+        if not archivo or not archivo.filename.endswith('.xlsx'):
+             return jsonify({'success': False, 'error': 'Archivo no válido. Solo se permite .xlsx'}), 400
 
+        # --- Lectura con openpyxl ---
         try:
             workbook = openpyxl.load_workbook(archivo)
             sheet = workbook.active
@@ -81,19 +74,28 @@ def importar_preguntas_ajax():
              print(f"Error al cargar Excel con openpyxl: {e}")
              return jsonify({'success': False, 'error': 'Error al leer el archivo Excel. Verifica que no esté corrupto o protegido.'}), 400
 
-        headers = [cell.value for cell in sheet[1]]
-        if not headers or headers[0] is None:
+        # --- Validación de Encabezados ---
+        headers = [str(cell.value).strip() if cell.value is not None else "" for cell in sheet[1]] # Limpiar encabezados
+        if not headers or headers[0] == "":
              return jsonify({'success': False, 'error': "La primera fila (encabezados) del Excel está vacía o es inválida."}), 400
         if 'pregunta' not in headers or 'opcion_correcta' not in headers:
-            return jsonify({'success': False, 'error': "El archivo Excel debe tener al menos las columnas 'pregunta' y 'opcion_correcta' en la primera fila."}), 400
+            return jsonify({'success': False, 'error': "El archivo Excel debe tener las columnas 'pregunta' y 'opcion_correcta'."}), 400
 
+        # --- Encontrar índices de columnas (incluida la de imagen) ---
         try:
             idx_pregunta = headers.index('pregunta')
             idx_op_correcta = headers.index('opcion_correcta')
-            indices_op_incorrectas = [i for i, h in enumerate(headers) if h and str(h).startswith('opcion_incorrecta')]
+            indices_op_incorrectas = [i for i, h in enumerate(headers) if h.startswith('opcion_incorrecta')]
+            
+            # ¡NUEVO! Busca la columna 'url_imagen'. Es opcional.
+            idx_url_imagen = -1 # Valor por defecto si no se encuentra
+            if 'url_imagen' in headers:
+                idx_url_imagen = headers.index('url_imagen')
+                
         except ValueError:
-             return jsonify({'success': False, 'error': "No se encontraron las columnas 'pregunta' u 'opcion_correcta'."}), 400
+             return jsonify({'success': False, 'error': "Error al leer los encabezados requeridos."}), 400
 
+        # --- Procesamiento en Base de Datos ---
         connection = obtener_conexion()
         if not connection:
             return jsonify({'success': False, 'error': 'Error al conectar con la base de datos.'}), 500
@@ -110,27 +112,43 @@ def importar_preguntas_ajax():
                     if all(cell is None for cell in row):
                         continue
 
-                    texto_pregunta = row[idx_pregunta]
-                    op_correcta = row[idx_op_correcta]
-                    texto_pregunta = str(texto_pregunta).strip() if texto_pregunta is not None else ""
-                    op_correcta = str(op_correcta).strip() if op_correcta is not None else ""
+                    texto_pregunta = str(row[idx_pregunta]).strip() if row[idx_pregunta] is not None else ""
+                    op_correcta = str(row[idx_op_correcta]).strip() if row[idx_op_correcta] is not None else ""
 
                     if not texto_pregunta or not op_correcta:
                         print(f"Omitiendo fila {row_index}: Datos incompletos.")
                         continue
 
-                    sql_pregunta = "INSERT INTO PREGUNTAS (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo) VALUES (%s, %s, %s, %s, %s)"
-                    cursor.execute(sql_pregunta, (id_cuestionario, texto_pregunta, num_pregunta_siguiente, 1000, 15))
+                    # ¡NUEVO! Obtener la URL de la imagen (si existe)
+                    url_imagen = None
+                    if idx_url_imagen != -1 and idx_url_imagen < len(row):
+                        url_imagen_val = row[idx_url_imagen]
+                        if url_imagen_val and str(url_imagen_val).strip().startswith('http'):
+                            url_imagen = str(url_imagen_val).strip()
+
+                    # --- ¡INSERT SQL ACTUALIZADO! ---
+                    # Ahora incluye la columna 'adjunto'
+                    sql_pregunta = """
+                        INSERT INTO PREGUNTAS 
+                        (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo, adjunto) 
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """
+                    puntaje_base = 1000
+                    tiempo = 15
+                    cursor.execute(sql_pregunta, (
+                        id_cuestionario, texto_pregunta, num_pregunta_siguiente, 
+                        puntaje_base, tiempo, url_imagen  # <-- url_imagen se inserta aquí
+                    ))
                     id_pregunta_nueva = cursor.lastrowid
 
+                    # --- Insertar Opciones (sin cambios) ---
                     sql_opcion = "INSERT INTO OPCIONES (opcion, id_pregunta, es_correcta_bool) VALUES (%s, %s, %s)"
                     cursor.execute(sql_opcion, (op_correcta, id_pregunta_nueva, 1))
 
                     opciones_incorrectas_insertadas = 0
                     for idx in indices_op_incorrectas:
                         if idx < len(row):
-                            op_incorrecta = row[idx]
-                            op_incorrecta = str(op_incorrecta).strip() if op_incorrecta is not None else ""
+                            op_incorrecta = str(row[idx]).strip() if row[idx] is not None else ""
                             if op_incorrecta:
                                 cursor.execute(sql_opcion, (op_incorrecta, id_pregunta_nueva, 0))
                                 opciones_incorrectas_insertadas += 1
@@ -145,7 +163,8 @@ def importar_preguntas_ajax():
                     raise ValueError("El archivo Excel no contenía preguntas válidas para importar.")
 
                 connection.commit()
-
+                
+                # --- Devolver lista actualizada (sin cambios) ---
                 if connection:
                     connection.close()
                     connection = None 
@@ -156,7 +175,7 @@ def importar_preguntas_ajax():
                 return jsonify({
                     'success': True,
                     'message': f'{preguntas_importadas} preguntas importadas correctamente.',
-                    'preguntas_actualizadas': lista_preguntas # ¡Devolvemos la nueva lista!
+                    'preguntas_actualizadas': lista_preguntas
                 })
 
             except ValueError as ve:
@@ -168,9 +187,6 @@ def importar_preguntas_ajax():
                 print(f"Error en transacción AJAX (Fila {row_index}): {db_error}")
                 return jsonify({'success': False, 'error': f'Error al procesar el archivo en fila {row_index}: {db_error}'}), 500
 
-    except openpyxl.utils.exceptions.InvalidFileException:
-         print("Error: El archivo subido no es un formato Excel .xlsx válido.")
-         return jsonify({'success': False, 'error': 'El archivo subido no parece ser un archivo Excel .xlsx válido.'}), 400
     except Exception as e:
         print(f"Error general en AJAX: {e}")
         import traceback
