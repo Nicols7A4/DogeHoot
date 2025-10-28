@@ -87,7 +87,7 @@ def obtener_partidas_por_usuario(id_usuario):
             # Hacemos un JOIN para vincular Partida -> Cuestionario -> Usuario
             sql = """
                 SELECT
-                    P.id_partida, P.pin, P.estado, P.fecha_hora_inicio, p.modalidad,
+                    P.id_partida, P.pin, P.estado, P.fecha_hora_inicio, P.modalidad,
                     C.titulo AS cuestionario_titulo
                 FROM PARTIDA AS P
                 JOIN CUESTIONARIO AS C ON P.id_cuestionario = C.id_cuestionario
@@ -104,8 +104,14 @@ def obtener_partidas_por_usuario(id_usuario):
 
 
 
-def finalizar_partida(id_partida):
-    """Finaliza una partida y otorga recompensas."""
+def finalizar_partida(id_partida, ranking_data=None):
+    """
+    Finaliza una partida y otorga recompensas.
+    
+    Args:
+        id_partida: ID de la partida
+        ranking_data: Lista opcional con {'id_usuario', 'puntaje', 'posicion'}
+    """
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 
@@ -118,8 +124,8 @@ def finalizar_partida(id_partida):
         """, (id_partida,))
         conexion.commit()
 
-        # Otorgar recompensas después de finalizar
-        exito = c_rec.otorgar_recompensas(id_partida)
+        # Otorgar recompensas después de finalizar (con ranking si se proporciona)
+        exito = c_rec.otorgar_recompensas(id_partida, ranking_data)
 
         if exito:
             print(f"Partida {id_partida} finalizada y recompensas otorgadas correctamente")

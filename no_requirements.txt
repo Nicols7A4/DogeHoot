@@ -1,0 +1,122 @@
+# ========================================
+# LIBRERÍAS NO UTILIZADAS EN EL PROYECTO
+# ========================================
+# Este archivo contiene librerías que están en requirements.txt
+# pero NO se están usando en el código del proyecto.
+# Pueden ser desinstaladas para optimizar espacio y dependencias.
+#
+# Para desinstalar todas estas librerías, ejecuta:
+# pip uninstall -r no_requirements.txt -y
+# ========================================
+
+# === LIBRERÍAS COMPLETAMENTE NO UTILIZADAS ===
+
+# docopt - No hay uso de parsing de argumentos CLI
+docopt==0.6.2
+
+# dotenv (versión standalone) - Se usa python-dotenv en su lugar
+dotenv==0.9.9
+
+# markdown-it-py - No hay procesamiento de Markdown
+markdown-it-py==4.0.0
+mdurl==0.1.2
+
+# numpy - Comentado en requirements.txt, no se usa
+# numpy==1.26.4
+
+# Pygments - No hay syntax highlighting de código
+Pygments==2.19.2
+
+# python-http-client - SendGrid lo requiere pero SendGrid no se usa
+python-http-client==3.3.7
+
+# rich - No hay uso de rich text en terminal
+rich==14.2.0
+
+# schema - No hay validación con esta librería
+schema==0.7.8
+
+# sendgrid - No se está usando, se usa Outlook/Gmail en su lugar
+sendgrid==6.12.5
+
+# shellingham - Requerido por typer, pero typer no se usa
+shellingham==1.5.4
+
+# snakesay - No hay uso de este comando ASCII art
+snakesay==0.10.4
+
+# tabulate - No hay uso de tablas en terminal
+tabulate==0.9.0
+
+# typer - No hay CLI con typer
+typer==0.19.2
+
+# pythonanywhere y pythonanywhere-core - Solo comentarios en código, no se usa la CLI
+pythonanywhere==0.17.0
+pythonanywhere-core==0.2.7
+
+# XlsxWriter - Se usa openpyxl para escribir Excel, no XlsxWriter
+XlsxWriter==3.1.9
+
+
+# === NOTAS IMPORTANTES ===
+#
+# LIBRERÍAS QUE SÍ SE USAN (NO ELIMINAR):
+# ----------------------------------------
+# bidict - Requerido por Flask-SocketIO
+# blinker - Requerido por Flask para signals
+# cachetools - Requerido por google-auth
+# certifi - Usado en bd.py para SSL
+# cffi - Requerido por cryptography
+# charset-normalizer - Requerido por requests
+# click - Requerido por Flask
+# colorama - Requerido por Flask en Windows
+# cryptography - Requerido por PyMySQL para SSL
+# dnspython - Requerido por eventlet
+# et_xmlfile - Requerido por openpyxl
+# eventlet - Usado en game_events.py
+# Flask - Framework principal
+# Flask-Login - Usado en routes_web.py
+# Flask-Mail - Usado en main.py y routes_web.py
+# Flask-SocketIO - Usado en game_events.py
+# google-* - Todas las librerías Google se usan (Drive, Auth, Gmail)
+# googleapis-common-protos - Requerido por google-api-core
+# greenlet - Requerido por eventlet
+# h11 - Requerido por wsproto
+# httplib2 - Requerido por google-api-python-client
+# idna - Requerido por requests
+# itsdangerous - Usado en usuarios.py para tokens
+# Jinja2 - Template engine de Flask
+# MarkupSafe - Requerido por Jinja2
+# oauthlib - Requerido por google-auth-oauthlib
+# openpyxl - Usado en importarExcel.py y routes_api.py
+# packaging - Requerido por múltiples librerías
+# pandas - Usado en importador.py
+# pillow (PIL) - Usado en main.py y foto_perfil.py
+# proto-plus - Requerido por google-api-core
+# protobuf - Requerido por google-api-core
+# pyasn1 y pyasn1_modules - Requeridos por google-auth
+# pycparser - Requerido por cffi
+# PyMySQL - Usado en bd.py
+# pyparsing - Requerido por packaging
+# python-dateutil - Requerido por pandas
+# python-dotenv - Usado en main.py, bd.py, outlook_email_sender.py
+# python-engineio - Requerido por python-socketio
+# python-socketio - Requerido por Flask-SocketIO
+# pytz - Requerido por pandas
+# requests - Usado en outlook_email_sender.py y onedrive_uploader.py
+# requests-oauthlib - Requerido por google-auth-oauthlib
+# rsa - Requerido por google-auth
+# simple-websocket - Requerido por python-socketio
+# six - Requerido por múltiples librerías Google
+# typing_extensions - Requerido por typer (pero typer no se usa)
+# tzdata - Requerido por pandas
+# uritemplate - Requerido por google-api-python-client
+# urllib3 - Requerido por requests
+# Werkzeug - Requerido por Flask
+# wsproto - Requerido por simple-websocket
+
+# === RESUMEN ===
+# Total de librerías en requirements.txt: ~75
+# Librerías NO utilizadas: 17
+# Ahorro estimado de espacio: ~30-50 MB

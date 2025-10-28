@@ -611,25 +611,42 @@ def finalize_game(pin):
     partida['estado'] = 'F'
     partida['fase'] = 'final'
 
+    # Preparar ranking para recompensas
+    ranking_para_recompensas = []
+
     # guardar puntos en DB
     if partida['modalidad_grupal']:
         ranking_final = sorted(partida['grupos'], key=lambda g: g['puntaje'], reverse=True)
-        for grupo in ranking_final:
+        for i, grupo in enumerate(ranking_final, start=1):
             for miembro_nombre in grupo['miembros']:
                 participante_data = partida['participantes'].get(miembro_nombre)
                 if participante_data and participante_data.get('id_usuario'):
                     ctrl_usuarios.sumar_puntos(participante_data['id_usuario'], grupo['puntaje'])
+                    # Agregar al ranking para recompensas
+                    ranking_para_recompensas.append({
+                        'id_usuario': participante_data['id_usuario'],
+                        'puntaje': grupo['puntaje'],
+                        'posicion': i
+                    })
     else:
         ranking_final = sorted(partida['participantes'].values(), key=lambda p: p['puntaje'], reverse=True)
         usados = set()
+        posicion = 1
         for p_data in ranking_final:
             for nombre, data in partida['participantes'].items():
                 if data == p_data and nombre not in usados:
                     if data.get('id_usuario'):
                         ctrl_usuarios.sumar_puntos(data['id_usuario'], data['puntaje'])
+                        # Agregar al ranking para recompensas
+                        ranking_para_recompensas.append({
+                            'id_usuario': data['id_usuario'],
+                            'puntaje': data['puntaje'],
+                            'posicion': posicion
+                        })
                     usados.add(nombre)
+                    posicion += 1
                     break
 
-    # marcar finalizado en BD
-    ctrl_partidas.finalizar_partida(partida['id_partida'])
+    # marcar finalizado en BD y otorgar recompensas con ranking correcto
+    ctrl_partidas.finalizar_partida(partida['id_partida'], ranking_para_recompensas)
     return True
