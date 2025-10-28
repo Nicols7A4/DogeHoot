@@ -68,3 +68,6 @@ if __name__ == "__main__":
 def test_recompensas(id_partida):
     otorgar_recompensas(id_partida)
     return f"Recompensas otorgadas para la partida {id_partida}"
+
+
+# Go
