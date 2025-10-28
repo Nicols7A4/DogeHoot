@@ -86,7 +86,7 @@ def obtener_partidas_por_usuario(id_usuario):
             # Hacemos un JOIN para vincular Partida -> Cuestionario -> Usuario
             sql = """
                 SELECT
-                    P.id_partida, P.pin, P.estado, P.fecha_hora_inicio,
+                    P.id_partida, P.pin, P.estado, P.fecha_hora_inicio, p.modalidad,
                     C.titulo AS cuestionario_titulo
                 FROM PARTIDA AS P
                 JOIN CUESTIONARIO AS C ON P.id_cuestionario = C.id_cuestionario

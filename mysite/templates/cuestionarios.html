@@ -363,6 +363,12 @@
         border-color: rgba(229, 57, 53, .2);
     }
 
+    .badge-categoria {
+        background: var(--btn-inreview-bg);
+        color: var(--btn-pending-text);
+        border-color: rgba(229, 57, 53, .2);
+    }
+
     /* ====== Estado vacío ====== */
     .sin-cuestionarios {
         font-size: 15px;
@@ -565,6 +571,10 @@
                     {% else %}
                     <span class="badge badge-privado">Privado</span>
                     {% endif %}
+
+                    {% if c.categoria %}
+                    <span class="badge badge-categoria">{{ c.categoria }}</span>
+                    {% endif %}
                 </div>
 
                 <p class="card-descripcion">{{ c.descripcion }}</p>
@@ -576,7 +586,12 @@
                             class="btn btn-jugar" data-c="{{c.id_cuestionario}}">Jugar</a>
                         <a href="{{ url_for('cuestionarios_editar', id_cuestionario=c.id_cuestionario) }}"
                             class="btn btn-editar">Editar</a>
-                        <a data-id="{{ c.id_cuestionario }}" class="btn btn-borrar">Borrar</a>
+                        <!-- <a data-id="{{ c.id_cuestionario }}"  class="btn btn-borrar">Borrar</a> -->
+
+                        <!-- OJO: NO  ES UN ERROR, ES POR EL RENDERIZADO JINJAX-->
+                        <button data-id="{{ c.id_cuestionario }}"
+                            onclick="eliminarCuestionario({{ c.id_cuestionario }})"
+                            class="btn btn-borrar">Borrar</button>
                     </div>
                 </div>
             </div>
@@ -682,6 +697,8 @@
     // ====== ELIMINACIÓN DE CUESTIONARIOS (código original) ======
     document.addEventListener('click', function (event) {
         if (event.target.classList.contains('btn-borrar')) {
+            alert("Borra", id);
+            console.log("Borra", id);
             const id = event.target.dataset.id;
             eliminarCuestionario(id);
         }
@@ -692,6 +709,105 @@
     });
 
     async function eliminarCuestionario(id_cuestionario) {
+
+        // Crear popups personalizados y sobreescribir alert/confirm para este flujo
+        function mostrarConfirmacion(message) {
+            return new Promise(resolve => {
+                const overlay = document.createElement('div');
+                overlay.style = 'position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:2000;';
+
+                const box = document.createElement('div');
+                box.style = 'background:#fff;padding:18px;border-radius:12px;min-width:300px;max-width:90%;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.18);';
+
+                const txt = document.createElement('div');
+                txt.style = 'margin-bottom:16px;color:#333;font-weight:600;';
+                txt.textContent = message;
+
+                const actions = document.createElement('div');
+                actions.style = 'display:flex;gap:10px;justify-content:center';
+
+                const btnCancel = document.createElement('button');
+                btnCancel.textContent = 'Cancelar';
+                btnCancel.style = 'padding:8px 14px;border-radius:10px;border:1px solid #ddd;background:#fff;cursor:pointer';
+                btnCancel.addEventListener('click', () => {
+                    document.body.removeChild(overlay);
+                    resolve(false);
+                });
+
+                const btnOk = document.createElement('button');
+                btnOk.textContent = 'Borrar';
+                btnOk.style = 'padding:8px 14px;border-radius:10px;border:1px solid transparent;background:#FFE6E6;color:#E53935;font-weight:700;cursor:pointer';
+                btnOk.addEventListener('click', () => {
+                    document.body.removeChild(overlay);
+                    resolve(true);
+                });
+
+                actions.appendChild(btnCancel);
+                actions.appendChild(btnOk);
+                box.appendChild(txt);
+                box.appendChild(actions);
+                overlay.appendChild(box);
+                document.body.appendChild(overlay);
+
+                // cerrar al hacer click fuera
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) {
+                        document.body.removeChild(overlay);
+                        resolve(false);
+                    }
+                });
+            });
+        }
+
+        function mostrarAlerta(message, opts = {}) {
+            const overlay = document.createElement('div');
+            overlay.style = 'position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;z-index:2000;';
+
+            const box = document.createElement('div');
+            box.style = 'background:#fff;padding:16px 18px;border-radius:10px;min-width:260px;max-width:90%;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.12);';
+
+            const txt = document.createElement('div');
+            txt.style = 'margin-bottom:12px;color:#333;font-weight:600;';
+            txt.textContent = message;
+
+            const btn = document.createElement('button');
+            btn.textContent = 'OK';
+            btn.style = 'padding:8px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer';
+            btn.addEventListener('click', () => {
+                if (overlay.parentNode) document.body.removeChild(overlay);
+            });
+
+            box.appendChild(txt);
+            box.appendChild(btn);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+
+            // opcional auto-cierre
+            if (opts.autoClose) {
+                setTimeout(() => {
+                    if (overlay.parentNode) document.body.removeChild(overlay);
+                }, opts.autoClose);
+            }
+
+            // cerrar al click fuera
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay && overlay.parentNode) {
+                    document.body.removeChild(overlay);
+                }
+            });
+        }
+
+        // Sobrescribimos alert y confirm para que el código existente use los popups.
+        // confirm sincrónico no es posible; por eso aquí hacemos una confirmación previa
+        // y neutralizamos la llamada nativa posterior devolviendo siempre true.
+        window.alert = function (msg) { mostrarAlerta(msg); };
+        window.confirm = function () { return true; };
+
+        // Mostrar confirmación personalizada antes de continuar con la eliminación
+        const confirmado = await mostrarConfirmacion('¿Seguro que desea borrar el cuestionario?');
+        if (!confirmado) {
+            return;
+        }
 
         if (!confirm("¿Seguro que desea borrar el cuestionario?")) {
             return;

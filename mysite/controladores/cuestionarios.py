@@ -67,6 +67,12 @@ def obtener_con_filtros(id_usuario=None, id_categoria=None, es_publico=None):
     try:
         with conexion.cursor() as cursor:
             query = "SELECT * FROM CUESTIONARIO WHERE vigente = TRUE"
+            query = """
+                SELECT *
+                FROM CUESTIONARIO CU
+                JOIN CATEGORIA CA ON CA.id_categoria = CU.id_categoria
+                WHERE CU.vigente = TRUE
+                """
             params = []
 
             if id_usuario:
