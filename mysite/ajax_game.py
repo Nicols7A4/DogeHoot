@@ -39,6 +39,7 @@ def _ensure_loaded(pin):
         n = int(partida_db.get('cant_grupos') or 2)
         for i in range(n):
             grupos.append({
+                'numero': i + 1,
                 'nombre': f"Grupo {i+1}",
                 'miembros': [],
                 'puntaje': 0,
@@ -53,7 +54,7 @@ def _ensure_loaded(pin):
         'fase': 'lobby',               # lobby | question | results | final
         'pregunta_actual_index': -1,
         'preguntas_data': preguntas,   # usamos la lista ya cargada
-        'participantes': {},           # nombre -> {grupo, puntaje, id_usuario, ...}
+        'participantes': {},           # nombre -> {grupo, grupo_numero, puntaje, id_usuario, ...}
         'grupos': grupos,
         'participantes_sin_grupo': [],
         # tiempos
@@ -131,8 +132,9 @@ def join_player(pin):
 
     if nombre_usuario not in partida['participantes']:
         partida['participantes'][nombre_usuario] = {
-            'grupo': None, 
-            'puntaje': 0, 
+            'grupo': None,
+            'grupo_numero': 0,
+            'puntaje': 0,
             'id_usuario': id_usuario,
             'foto': foto,
             'skin': skin
@@ -141,9 +143,10 @@ def join_player(pin):
             partida['participantes_sin_grupo'].append(nombre_usuario)
         else:
             if not partida['grupos']:
-                partida['grupos'].append({'nombre': 'Individual', 'miembros': [], 'puntaje': 0, 'respondio_pregunta': False})
+                partida['grupos'].append({'numero': 0, 'nombre': 'Individual', 'miembros': [], 'puntaje': 0, 'respondio_pregunta': False})
             partida['grupos'][0]['miembros'].append(nombre_usuario)
             partida['participantes'][nombre_usuario]['grupo'] = 'Individual'
+            partida['participantes'][nombre_usuario]['grupo_numero'] = 0
 
     # Retornar información incluyendo el grupo
     return {
@@ -167,11 +170,13 @@ def select_group(pin, nombre_grupo):
     for g in partida['grupos']:
         if nombre_usuario in g['miembros']:
             g['miembros'].remove(nombre_usuario)
+            partida['participantes'][nombre_usuario]['grupo_numero'] = 0
 
     for g in partida['grupos']:
         if g['nombre'] == nombre_grupo:
             g['miembros'].append(nombre_usuario)
             partida['participantes'][nombre_usuario]['grupo'] = nombre_grupo
+            partida['participantes'][nombre_usuario]['grupo_numero'] = g.get('numero', 0)
             return True
     return False
 
@@ -198,6 +203,7 @@ def remove_player(pin):
     for g in partida['grupos']:
         if nombre_usuario in g['miembros']:
             g['miembros'].remove(nombre_usuario)
+            partida['participantes'][nombre_usuario]['grupo_numero'] = 0
             break
 
     return True
@@ -220,6 +226,7 @@ def _assign_unassigned_players_to_groups(partida):
         # Asigna participante al grupo
         grupo_aleatorio['miembros'].append(nombre_usuario)
         partida['participantes'][nombre_usuario]['grupo'] = grupo_aleatorio['nombre']
+        partida['participantes'][nombre_usuario]['grupo_numero'] = grupo_aleatorio.get('numero', 0)
         
         print(f"[AUTO-ASIGNAR] {nombre_usuario} → {grupo_aleatorio['nombre']}")
     
