@@ -1,17 +1,13 @@
+# Variables de entorno
+.env
 
-# Credenciales y tokens de Google
+# Tokens y credenciales
+token_onedrive.json
 mysite/token.json
 mysite/token_drive.json
 mysite/old-token.json
 mysite/credentials.json
 mysite/pruebas/token_drive.json
-
-# Archivos de base de datos con credenciales
-mysite/bd.py
-
-# Archivos con credenciales de Azure/Microsoft
-mysite/controladores/onedrive_uploader.py
-mysite/controladores/outlook_email_sender.py
 
 # Entornos virtuales
 .venv/
@@ -24,14 +20,22 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.so
+
+# Archivos de base de datos locales
+*.db
+*.sqlite
+*.sqlite3
 
 # Respaldos
 respaldos/
 
-# Tokens y credenciales
-token_onedrive.json
-.env
-
 # OS
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/
+
+# Logs
+*.log
+logs/
