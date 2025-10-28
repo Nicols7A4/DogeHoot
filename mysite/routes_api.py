@@ -923,9 +923,6 @@ def api_solicitar_restablecimiento():
         if usuario_any and usuario_any.get('vigente') and not usuario_any.get('verificado'):
             return jsonify({"mensaje": "No has verificado el correo que has ingresado."}), 200
 
-        # Genérico para no enumerar
-        return jsonify({"mensaje": "Si tu correo está en nuestro sistema, recibirás un enlace para restablecer tu contraseña."}), 200
-
     # Si llegó acá, está vigente y verificado → envía correo
     try:
         token = ctrl.generar_token_restablecimiento(usuario_ok['id_usuario'])
@@ -936,7 +933,7 @@ def api_solicitar_restablecimiento():
     except Exception as e:
         return jsonify({"error": f"Error interno del servidor: {str(e)}"}), 500
 
-    return jsonify({"mensaje": "Si tu correo está en nuestro sistema, recibirás un enlace para restablecer tu contraseña."}), 200
+    return jsonify({"mensaje": "En breve recibirás un enlace para restablecer tu contraseña."}), 200
 # --- FIN: NUEVO ENDPOINT ---
 
 # ---------------------------------- AGREGADO POR PAME - Reportes
@@ -1355,6 +1352,7 @@ def api_report_partida_export():
             "Usuario",
             "Grupo",
             "PuntajeTotal",
+            "Monedas",
             "RespuestasCorrectas",
             "RespuestasIncorrectas",
             "%Acierto",
@@ -1377,10 +1375,11 @@ def api_report_partida_export():
             ws_resumen.cell(row=row, column=2, value=part["nombre"])
             ws_resumen.cell(row=row, column=3, value=grupo_texto)
             ws_resumen.cell(row=row, column=4, value=int(part["puntaje_total"]))
-            ws_resumen.cell(row=row, column=5, value=int(part["correctas"]))
-            ws_resumen.cell(row=row, column=6, value=int(part["incorrectas"]))
-            ws_resumen.cell(row=row, column=7, value=pct_acierto)
-            ws_resumen.cell(row=row, column=8, value=round(float(part["tiempo_prom_seg"] or 0), 2))
+            ws_resumen.cell(row=row, column=5, value=int(part.get("monedas") or 0))
+            ws_resumen.cell(row=row, column=6, value=int(part["correctas"]))
+            ws_resumen.cell(row=row, column=7, value=int(part["incorrectas"]))
+            ws_resumen.cell(row=row, column=8, value=pct_acierto)
+            ws_resumen.cell(row=row, column=9, value=round(float(part["tiempo_prom_seg"] or 0), 2))
 
 
         _apply_sheet_style(ws_resumen)
@@ -1631,6 +1630,7 @@ def api_report_partida_export_drive():
             "Usuario",
             "Grupo",
             "PuntajeTotal",
+            "Monedas",
             "RespuestasCorrectas",
             "RespuestasIncorrectas",
             "%Acierto",
@@ -1653,10 +1653,11 @@ def api_report_partida_export_drive():
             ws_resumen.cell(row=row, column=2, value=part["nombre"])
             ws_resumen.cell(row=row, column=3, value=grupo_texto)
             ws_resumen.cell(row=row, column=4, value=int(part["puntaje_total"]))
-            ws_resumen.cell(row=row, column=5, value=int(part["correctas"]))
-            ws_resumen.cell(row=row, column=6, value=int(part["incorrectas"]))
-            ws_resumen.cell(row=row, column=7, value=pct_acierto)
-            ws_resumen.cell(row=row, column=8, value=round(float(part["tiempo_prom_seg"] or 0), 2))
+            ws_resumen.cell(row=row, column=5, value=int(part.get("monedas") or 0))
+            ws_resumen.cell(row=row, column=6, value=int(part["correctas"]))
+            ws_resumen.cell(row=row, column=7, value=int(part["incorrectas"]))
+            ws_resumen.cell(row=row, column=8, value=pct_acierto)
+            ws_resumen.cell(row=row, column=9, value=round(float(part["tiempo_prom_seg"] or 0), 2))
 
 
         _apply_sheet_style(ws_resumen)
@@ -1938,6 +1939,7 @@ def api_report_partida_export_onedrive():
             "Usuario",
             "Grupo",
             "PuntajeTotal",
+            "Monedas",
             "RespuestasCorrectas",
             "RespuestasIncorrectas",
             "%Acierto",
@@ -1960,10 +1962,11 @@ def api_report_partida_export_onedrive():
             ws_resumen.cell(row=row, column=2, value=part["nombre"])
             ws_resumen.cell(row=row, column=3, value=grupo_texto)
             ws_resumen.cell(row=row, column=4, value=int(part["puntaje_total"]))
-            ws_resumen.cell(row=row, column=5, value=int(part["correctas"]))
-            ws_resumen.cell(row=row, column=6, value=int(part["incorrectas"]))
-            ws_resumen.cell(row=row, column=7, value=pct_acierto)
-            ws_resumen.cell(row=row, column=8, value=round(float(part["tiempo_prom_seg"] or 0), 2))
+            ws_resumen.cell(row=row, column=5, value=int(part.get("monedas") or 0))
+            ws_resumen.cell(row=row, column=6, value=int(part["correctas"]))
+            ws_resumen.cell(row=row, column=7, value=int(part["incorrectas"]))
+            ws_resumen.cell(row=row, column=8, value=pct_acierto)
+            ws_resumen.cell(row=row, column=9, value=round(float(part["tiempo_prom_seg"] or 0), 2))
 
 
         _apply_sheet_style(ws_resumen)

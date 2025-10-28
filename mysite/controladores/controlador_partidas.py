@@ -458,7 +458,59 @@ def _get_ranking_final(id_partida):
                     GROUP BY pa.id_participante, pa.nombre, pa.grupo
                     ORDER BY puntaje_total DESC, correctas DESC
             """, (id_partida,))
-            return c.fetchall()
+            rows = c.fetchall() or []
+
+            if not rows:
+                return []
+
+            # Determinar si la partida se jugó en modalidad grupal
+            modalidad_grupal = any(int(row.get("grupo") or 0) > 0 for row in rows)
+
+            participantes = []
+
+            if modalidad_grupal:
+                # Sumar puntaje por grupo y calcular recompensa para cada grupo
+                puntaje_por_grupo = {}
+                for row in rows:
+                    grupo = int(row.get("grupo") or 0)
+                    if grupo > 0:
+                        puntaje_por_grupo[grupo] = puntaje_por_grupo.get(grupo, 0) + int(row.get("puntaje_total") or 0)
+
+                grupos_ordenados = sorted(
+                    puntaje_por_grupo.items(),
+                    key=lambda item: item[1],
+                    reverse=True
+                )
+
+                recompensa_por_grupo = {}
+                for posicion, (grupo, puntaje) in enumerate(grupos_ordenados, start=1):
+                    recompensa_por_grupo[grupo] = c_rec.calcular_recompensa(posicion, puntaje)
+
+                for row in rows:
+                    grupo_num = int(row.get("grupo") or 0)
+                    participantes.append({
+                        "nombre": row["nombre"],
+                        "grupo": grupo_num,
+                        "puntaje_total": row["puntaje_total"],
+                        "correctas": row["correctas"],
+                        "incorrectas": row["incorrectas"],
+                        "tiempo_prom_seg": row["tiempo_prom_seg"],
+                        "monedas": recompensa_por_grupo.get(grupo_num, 0)
+                    })
+            else:
+                for posicion, row in enumerate(rows, start=1):
+                    puntaje = int(row.get("puntaje_total") or 0)
+                    participantes.append({
+                        "nombre": row["nombre"],
+                        "grupo": int(row.get("grupo") or 0),
+                        "puntaje_total": row["puntaje_total"],
+                        "correctas": row["correctas"],
+                        "incorrectas": row["incorrectas"],
+                        "tiempo_prom_seg": row["tiempo_prom_seg"],
+                        "monedas": c_rec.calcular_recompensa(posicion, puntaje)
+                    })
+
+            return participantes
     finally:
         cx.close()
 

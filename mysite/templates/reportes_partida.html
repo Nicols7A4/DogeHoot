@@ -447,6 +447,7 @@
                             <th>Grupo</th>
                             <th>Usuario</th>
                             <th>Puntaje Total</th>
+                            <th>Monedas</th>
                             <th>Correctas</th>
                             <th>Incorrectas</th>
                             <th>% Acierto</th>
@@ -558,12 +559,14 @@
                 const pct = total > 0 ? ((p.correctas / total) * 100).toFixed(2) : 0;
                 const grupoNumero = parseInt(p.grupo || 0, 10);
                 const grupoTexto = grupoNumero > 0 ? grupoNumero : 'No';
+                const monedas = parseInt(p.monedas ?? 0, 10);
                 tbodyRanking.innerHTML += `
                     <tr>
                         <td>${idx + 1}</td>
                         <td>${grupoTexto}</td>
                         <td>${p.nombre}</td>
                         <td>${p.puntaje_total}</td>
+                        <td>${monedas}</td>
                         <td>${p.correctas}</td>
                         <td>${p.incorrectas}</td>
                         <td>${pct}%</td>
