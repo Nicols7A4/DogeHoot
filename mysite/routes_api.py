@@ -10,7 +10,7 @@ import pymysql
 from datetime import datetime
 
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill
+from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
 from bd import obtener_conexion
@@ -993,7 +993,7 @@ def api_report_partida():
 
 # ---------- REPORTES CSV (descarga) ----------
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill
+from openpyxl.styles import Font, PatternFill, Alignment
 from flask import send_file
 import io
 
@@ -1267,13 +1267,17 @@ def api_report_partida_export():
         wb = Workbook()
         wb.remove(wb.active)  # Eliminar hoja por defecto
 
-        def _set_dimensions(sheet):
+        def _apply_sheet_style(sheet):
             max_col = sheet.max_column or 1
             max_row = sheet.max_row or 1
+            center_alignment = Alignment(horizontal="center", vertical="center")
             for col_idx in range(1, max_col + 1):
-                sheet.column_dimensions[get_column_letter(col_idx)].width = 20
+                sheet.column_dimensions[get_column_letter(col_idx)].width = 25
             for row_idx in range(1, max_row + 1):
                 sheet.row_dimensions[row_idx].height = 20
+            for row in sheet.iter_rows(min_row=1, max_row=max_row, min_col=1, max_col=max_col):
+                for cell in row:
+                    cell.alignment = center_alignment
 
         # --- HOJA 1: RESUMEN (Ranking Final) ---
         ws_resumen = wb.create_sheet("Resumen")
@@ -1283,7 +1287,7 @@ def api_report_partida_export():
         # Estilo para encabezados
         for cell in ws_resumen[1]:
             cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            cell.fill = PatternFill(start_color="FFE400", end_color="FFE400", fill_type="solid")
         
         # Llenar datos del ranking
         for idx, part in enumerate(data['participantes'], start=1):
@@ -1301,7 +1305,7 @@ def api_report_partida_export():
                 pct_acierto,
                 round(float(part['tiempo_prom_seg'] or 0), 2)
             ])
-        _set_dimensions(ws_resumen)
+        _apply_sheet_style(ws_resumen)
 
         # --- HOJA 2: DETALLE POR PARTICIPANTE ---
         ws_detalle_part = wb.create_sheet("Detalle por participante")
@@ -1310,7 +1314,7 @@ def api_report_partida_export():
         
         for cell in ws_detalle_part[1]:
             cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            cell.fill = PatternFill(start_color="FFE400", end_color="FFE400", fill_type="solid")
 
         # Obtener respuestas detalladas por participante
         cx = obtener_conexion()
@@ -1344,7 +1348,7 @@ def api_report_partida_export():
                     ])
         finally:
             cx.close()
-        _set_dimensions(ws_detalle_part)
+        _apply_sheet_style(ws_detalle_part)
 
         # --- HOJA 3: DETALLE POR PREGUNTA ---
         ws_detalle_preg = wb.create_sheet("Detalle por pregunta")
@@ -1353,7 +1357,7 @@ def api_report_partida_export():
         
         for cell in ws_detalle_preg[1]:
             cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            cell.fill = PatternFill(start_color="FFE400", end_color="FFE400", fill_type="solid")
 
         # Obtener detalle de opciones por pregunta
         cx = obtener_conexion()
@@ -1387,7 +1391,7 @@ def api_report_partida_export():
                     ])
         finally:
             cx.close()
-        _set_dimensions(ws_detalle_preg)
+        _apply_sheet_style(ws_detalle_preg)
 
         # timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
         # filename = f"reporte_partida_{target_partida_id}_{timestamp}.xlsx"
@@ -1488,6 +1492,18 @@ def api_report_partida_export_drive():
         wb = Workbook()
         wb.remove(wb.active)
 
+        def _apply_sheet_style(sheet):
+            max_col = sheet.max_column or 1
+            max_row = sheet.max_row or 1
+            center_alignment = Alignment(horizontal="center", vertical="center")
+            for col_idx in range(1, max_col + 1):
+                sheet.column_dimensions[get_column_letter(col_idx)].width = 25
+            for row_idx in range(1, max_row + 1):
+                sheet.row_dimensions[row_idx].height = 20
+            for row in sheet.iter_rows(min_row=1, max_row=max_row, min_col=1, max_col=max_col):
+                for cell in row:
+                    cell.alignment = center_alignment
+
         # --- HOJA 1: RESUMEN (Ranking Final) ---
         ws_resumen = wb.create_sheet("Resumen")
         ws_resumen.append(["Posición", "Usuario", "Grupo", "PuntajeTotal", "RespuestasCorrectas", 
@@ -1495,7 +1511,7 @@ def api_report_partida_export_drive():
         
         for cell in ws_resumen[1]:
             cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            cell.fill = PatternFill(start_color="FFE400", end_color="FFE400", fill_type="solid")
         
         for idx, part in enumerate(data['participantes'], start=1):
             total_resp = int(part['correctas']) + int(part['incorrectas'])
@@ -1512,6 +1528,7 @@ def api_report_partida_export_drive():
                 pct_acierto,
                 round(float(part['tiempo_prom_seg'] or 0), 2)
             ])
+        _apply_sheet_style(ws_resumen)
 
         # --- HOJA 2: DETALLE POR PARTICIPANTE ---
         ws_detalle_part = wb.create_sheet("Detalle por participante")
@@ -1520,7 +1537,7 @@ def api_report_partida_export_drive():
         
         for cell in ws_detalle_part[1]:
             cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            cell.fill = PatternFill(start_color="FFE400", end_color="FFE400", fill_type="solid")
 
         cx = obtener_conexion()
         try:
@@ -1552,6 +1569,7 @@ def api_report_partida_export_drive():
                     ])
         finally:
             cx.close()
+        _apply_sheet_style(ws_detalle_part)
 
         # --- HOJA 3: DETALLE POR PREGUNTA ---
         ws_detalle_preg = wb.create_sheet("Detalle por pregunta")
@@ -1560,7 +1578,7 @@ def api_report_partida_export_drive():
         
         for cell in ws_detalle_preg[1]:
             cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            cell.fill = PatternFill(start_color="FFE400", end_color="FFE400", fill_type="solid")
 
         cx = obtener_conexion()
         try:
@@ -1594,6 +1612,7 @@ def api_report_partida_export_drive():
                     ])
         finally:
             cx.close()
+        _apply_sheet_style(ws_detalle_preg)
 
         # Guardar en memoria
         output = io.BytesIO()
@@ -1721,12 +1740,24 @@ def api_report_partida_export_onedrive():
         
         # === PASO 2: Crear el archivo Excel (mismo código que ya tienes) ===
         from openpyxl import Workbook
-        from openpyxl.styles import Font, PatternFill
+        from openpyxl.styles import Font, PatternFill, Alignment
         import io
         
         wb = Workbook()
         wb.remove(wb.active)  # Eliminar hoja por defecto
-        
+
+        def _apply_sheet_style(sheet):
+            max_col = sheet.max_column or 1
+            max_row = sheet.max_row or 1
+            center_alignment = Alignment(horizontal="center", vertical="center")
+            for col_idx in range(1, max_col + 1):
+                sheet.column_dimensions[get_column_letter(col_idx)].width = 25
+            for row_idx in range(1, max_row + 1):
+                sheet.row_dimensions[row_idx].height = 20
+            for row in sheet.iter_rows(min_row=1, max_row=max_row, min_col=1, max_col=max_col):
+                for cell in row:
+                    cell.alignment = center_alignment
+
         # --- HOJA 1: RESUMEN ---
         ws_resumen = wb.create_sheet("Resumen")
         ws_resumen.append(['Posición', 'Usuario', 'Grupo', 'Puntaje Total', 'Respuestas Correctas', 
@@ -1735,7 +1766,7 @@ def api_report_partida_export_onedrive():
         # Estilo del header
         for cell in ws_resumen[1]:
             cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
+            cell.fill = PatternFill(start_color='FFE400', end_color='FFE400', fill_type='solid')
         
         # Llenar datos
         for idx, part in enumerate(data['participantes'], start=1):
@@ -1753,6 +1784,7 @@ def api_report_partida_export_onedrive():
                 pct_acierto,
                 round(float(part['tiempo_prom_seg'] or 0), 2)
             ])
+        _apply_sheet_style(ws_resumen)
         
         # --- HOJA 2: DETALLE POR PARTICIPANTE ---
         ws_detalle_part = wb.create_sheet("Detalle por participante")
@@ -1761,7 +1793,7 @@ def api_report_partida_export_onedrive():
         
         for cell in ws_detalle_part[1]:
             cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
+            cell.fill = PatternFill(start_color='FFE400', end_color='FFE400', fill_type='solid')
         
         # Obtener detalle de respuestas
         cx = obtener_conexion()
@@ -1793,6 +1825,7 @@ def api_report_partida_export_onedrive():
                     ])
         finally:
             cx.close()
+        _apply_sheet_style(ws_detalle_part)
         
         # --- HOJA 3: DETALLE POR PREGUNTA ---
         ws_detalle_preg = wb.create_sheet("Detalle por pregunta")
@@ -1801,7 +1834,7 @@ def api_report_partida_export_onedrive():
         
         for cell in ws_detalle_preg[1]:
             cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
+            cell.fill = PatternFill(start_color='FFE400', end_color='FFE400', fill_type='solid')
         
         cx = obtener_conexion()
         try:
@@ -1833,6 +1866,7 @@ def api_report_partida_export_onedrive():
                     ])
         finally:
             cx.close()
+        _apply_sheet_style(ws_detalle_preg)
         
         # === PASO 3: Guardar Excel en memoria (bytes) ===
         output = io.BytesIO()
