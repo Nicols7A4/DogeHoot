@@ -338,6 +338,7 @@
             <tr>
                 <th>Cuestionario</th>
                 <th>Fecha de Inicio</th>
+                <th>Modalidad</th>
                 <th>Estado</th>
                 <th>PIN / Acciones</th>
             </tr>
@@ -347,6 +348,13 @@
             <tr>
                 <td>{{ partida.cuestionario_titulo }}</td>
                 <td>{{ partida.fecha_hora_inicio.strftime('%d/%m/%Y a las %H:%M') }}</td>
+                <td>
+                    {% if partida.modalidad == true %}
+                    <span class="badge-estado estado-e">Grupal</span>
+                    {% else %}
+                    <span class="badge-estado estado-e">Individual</span>
+                    {% endif %}
+                </td>
                 <td>
                     {% if partida.estado == 'E' %}
                     <span class="badge-estado estado-e">En Espera</span>
@@ -388,6 +396,17 @@
         <div class="partida-card">
             <div class="card-titulo">{{ partida.cuestionario_titulo }}</div>
             <div class="card-fecha">{{ partida.fecha_hora_inicio.strftime('%d/%m/%Y a las %H:%M') }}</div>
+
+            <div class="card-row">
+                <div>
+                    <div class="card-label">Modalidad</div>
+                    {% if partida.modalidad == true %}
+                    <span class="badge-estado estado-e">Grupal</span>
+                    {% else %}
+                    <span class="badge-estado estado-e">Individual</span>
+                    {% endif %}
+                </div>
+            </div>
 
             <div class="card-row">
                 <div>

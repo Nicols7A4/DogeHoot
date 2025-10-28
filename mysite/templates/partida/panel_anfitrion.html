@@ -1181,12 +1181,21 @@
             const rankingDiv = document.getElementById('ranking-final');
             const extraDiv = document.getElementById('extra');
             rankingDiv.innerHTML = '<div class="podium-places">';
+
+            console.log('DEBUG HOST: Datos finales recibidos:', r);
+
             (r || []).forEach((item, idx) => {
+                const monedasMostrar = item.monedas !== undefined ? item.monedas : 0;
                 rankingDiv.innerHTML += `
                     <div class="podium-place">
                         <div class="podium-rank">${idx + 1}</div>
                         <div class="podium-name">${item.nombre}</div>
-                        <div class="podium-score">${item.puntaje} pts</div>
+                        <div class="podium-score">
+                            ${item.puntaje} pts
+                            <div style="font-size: 0.85rem; margin-top: 0.3rem; color: #000; font-weight: 700;">
+                                💰 ${monedasMostrar} monedas
+                            </div>
+                        </div>
                     </div>
                 `;
             });

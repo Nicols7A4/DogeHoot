@@ -4,9 +4,13 @@ import base64
 import os
 import re
 import time
-from main import app
+# TEST con from main import app para Excel
+# from main import app
+from flask import current_app
+#
 from bd import obtener_conexion
 from datetime import datetime
+
 
 def crear(titulo, descripcion, es_publico, id_usuario, id_categoria, id_cuestionario_original=None):
     """Crea un nuevo cuestionario en la base de datos."""
@@ -23,6 +27,39 @@ def crear(titulo, descripcion, es_publico, id_usuario, id_categoria, id_cuestion
         if conexion:
             conexion.close()
 
+# TEST para Excel
+def crear_solo_cuestionario(titulo, descripcion, es_publico, fecha_hora_creacion, id_usuario, id_categoria, vigente, id_cuestionario_original=None):
+    """
+    Crea un nuevo registro de CUESTIONARIO (solo los datos básicos)
+    y DEVUELVE el nuevo id_cuestionario.
+    Usado por el endpoint /api/cuestionarios/guardar-basico.
+    """
+    conexion = obtener_conexion()
+    nuevo_id = None
+    try:
+        with conexion.cursor() as cursor:
+            sql = """
+                INSERT INTO CUESTIONARIO
+                (titulo, descripcion, es_publico, fecha_hora_creacion, id_usuario, id_categoria, id_cuestionario_original, vigente)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql, (
+                titulo, descripcion, es_publico,
+                fecha_hora_creacion, id_usuario, id_categoria,
+                id_cuestionario_original, vigente
+            ))
+            nuevo_id = cursor.lastrowid # ¡Obtenemos el ID de la fila recién insertada!
+        conexion.commit()
+    except Exception as e:
+        print(f"Error en crear_solo_cuestionario: {e}")
+        if conexion:
+            conexion.rollback() # Deshacer cambios si hay un error
+        raise e # Relanzar la excepción para que el API la capture
+    finally:
+        if conexion:
+            conexion.close()
+    return nuevo_id
+
 def obtener_con_filtros(id_usuario=None, id_categoria=None, es_publico=None):
     """Obtiene una lista de cuestionarios aplicando filtros opcionales."""
     conexion = obtener_conexion()
@@ -30,6 +67,12 @@ def obtener_con_filtros(id_usuario=None, id_categoria=None, es_publico=None):
     try:
         with conexion.cursor() as cursor:
             query = "SELECT * FROM CUESTIONARIO WHERE vigente = TRUE"
+            query = """
+                SELECT *
+                FROM CUESTIONARIO CU
+                JOIN CATEGORIA CA ON CA.id_categoria = CU.id_categoria
+                WHERE CU.vigente = TRUE
+                """
             params = []
 
             if id_usuario:
@@ -169,7 +212,9 @@ def _guardar_imagen_base64(id_cuestionario, id_pregunta, adjunto_str):
 
             timestamp = int(time.time())
             filename = f"pregunta_{id_pregunta}_{timestamp}.{ext}"
-            upload_folder = os.path.join(app.root_path, 'static', 'img', 'cuestionarios', f'c_{id_cuestionario}')
+            # TEST para el Excel
+            # ORIGINAL: upload_folder = os.path.join(app.root_path, 'static', 'img', 'cuestionarios', f'c_{id_cuestionario}')
+            upload_folder = os.path.join(current_app.root_path, 'static', 'img', 'cuestionarios', f'c_{id_cuestionario}')
             os.makedirs(upload_folder, exist_ok=True)
 
             ruta_completa = os.path.join(upload_folder, filename)

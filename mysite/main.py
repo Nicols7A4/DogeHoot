@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 from flask import Flask, render_template, request, redirect, flash, jsonify
 from flask_mail import Mail, Message
+from controladores.importarExcel import importar_bp # TEST EXCEL aún
 
 # Cargar variables de entorno desde .env
 from dotenv import load_dotenv
@@ -24,6 +25,9 @@ app = Flask(__name__)
 app.register_blueprint(perfil_bp) #agregado por pame. NOTA: Se puede borrar
 # app.secret_key = 'Tralalero Tralala'
 app.config['SECRET_KEY'] = 'Tralalero Tralala'
+
+# TEST EXCEL, Línea de prueba para el Importar Cuestionario
+app.register_blueprint(importar_bp)
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
@@ -64,3 +68,6 @@ if __name__ == "__main__":
 def test_recompensas(id_partida):
     otorgar_recompensas(id_partida)
     return f"Recompensas otorgadas para la partida {id_partida}"
+
+
+# Go

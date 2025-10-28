@@ -39,6 +39,7 @@ def _ensure_loaded(pin):
         n = int(partida_db.get('cant_grupos') or 2)
         for i in range(n):
             grupos.append({
+                'numero': i + 1,
                 'nombre': f"Grupo {i+1}",
                 'miembros': [],
                 'puntaje': 0,
@@ -53,7 +54,7 @@ def _ensure_loaded(pin):
         'fase': 'lobby',               # lobby | question | results | final
         'pregunta_actual_index': -1,
         'preguntas_data': preguntas,   # usamos la lista ya cargada
-        'participantes': {},           # nombre -> {grupo, puntaje, id_usuario, ...}
+        'participantes': {},           # nombre -> {grupo, grupo_numero, puntaje, id_usuario, ...}
         'grupos': grupos,
         'participantes_sin_grupo': [],
         # tiempos
@@ -131,8 +132,9 @@ def join_player(pin):
 
     if nombre_usuario not in partida['participantes']:
         partida['participantes'][nombre_usuario] = {
-            'grupo': None, 
-            'puntaje': 0, 
+            'grupo': None,
+            'grupo_numero': 0,
+            'puntaje': 0,
             'id_usuario': id_usuario,
             'foto': foto,
             'skin': skin
@@ -141,9 +143,10 @@ def join_player(pin):
             partida['participantes_sin_grupo'].append(nombre_usuario)
         else:
             if not partida['grupos']:
-                partida['grupos'].append({'nombre': 'Individual', 'miembros': [], 'puntaje': 0, 'respondio_pregunta': False})
+                partida['grupos'].append({'numero': 0, 'nombre': 'Individual', 'miembros': [], 'puntaje': 0, 'respondio_pregunta': False})
             partida['grupos'][0]['miembros'].append(nombre_usuario)
             partida['participantes'][nombre_usuario]['grupo'] = 'Individual'
+            partida['participantes'][nombre_usuario]['grupo_numero'] = 0
 
     # Retornar información incluyendo el grupo
     return {
@@ -167,11 +170,13 @@ def select_group(pin, nombre_grupo):
     for g in partida['grupos']:
         if nombre_usuario in g['miembros']:
             g['miembros'].remove(nombre_usuario)
+            partida['participantes'][nombre_usuario]['grupo_numero'] = 0
 
     for g in partida['grupos']:
         if g['nombre'] == nombre_grupo:
             g['miembros'].append(nombre_usuario)
             partida['participantes'][nombre_usuario]['grupo'] = nombre_grupo
+            partida['participantes'][nombre_usuario]['grupo_numero'] = g.get('numero', 0)
             return True
     return False
 
@@ -198,6 +203,7 @@ def remove_player(pin):
     for g in partida['grupos']:
         if nombre_usuario in g['miembros']:
             g['miembros'].remove(nombre_usuario)
+            partida['participantes'][nombre_usuario]['grupo_numero'] = 0
             break
 
     return True
@@ -220,6 +226,7 @@ def _assign_unassigned_players_to_groups(partida):
         # Asigna participante al grupo
         grupo_aleatorio['miembros'].append(nombre_usuario)
         partida['participantes'][nombre_usuario]['grupo'] = grupo_aleatorio['nombre']
+        partida['participantes'][nombre_usuario]['grupo_numero'] = grupo_aleatorio.get('numero', 0)
         
         print(f"[AUTO-ASIGNAR] {nombre_usuario} → {grupo_aleatorio['nombre']}")
     
@@ -557,15 +564,41 @@ def submit_answer(pin, id_opcion, tiempo_restante):
 def _final_ranking(partida):
     if partida['modalidad_grupal']:
         ranking_final = sorted(partida['grupos'], key=lambda g: g['puntaje'], reverse=True)
-        return [{'nombre': g['nombre'], 'puntaje': g['puntaje']} for g in ranking_final]
+        ranking_data = []
+        for i, grupo in enumerate(ranking_final, start=1):
+            # Calcular monedas para cada grupo
+            base_por_puesto = {1: 100, 2: 75, 3: 50}
+            base = base_por_puesto.get(i, 20)
+            extra = grupo['puntaje'] // 50
+            monedas = base + extra
+            ranking_data.append({
+                'nombre': grupo['nombre'], 
+                'puntaje': grupo['puntaje'],
+                'monedas': monedas,
+                'posicion': i
+            })
+        return ranking_data
     else:
         ranking_ordenado = sorted(partida['participantes'].values(), key=lambda p: p['puntaje'], reverse=True)
         ranking_data, usados = [], set()
+        posicion = 1
         for p_data in ranking_ordenado:
             for nombre, data in partida['participantes'].items():
                 if data == p_data and nombre not in usados:
-                    ranking_data.append({'nombre': nombre, 'puntaje': data['puntaje']})
+                    # Calcular monedas para este jugador
+                    base_por_puesto = {1: 100, 2: 75, 3: 50}
+                    base = base_por_puesto.get(posicion, 20)
+                    extra = data['puntaje'] // 50
+                    monedas = base + extra
+                    
+                    ranking_data.append({
+                        'nombre': nombre, 
+                        'puntaje': data['puntaje'],
+                        'monedas': monedas,
+                        'posicion': posicion
+                    })
                     usados.add(nombre)
+                    posicion += 1
                     break
         return ranking_data
 
@@ -578,25 +611,42 @@ def finalize_game(pin):
     partida['estado'] = 'F'
     partida['fase'] = 'final'
 
+    # Preparar ranking para recompensas
+    ranking_para_recompensas = []
+
     # guardar puntos en DB
     if partida['modalidad_grupal']:
         ranking_final = sorted(partida['grupos'], key=lambda g: g['puntaje'], reverse=True)
-        for grupo in ranking_final:
+        for i, grupo in enumerate(ranking_final, start=1):
             for miembro_nombre in grupo['miembros']:
                 participante_data = partida['participantes'].get(miembro_nombre)
                 if participante_data and participante_data.get('id_usuario'):
                     ctrl_usuarios.sumar_puntos(participante_data['id_usuario'], grupo['puntaje'])
+                    # Agregar al ranking para recompensas
+                    ranking_para_recompensas.append({
+                        'id_usuario': participante_data['id_usuario'],
+                        'puntaje': grupo['puntaje'],
+                        'posicion': i
+                    })
     else:
         ranking_final = sorted(partida['participantes'].values(), key=lambda p: p['puntaje'], reverse=True)
         usados = set()
+        posicion = 1
         for p_data in ranking_final:
             for nombre, data in partida['participantes'].items():
                 if data == p_data and nombre not in usados:
                     if data.get('id_usuario'):
                         ctrl_usuarios.sumar_puntos(data['id_usuario'], data['puntaje'])
+                        # Agregar al ranking para recompensas
+                        ranking_para_recompensas.append({
+                            'id_usuario': data['id_usuario'],
+                            'puntaje': data['puntaje'],
+                            'posicion': posicion
+                        })
                     usados.add(nombre)
+                    posicion += 1
                     break
 
-    # marcar finalizado en BD
-    ctrl_partidas.finalizar_partida(partida['id_partida'])
+    # marcar finalizado en BD y otorgar recompensas con ranking correcto
+    ctrl_partidas.finalizar_partida(partida['id_partida'], ranking_para_recompensas)
     return True

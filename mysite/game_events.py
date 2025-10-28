@@ -10,6 +10,7 @@ import random
 from controladores import controlador_partidas as ctrl_partidas
 from controladores import preguntas_opciones as cpo 
 from controladores import usuarios as ctrl_usuarios # Para actualizar puntos al final
+from controladores import controlador_recompensas as c_rec
 
 partidas_en_juego = {} # Nuestro "cerebro" en memoria
 
@@ -41,6 +42,7 @@ def al_iniciar_panel(data):
         if partida_db['modalidad']:
             for i in range(partida_db.get('cant_grupos', 2)):
                 grupos.append({
+                    "numero": i + 1,
                     "nombre": f"Grupo {i + 1}", 
                     "miembros": [], 
                     "puntaje": 0, 
@@ -84,7 +86,13 @@ def al_unirse_jugador(data):
         grupos = []
         if partida_db['modalidad']:
             for i in range(partida_db.get('cant_grupos', 2)):
-                grupos.append({"nombre": f"Grupo {i + 1}", "miembros": [], "puntaje": 0, "respondio_pregunta": False})
+                grupos.append({
+                    "numero": i + 1,
+                    "nombre": f"Grupo {i + 1}", 
+                    "miembros": [], 
+                    "puntaje": 0, 
+                    "respondio_pregunta": False
+                })
 
         partidas_en_juego[pin] = {
             "id_partida": partida_db['id_partida'],
@@ -104,11 +112,11 @@ def al_unirse_jugador(data):
     # El resto de la lógica para añadir al jugador no cambia...
     jugador_ya_existe = nombre_usuario in partida['participantes']
     if not jugador_ya_existe:
-        partida['participantes'][nombre_usuario] = {'grupo': None, 'puntaje': 0, 'id_usuario': id_usuario}
+        partida['participantes'][nombre_usuario] = {'grupo': None, 'grupo_numero': 0, 'puntaje': 0, 'id_usuario': id_usuario}
         if partida['modalidad_grupal']:
             partida['participantes_sin_grupo'].append(nombre_usuario)
         else:
-             if not partida['grupos']: partida['grupos'].append({'nombre':'Individual', 'miembros':[], 'puntaje':0, 'respondio_pregunta':False})
+             if not partida['grupos']: partida['grupos'].append({'numero': 0, 'nombre':'Individual', 'miembros':[], 'puntaje':0, 'respondio_pregunta':False})
              partida['grupos'][0]['miembros'].append(nombre_usuario)
 
     
@@ -151,12 +159,14 @@ def al_seleccionar_grupo(data):
     for g in partida['grupos']:
         if nombre_usuario in g['miembros']:
             g['miembros'].remove(nombre_usuario)
+            partida['participantes'][nombre_usuario]['grupo_numero'] = 0
 
     # Añadir al nuevo grupo
     for g in partida['grupos']:
         if g['nombre'] == nombre_grupo:
             g['miembros'].append(nombre_usuario)
             partida['participantes'][nombre_usuario]['grupo'] = nombre_grupo
+            partida['participantes'][nombre_usuario]['grupo_numero'] = g.get('numero', 0)
             break
             
     # emit('actualizar_estado_lobby', partida, room=pin)
@@ -359,7 +369,18 @@ def finalizar_juego(pin):
 
     if partida['modalidad_grupal']:
         ranking_final = sorted(partida['grupos'], key=lambda g: g['puntaje'], reverse=True)
-        ranking_data = [{'nombre': g['nombre'], 'puntaje': g['puntaje']} for g in ranking_final]
+        # Calcular monedas para cada grupo
+        for i, grupo in enumerate(ranking_final, start=1):
+            base_por_puesto = {1: 100, 2: 75, 3: 50}
+            base = base_por_puesto.get(i, 20)
+            extra = grupo['puntaje'] // 50
+            monedas = base + extra
+            ranking_data.append({
+                'nombre': grupo['nombre'], 
+                'puntaje': grupo['puntaje'],
+                'monedas': monedas,
+                'posicion': i
+            })
         
         # --- LÓGICA DE GUARDADO GRUPAL (DESCOMENTADA) ---
         for grupo in ranking_final:
@@ -373,33 +394,38 @@ def finalizar_juego(pin):
     else: # Modo individual
         ranking_final = sorted(partida['participantes'].values(), key=lambda p: p['puntaje'], reverse=True)
         
+        posicion = 1
         for p_data in ranking_final:
             for nombre, data in partida['participantes'].items():
                 if data == p_data and nombre not in nombres_usados: 
-                    ranking_data.append({'nombre': nombre, 'puntaje': data['puntaje']})
+                    # Calcular monedas para este jugador
+                    base_por_puesto = {1: 100, 2: 75, 3: 50}
+                    base = base_por_puesto.get(posicion, 20)
+                    extra = data['puntaje'] // 50
+                    monedas = base + extra
+                    
+                    print(f"DEBUG: Jugador {nombre} - Posición {posicion} - Puntaje {data['puntaje']} - Monedas {monedas}")
+                    
+                    ranking_data.append({
+                        'nombre': nombre, 
+                        'puntaje': data['puntaje'],
+                        'monedas': monedas,
+                        'posicion': posicion
+                    })
                     
                     # --- LÓGICA DE GUARDADO INDIVIDUAL (DESCOMENTADA) ---
                     if data['id_usuario']:
                         ctrl_usuarios.sumar_puntos(data['id_usuario'], data['puntaje'])
                     
                     nombres_usados.add(nombre)
+                    posicion += 1
                     break # Pasa al siguiente p_data
 
     # Marcamos la partida como finalizada en la BD
+    # ⚠️ NOTA: finalizar_partida() YA otorga recompensas automáticamente, no llamar otorgar_recompensas() aquí
     ctrl_partidas.finalizar_partida(partida['id_partida'])
 
-     # --- OTORGAR RECOMPENSAS AUTOMÁTICAMENTE ---
-    try:
-
-        recompensas_ok = c_rec.otorgar_recompensas(partida['id_partida'])
-        if recompensas_ok:
-            print(f"Recompensas otorgadas automáticamente para la partida {partida['id_partida']}")
-        else:
-            print(f"No se pudieron otorgar recompensas para la partida {partida['id_partida']}")
-    except Exception as e:
-        import traceback
-        print(f"Error otorgando recompensas automáticamente: {e}")
-        print(traceback.format_exc())
+    print(f"DEBUG: Enviando ranking_data al cliente: {ranking_data}")
 
     socketio.emit('juego_finalizado', {'ranking': ranking_data}, room=pin, namespace='/')
     

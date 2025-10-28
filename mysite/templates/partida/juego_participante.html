@@ -977,19 +977,31 @@
 
             const miNombre = "{{ session.get('nombre_usuario', 'Invitado') }}";
             let miPosicion = -1;
+            let misMonedas = 0;
             let esGrupo = false;
 
+            console.log('DEBUG: Datos recibidos en renderFinal:', data);
+
             (data || []).forEach((item, idx) => {
+                console.log(`DEBUG: Item ${idx}:`, item);
+                const monedasMostrar = item.monedas !== undefined ? item.monedas : 0;
+
                 podiumPlaces.innerHTML += `
                     <div class="podium-place">
                         <div class="podium-rank">${idx + 1}</div>
                         <div class="podium-name">${item.nombre}</div>
-                        <div class="podium-score">${item.puntaje} pts</div>
+                        <div class="podium-score">
+                            ${item.puntaje} pts
+                            <div style="font-size: 0.9rem; margin-top: 0.3rem; color: #000; font-weight: 700;">
+                                💰 ${monedasMostrar} monedas
+                            </div>
+                        </div>
                     </div>
                 `;
 
                 if (item.nombre === miNombre || item.nombre === miGrupo) {
                     miPosicion = idx + 1;
+                    misMonedas = monedasMostrar;
                     esGrupo = item.nombre === miGrupo;
                 }
             });
@@ -999,7 +1011,7 @@
                 const sufijo = miPosicion === 1 ? 'er' : miPosicion === 2 ? 'do' : miPosicion === 3 ? 'er' : 'to';
                 const articulo = esGrupo ? 'Tu grupo ha' : 'Has';
                 positionTitle.textContent = miPosicion === 1 ? 'GANADOR' : 'BIEN HECHO';
-                positionText.textContent = articulo + ' quedado en ' + miPosicion + sufijo + ' lugar';
+                positionText.innerHTML = articulo + ' quedado en ' + miPosicion + sufijo + ' lugar<br><span style="font-size: 1.2rem; color: #FFB800; font-weight: 800;">💰 +' + misMonedas + ' monedas ganadas</span>';
             } else {
                 myPositionBanner.style.display = 'none';
             }

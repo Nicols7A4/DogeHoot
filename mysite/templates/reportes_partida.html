@@ -354,7 +354,8 @@
                     <thead>
                         <tr>
                             <th>Posicion</th>
-                            <th>Usuario/Grupo</th>
+                            <th>Grupo</th>
+                            <th>Usuario</th>
                             <th>Puntaje Total</th>
                             <th>Correctas</th>
                             <th>Incorrectas</th>
@@ -424,10 +425,16 @@
         function mostrarDatos(data) {
             // Header
             const header = data.header;
+            const estadoMap = {
+                'F': 'Finalizado',
+                'E': 'En espera',
+                'P': 'En progreso'
+            };
+            const estadoTexto = estadoMap[header.estado] || header.estado;
             document.getElementById('header-info').innerHTML = `
                 <p><strong>PIN:</strong> ${header.pin} | 
                    <strong>Cuestionario:</strong> ${header.cuestionario_titulo} | 
-                   <strong>Estado:</strong> ${header.estado}</p>
+                   <strong>Estado:</strong> ${estadoTexto}</p>
             `;
 
             // Resumen global
@@ -446,9 +453,12 @@
             data.participantes.forEach((p, idx) => {
                 const total = parseInt(p.correctas) + parseInt(p.incorrectas);
                 const pct = total > 0 ? ((p.correctas / total) * 100).toFixed(2) : 0;
+                const grupoNumero = parseInt(p.grupo || 0, 10);
+                const grupoTexto = grupoNumero > 0 ? grupoNumero : 'No';
                 tbodyRanking.innerHTML += `
                     <tr>
                         <td>${idx + 1}</td>
+                        <td>${grupoTexto}</td>
                         <td>${p.nombre}</td>
                         <td>${p.puntaje_total}</td>
                         <td>${p.correctas}</td>

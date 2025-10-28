@@ -11,11 +11,15 @@ Fecha: 23 de octubre de 2025
 import os
 import requests
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 # Configuración de OneDrive/Microsoft Graph
-CLIENT_ID = os.getenv('ONEDRIVE_CLIENT_ID')
-CLIENT_SECRET = os.getenv('ONEDRIVE_CLIENT_SECRET')
-REDIRECT_URI = os.getenv('ONEDRIVE_REDIRECT_URI', 'http://localhost:5001/onedrive/callback')
+CLIENT_ID = os.getenv('AZURE_CLIENT_ID')
+CLIENT_SECRET = os.getenv('AZURE_CLIENT_SECRET')
+REDIRECT_URI = os.getenv('AZURE_REDIRECT_URI', 'http://localhost:5001/onedrive/callback')
 
 # Debug: Verificar que las variables se cargaron
 print(f"🔑 CLIENT_ID cargado: {'✅ Sí' if CLIENT_ID else '❌ No'}")
@@ -119,7 +123,7 @@ class OneDriveUploader:
             'client_id': CLIENT_ID,
             'response_type': 'code',
             'redirect_uri': REDIRECT_URI,
-            'scope': 'Files.ReadWrite.All offline_access',
+            'scope': 'Files.ReadWrite.All Mail.Send offline_access',
             'response_mode': 'query'
         }
         
@@ -152,7 +156,7 @@ class OneDriveUploader:
             'code': code,
             'redirect_uri': REDIRECT_URI,
             'grant_type': 'authorization_code',
-            'scope': 'Files.ReadWrite.All offline_access'
+            'scope': 'Files.ReadWrite.All Mail.Send offline_access'
         }
         
         response = requests.post(url, data=data)
