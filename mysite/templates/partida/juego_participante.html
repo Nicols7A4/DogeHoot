@@ -851,9 +851,25 @@
             const existingImg = questionHeader.querySelector('.question-image');
             if (existingImg) existingImg.remove();
 
-            if (data.adjunto) {
+            //TEST EXCEL importar imagen
+            /*
+                        if (data.adjunto) {
+                            const img = document.createElement('img');
+                            img.src = '/static/' + data.adjunto;
+                            img.className = 'question-image';
+                            questionHeader.appendChild(img);
+                        }
+            */
+
+            if (data.adjunto && typeof data.adjunto === 'string') {
                 const img = document.createElement('img');
-                img.src = '/static/' + data.adjunto;
+
+                if (data.adjunto.startsWith('http://') || data.adjunto.startsWith('https://')) {
+                    img.src = data.adjunto;
+                } else {
+                    img.src = '/static/' + data.adjunto;
+                }
+
                 img.className = 'question-image';
                 questionHeader.appendChild(img);
             }

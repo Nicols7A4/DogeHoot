@@ -1107,13 +1107,31 @@
                 switchScreen('host-question-screen');
                 document.getElementById('host-q-text').textContent = q.texto;
 
+                //const questionSection = document.querySelector('#host-question-screen .question-section');
+                //const existingImg = questionSection ? questionSection.querySelector('.question-image') : null;
+                //if (existingImg) existingImg.remove();
+                //TEST EXCEL importar imagen
+                /*
+                                if (q.adjunto && questionSection) {
+                                    const img = document.createElement('img');
+                                    img.src = `/static/${q.adjunto}`;
+                                    img.className = 'question-image';
+                                    questionSection.appendChild(img);
+                                }
+                */
                 const questionSection = document.querySelector('#host-question-screen .question-section');
                 const existingImg = questionSection ? questionSection.querySelector('.question-image') : null;
                 if (existingImg) existingImg.remove();
 
-                if (q.adjunto && questionSection) {
+                if (q.adjunto && typeof q.adjunto === 'string' && questionSection) { // Asegurarse que no sea nulo y que la sección exista
                     const img = document.createElement('img');
-                    img.src = `/static/${q.adjunto}`;
+
+                    if (q.adjunto.startsWith('http://') || q.adjunto.startsWith('https://')) {
+                        img.src = q.adjunto;
+                    } else {
+                        img.src = '/static/' + q.adjunto;
+                    }
+
                     img.className = 'question-image';
                     questionSection.appendChild(img);
                 }
