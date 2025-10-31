@@ -257,6 +257,10 @@ def guardar_o_actualizar_completo(data):
                 # Procesar cada pregunta del formulario
                 for index, pregunta_data in enumerate(data.get('preguntas', [])):
                     id_pregunta = pregunta_data.get('id_pregunta')
+                    
+                    # DEBUG: Log para ver qué está pasando
+                    print(f"[DEBUG] Procesando pregunta {index + 1}: id_pregunta={id_pregunta}, pregunta={pregunta_data.get('pregunta')[:30]}...")
+                    print(f"[DEBUG] ¿id_pregunta existe? {id_pregunta is not None}, ¿está en BD? {id_pregunta in ids_preguntas_bd if id_pregunta else 'N/A'}")
 
                     if id_pregunta and id_pregunta in ids_preguntas_bd:
                         # ACTUALIZAR pregunta existente
@@ -348,15 +352,22 @@ def guardar_o_actualizar_completo(data):
                                 opcion_data.get('descripcion'), opcion_data.get('adjunto')
                             ))
 
-                # ELIMINAR preguntas que ya no existen (solo si no tienen respuestas)
+                # ELIMINAR preguntas que ya no existen
                 ids_preguntas_eliminar = ids_preguntas_bd - ids_preguntas_data
                 for id_pregunta_eliminar in ids_preguntas_eliminar:
+                    print(f"[DEBUG] Eliminando pregunta vieja: id={id_pregunta_eliminar}")
                     # Verificar si tiene respuestas asociadas
                     cursor.execute("SELECT COUNT(*) as count FROM RESPUESTA_PARTICIPANTE WHERE id_pregunta = %s", (id_pregunta_eliminar,))
                     result = cursor.fetchone()
                     if result['count'] == 0:
                         # ON DELETE CASCADE eliminará las opciones automáticamente
                         cursor.execute("DELETE FROM PREGUNTAS WHERE id_pregunta = %s", (id_pregunta_eliminar,))
+                        print(f"[DEBUG] ✅ Pregunta {id_pregunta_eliminar} eliminada (sin respuestas)")
+                    else:
+                        print(f"[DEBUG] ⚠️  Pregunta {id_pregunta_eliminar} NO eliminada (tiene {result['count']} respuestas)")
+                
+                print(f"[DEBUG] Total preguntas en BD después: {len(ids_preguntas_data)}")
+                print(f"[DEBUG] Preguntas eliminadas: {len(ids_preguntas_eliminar)}")
 
             else:  # Si no tiene ID, es un NUEVO CUESTIONARIO
                 sql_insert_cuestionario = """

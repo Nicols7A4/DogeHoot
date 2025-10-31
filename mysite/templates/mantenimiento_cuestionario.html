@@ -845,6 +845,7 @@
         background: #1D6F42;
         color: white;
     }
+
     .btn-importar:hover {
         background: #165934;
         border-color: #1D6F42;
@@ -855,14 +856,17 @@
         display: none;
         position: fixed;
         z-index: 1050;
-        left: 0; top: 0;
-        width: 100%; height: 100%;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
         background-color: rgba(0, 0, 0, 0.5);
         display: flex;
         align-items: center;
         justify-content: center;
         backdrop-filter: blur(4px);
     }
+
     .modal-content {
         background-color: #fff;
         padding: 1.5rem;
@@ -870,20 +874,42 @@
         min-width: 450px;
         max-width: 90vw;
         position: relative;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
     }
-    .modal-content h3 { margin-top: 0; margin-bottom: 10px; }
-    .modal-content p { font-size: 14px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+
+    .modal-content h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+    }
+
+    .modal-content p {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
     .modal-content .close-button {
-        position: absolute; top: 10px; right: 15px;
-        color: #aaa; font-size: 28px;
-        cursor: pointer; font-weight: bold;
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        color: #aaa;
+        font-size: 28px;
+        cursor: pointer;
+        font-weight: bold;
     }
-    .modal-content .form-group { margin-bottom: 15px; }
+
+    .modal-content .form-group {
+        margin-bottom: 15px;
+    }
+
     .modal-content .form-group label {
-        display: block; margin-bottom: 5px;
-        font-weight: 600; font-size: .85rem;
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        font-size: .85rem;
     }
+
     .modal-content .form-group input[type="file"] {
         width: 100%;
         font-size: .85rem;
@@ -891,6 +917,7 @@
         border: 1px solid var(--border-soft);
         border-radius: 8px;
     }
+
     .modal-actions {
         display: flex;
         justify-content: flex-end;
@@ -900,16 +927,21 @@
 
     /* Mensajes de feedback en el modal */
     .importar-mensaje {
-        font-size: .85rem; font-weight: 600;
-        padding: .75rem; border-radius: 8px;
-        display: none; /* Oculto por defecto */
+        font-size: .85rem;
+        font-weight: 600;
+        padding: .75rem;
+        border-radius: 8px;
+        display: none;
+        /* Oculto por defecto */
         margin-top: 15px;
     }
+
     .importar-mensaje.success {
         background-color: var(--btn-success-bg);
         color: var(--btn-success-text);
         display: block;
     }
+
     .importar-mensaje.error {
         background-color: var(--btn-failed-bg);
         color: var(--btn-failed-text);
@@ -1164,7 +1196,8 @@
                         <button class="btn btn-outline btn-sm" id="btn-volver-general" type="button">Volver</button>
                         <button class="btn btn-primary btn-sm" onclick="agregarPregunta()">Añadir</button>
                         <!-- Test de botón importar -->
-                        <button class="btn btn-importar btn-sm" id="btn-abrir-modal-importar" type="button">Importar Preguntas</button>
+                        <button class="btn btn-importar btn-sm" id="btn-abrir-modal-importar" type="button">Importar
+                            Preguntas</button>
                     </div>
                     {% endif %}
                 </div>
@@ -1187,19 +1220,34 @@
 
 <!-- TEST Importar Excel -->
 <div class="popup-overlay" id="modal-importar-overlay" style="display: none;">
-    <div class="popup-box" style="text-align: left; max-width: 500px;">
+    <div class="popup-box" style="text-align: left; max-width: 520px;">
         <h3 style="text-align: center; margin-top: 0; color: var(--text-color);">Importar Preguntas</h3>
+        <p style="text-align: center; margin-bottom: 1rem; font-size: 0.9rem;">
+            Sube un archivo <code>.xlsx</code> con el formato correcto.
+            Las preguntas <strong>reemplazarán</strong> las existentes en memoria.
+        </p>
+        <div style="background: #f0f7ff; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.8rem;">
+            <strong>Columnas requeridas:</strong>
+            <ul style="margin: 0.5rem 0 0 1.2rem; padding: 0; line-height: 1.6;">
+                <li><code>pregunta</code> - Texto de la pregunta</li>
+                <li><code>opcion_1</code> a <code>opcion_4</code> - Las 4 opciones</li>
+                <li><code>opcion_c_orrecta</code> - Número (1-4) de la opción correcta</li>
+                <li><code>tiempo_segundos</code> - Tiempo (10-100 segundos)</li>
+                <li><code>url_imagen</code> - URL de imagen (opcional)</li>
+            </ul>
+        </div>
         <p style="text-align: center; margin-bottom: 1.5rem;">
-            Sube un archivo <code>.xlsx</code>. Las preguntas se añadirán a este cuestionario.
-            <a href="{{ url_for('importarExcel.descargar_plantilla') }}" style="font-weight:600; color:var(--btn-inprogress-text);">
-                Descargar plantilla
+            <a href="{{ url_for('importarExcel.descargar_plantilla') }}"
+                style="font-weight:600; color:var(--btn-inprogress-text); font-size: 0.95rem;">
+                📥 Descargar plantilla de ejemplo
             </a>
         </p>
         <form id="form-importar-preguntas">
             <input type="hidden" name="id_cuestionario" id="import-cuestionario-id">
             <div class="form-group">
                 <label for="archivo_excel_modal">Archivo Excel (.xlsx)</label>
-                <input type="file" id="archivo_excel_modal" name="archivo_excel" class="form-control" accept=".xlsx" required>
+                <input type="file" id="archivo_excel_modal" name="archivo_excel" class="form-control" accept=".xlsx"
+                    required>
             </div>
             <div id="importar-mensaje" class="importar-mensaje"></div>
             <div class="popup-buttons" style="margin-top: 1.5rem;">
@@ -1279,13 +1327,13 @@
         const form = document.getElementById('form-importar-preguntas');
         if (form) form.reset();
         const msgDiv = document.getElementById('importar-mensaje');
-        if(msgDiv) {
+        if (msgDiv) {
             msgDiv.style.display = 'none';
             msgDiv.textContent = '';
             msgDiv.className = 'importar-mensaje';
         }
         const btnSubmit = document.getElementById('btn-submit-importar');
-        if(btnSubmit) btnSubmit.disabled = false;
+        if (btnSubmit) btnSubmit.disabled = false;
     };
 
     // Función para ABRIR el modal con logs
@@ -1346,27 +1394,53 @@
 
             const result = await response.json();
 
-            // --- ¡AQUÍ ESTÁ LA CORRECCIÓN PARA EL PROBLEMA 2! ---
+            // --- NUEVO COMPORTAMIENTO: Cargar en memoria SIN guardar automáticamente ---
             if (response.ok && result.success) {
-                messageDiv.textContent = result.message || 'Preguntas importadas con éxito.';
+                // 1. REEMPLAZAR todas las preguntas existentes con las importadas
+                if (result.preguntas_actualizadas && Array.isArray(result.preguntas_actualizadas)) {
+                    // Normalizar numeración de preguntas y ELIMINAR IDs (son preguntas nuevas de importación)
+                    const preguntasNormalizadas = result.preguntas_actualizadas.map((p, idx) => {
+                        // ⚠️ CRÍTICO: Eliminar id_pregunta para que se trate como pregunta nueva
+                        delete p.id_pregunta;
+
+                        // También eliminar id_opcion de las opciones
+                        if (p.opciones && Array.isArray(p.opciones)) {
+                            p.opciones.forEach(op => {
+                                delete op.id_opcion;
+                            });
+                        }
+
+                        p.num_pregunta = idx + 1;
+                        return p;
+                    });
+
+                    // REEMPLAZAR (no añadir) las preguntas en memoria
+                    cuestionarioData.preguntas = preguntasNormalizadas;
+
+                    // 2. IMPORTANTE: Actualizar también originalCuestionarioData para reflejar
+                    // el nuevo estado "base" (sin las preguntas antiguas)
+                    // Pero NO sincronizamos con las nuevas para que se detecte como cambio pendiente
+                    originalCuestionarioData.preguntas = [];
+
+                    // 3. Marcar que hay cambios pendientes
+                    onAnyChange();
+
+                    console.log(`${preguntasNormalizadas.length} preguntas importadas y cargadas en memoria (pendientes de guardar).`);
+                    console.log('[DEBUG] Preguntas sin IDs:', preguntasNormalizadas);
+                }
+
+                messageDiv.textContent = (result.message || 'Preguntas importadas con éxito.') +
+                    ' Las preguntas han reemplazado las anteriores. Usa "Guardar cambios" para persistir en la base de datos.';
                 messageDiv.className = 'importar-mensaje success';
                 messageDiv.style.display = 'block';
 
-                // 1. Actualizar la variable JavaScript con los datos del servidor
-                if (result.preguntas_actualizadas) {
-                    cuestionarioData.preguntas = result.preguntas_actualizadas;
-                    // Sincronizar 'original' para que no detecte cambios pendientes
-                    originalCuestionarioData.preguntas = JSON.parse(JSON.stringify(result.preguntas_actualizadas));
-                    console.log("Datos locales actualizados con preguntas importadas.");
-                }
-
-                // 2. Cerrar y re-renderizar la UI
+                // 2. Cerrar modal y re-renderizar la UI
                 setTimeout(() => {
                     cerrarModalImportar();
-                    // Ir a la última pregunta
-                    currentIndex = cuestionarioData.preguntas.length > 0 ? cuestionarioData.preguntas.length - 1 : 0;
+                    // Ir a la primera pregunta importada
+                    currentIndex = cuestionarioData.preguntas.length > 0 ? 0 : 0;
                     renderQuestionsUI(true); // ¡Renderizar con las nuevas preguntas!
-                    updateActionButtons(); // Actualizar botones
+                    updateActionButtons(); // Actualizar botones (debería mostrar "Guardar cambios" habilitado)
                 }, 1500);
 
             } else {
@@ -1597,11 +1671,15 @@
             const response = await fetch('/api/cuestionarios/guardar-completo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleanedData) });
             const resultado = await response.json();
             if (response.ok) {
-                originalCuestionarioData = JSON.parse(JSON.stringify(cuestionarioData));
                 await mostrarAlerta('¡Cuestionario guardado con éxito!');
-                updateActionButtons();
                 window.removeEventListener('beforeunload', beforeUnloadHandler);
-                window.location.href = '/cuestionarios';
+                // Recargar la página para obtener datos frescos con IDs actualizados
+                if (CUESTIONARIO_ID) {
+                    window.location.href = `/cuestionarios/${CUESTIONARIO_ID}/editar`;
+                } else {
+                    // Si es nuevo, redirigir al ID devuelto por el servidor
+                    window.location.href = `/cuestionarios/${resultado.id_cuestionario}/editar`;
+                }
             } else {
                 await mostrarAlerta(`Error al guardar: ${resultado.error || 'Error desconocido'}`);
             }
