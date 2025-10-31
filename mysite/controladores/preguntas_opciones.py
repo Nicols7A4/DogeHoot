@@ -18,12 +18,13 @@ def crear_pregunta(id_cuestionario, pregunta, num_pregunta, puntaje_base, adjunt
 
 
 def obtener_preguntas_por_cuestionario(id_cuestionario):
-    """Obtiene todas las preguntas de un cuestionario específico."""
+    """Obtiene todas las preguntas VIGENTES de un cuestionario específico."""
     conexion = obtener_conexion()
     preguntas = []
     try:
         with conexion.cursor() as cursor:
-            cursor.execute("SELECT * FROM PREGUNTAS WHERE id_cuestionario = %s ORDER BY num_pregunta ASC", (id_cuestionario,))
+            # ✅ FILTRAR SOLO PREGUNTAS VIGENTES
+            cursor.execute("SELECT * FROM PREGUNTAS WHERE id_cuestionario = %s AND vigente = 1 ORDER BY num_pregunta ASC", (id_cuestionario,))
             preguntas = cursor.fetchall()
     finally:
         if conexion:
@@ -134,12 +135,13 @@ def crear_opcion(id_pregunta, opcion, es_correcta_bool, descripcion=None, adjunt
             conexion.close()
 
 def obtener_opciones_por_pregunta(id_pregunta):
-    """Obtiene todas las opciones de una pregunta específica."""
+    """Obtiene todas las opciones VIGENTES de una pregunta específica."""
     conexion = obtener_conexion()
     opciones = []
     try:
         with conexion.cursor() as cursor:
-            cursor.execute("SELECT * FROM OPCIONES WHERE id_pregunta = %s", (id_pregunta,))
+            # ✅ FILTRAR SOLO OPCIONES VIGENTES
+            cursor.execute("SELECT * FROM OPCIONES WHERE id_pregunta = %s AND vigente = 1", (id_pregunta,))
             opciones = cursor.fetchall()
     finally:
         if conexion:
