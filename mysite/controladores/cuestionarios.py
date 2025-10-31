@@ -125,14 +125,14 @@ def obtener_completo_por_id(id_cuestionario):
             if not cuestionario_dict:
                 return None
 
-            # --- Paso 2: Obtener todas las preguntas de ese cuestionario ---
-            sql_preguntas = "SELECT * FROM PREGUNTAS WHERE id_cuestionario = %s ORDER BY num_pregunta ASC"
+            # --- Paso 2: Obtener todas las preguntas de ese cuestionario (solo vigentes) ---
+            sql_preguntas = "SELECT * FROM PREGUNTAS WHERE id_cuestionario = %s AND vigente = 1 ORDER BY num_pregunta ASC"
             cursor.execute(sql_preguntas, (id_cuestionario,))
             preguntas = cursor.fetchall()
 
-            # --- Paso 3: Para cada pregunta, obtener sus opciones ---
+            # --- Paso 3: Para cada pregunta, obtener sus opciones (solo vigentes) ---
             for pregunta in preguntas:
-                sql_opciones = "SELECT * FROM OPCIONES WHERE id_pregunta = %s"
+                sql_opciones = "SELECT * FROM OPCIONES WHERE id_pregunta = %s AND vigente = 1"
                 cursor.execute(sql_opciones, (pregunta['id_pregunta'],))
                 opciones = cursor.fetchall()
                 # Añadimos la lista de opciones directamente al diccionario de la pregunta
@@ -248,9 +248,9 @@ def guardar_o_actualizar_completo(data):
                     data['titulo'], data['descripcion'], data['es_publico'], data['id_categoria'], id_cuestionario
                 ))
 
-                # ESTRATEGIA DE MERGE: Actualizar/Insertar/Eliminar preguntas y opciones
-                # Obtener IDs de preguntas actuales en BD
-                cursor.execute("SELECT id_pregunta FROM PREGUNTAS WHERE id_cuestionario = %s", (id_cuestionario,))
+                # ESTRATEGIA DE MERGE: Actualizar/Insertar/Soft-delete preguntas y opciones
+                # Obtener IDs de preguntas actuales VIGENTES en BD
+                cursor.execute("SELECT id_pregunta FROM PREGUNTAS WHERE id_cuestionario = %s AND vigente = 1", (id_cuestionario,))
                 ids_preguntas_bd = {row['id_pregunta'] for row in cursor.fetchall()}
                 ids_preguntas_data = set()
 
@@ -283,8 +283,8 @@ def guardar_o_actualizar_completo(data):
                             # Si adjunto es None, limpiamos la imagen
                             cursor.execute("UPDATE PREGUNTAS SET adjunto = NULL WHERE id_pregunta = %s", (id_pregunta,))
 
-                        # MERGE de opciones para esta pregunta
-                        cursor.execute("SELECT id_opcion FROM OPCIONES WHERE id_pregunta = %s", (id_pregunta,))
+                        # MERGE de opciones para esta pregunta (solo vigentes)
+                        cursor.execute("SELECT id_opcion FROM OPCIONES WHERE id_pregunta = %s AND vigente = 1", (id_pregunta,))
                         ids_opciones_bd = {row['id_opcion'] for row in cursor.fetchall()}
                         ids_opciones_data = set()
 
@@ -306,28 +306,25 @@ def guardar_o_actualizar_completo(data):
                             else:
                                 # INSERTAR nueva opción
                                 sql_insert_opcion = """
-                                    INSERT INTO OPCIONES (id_pregunta, opcion, es_correcta_bool, descripcion, adjunto)
-                                    VALUES (%s, %s, %s, %s, %s)
+                                    INSERT INTO OPCIONES (id_pregunta, opcion, es_correcta_bool, descripcion, adjunto, vigente)
+                                    VALUES (%s, %s, %s, %s, %s, 1)
                                 """
                                 cursor.execute(sql_insert_opcion, (
                                     id_pregunta, opcion_data['opcion'], opcion_data['es_correcta_bool'],
                                     opcion_data.get('descripcion'), opcion_data.get('adjunto')
                                 ))
 
-                        # ELIMINAR opciones que ya no existen (solo si no tienen respuestas)
+                        # SOFT DELETE de opciones que ya no existen
                         ids_opciones_eliminar = ids_opciones_bd - ids_opciones_data
                         for id_opcion_eliminar in ids_opciones_eliminar:
-                            # Verificar si tiene respuestas asociadas
-                            cursor.execute("SELECT COUNT(*) as count FROM RESPUESTA_PARTICIPANTE WHERE id_opcion = %s", (id_opcion_eliminar,))
-                            result = cursor.fetchone()
-                            if result['count'] == 0:
-                                cursor.execute("DELETE FROM OPCIONES WHERE id_opcion = %s", (id_opcion_eliminar,))
+                            cursor.execute("UPDATE OPCIONES SET vigente = 0 WHERE id_opcion = %s", (id_opcion_eliminar,))
+                            print(f"[DEBUG] Opción {id_opcion_eliminar} marcada como no vigente")
 
                     else:
                         # INSERTAR nueva pregunta
                         sql_insert_pregunta = """
-                            INSERT INTO PREGUNTAS (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo)
-                            VALUES (%s, %s, %s, %s, %s)
+                            INSERT INTO PREGUNTAS (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo, vigente)
+                            VALUES (%s, %s, %s, %s, %s, 1)
                         """
                         cursor.execute(sql_insert_pregunta, (
                             id_cuestionario, pregunta_data['pregunta'], index + 1,
@@ -344,27 +341,23 @@ def guardar_o_actualizar_completo(data):
                         # Insertar opciones de la nueva pregunta
                         for opcion_data in pregunta_data.get('opciones', []):
                             sql_insert_opcion = """
-                                INSERT INTO OPCIONES (id_pregunta, opcion, es_correcta_bool, descripcion, adjunto)
-                                VALUES (%s, %s, %s, %s, %s)
+                                INSERT INTO OPCIONES (id_pregunta, opcion, es_correcta_bool, descripcion, adjunto, vigente)
+                                VALUES (%s, %s, %s, %s, %s, 1)
                             """
                             cursor.execute(sql_insert_opcion, (
                                 id_pregunta_nueva, opcion_data['opcion'], opcion_data['es_correcta_bool'],
                                 opcion_data.get('descripcion'), opcion_data.get('adjunto')
                             ))
 
-                # ELIMINAR preguntas que ya no existen
+                # SOFT DELETE de preguntas que ya no existen
                 ids_preguntas_eliminar = ids_preguntas_bd - ids_preguntas_data
                 for id_pregunta_eliminar in ids_preguntas_eliminar:
-                    print(f"[DEBUG] Eliminando pregunta vieja: id={id_pregunta_eliminar}")
-                    # Verificar si tiene respuestas asociadas
-                    cursor.execute("SELECT COUNT(*) as count FROM RESPUESTA_PARTICIPANTE WHERE id_pregunta = %s", (id_pregunta_eliminar,))
-                    result = cursor.fetchone()
-                    if result['count'] == 0:
-                        # ON DELETE CASCADE eliminará las opciones automáticamente
-                        cursor.execute("DELETE FROM PREGUNTAS WHERE id_pregunta = %s", (id_pregunta_eliminar,))
-                        print(f"[DEBUG] ✅ Pregunta {id_pregunta_eliminar} eliminada (sin respuestas)")
-                    else:
-                        print(f"[DEBUG] ⚠️  Pregunta {id_pregunta_eliminar} NO eliminada (tiene {result['count']} respuestas)")
+                    print(f"[DEBUG] Marcando pregunta como no vigente: id={id_pregunta_eliminar}")
+                    # Soft delete: marcar como no vigente
+                    cursor.execute("UPDATE PREGUNTAS SET vigente = 0 WHERE id_pregunta = %s", (id_pregunta_eliminar,))
+                    # También marcar sus opciones como no vigentes
+                    cursor.execute("UPDATE OPCIONES SET vigente = 0 WHERE id_pregunta = %s", (id_pregunta_eliminar,))
+                    print(f"[DEBUG] ✅ Pregunta {id_pregunta_eliminar} y sus opciones marcadas como no vigentes")
                 
                 print(f"[DEBUG] Total preguntas en BD después: {len(ids_preguntas_data)}")
                 print(f"[DEBUG] Preguntas eliminadas: {len(ids_preguntas_eliminar)}")
@@ -384,8 +377,8 @@ def guardar_o_actualizar_completo(data):
                 # --- Insertar preguntas y opciones para cuestionario nuevo ---
                 for index, pregunta_data in enumerate(data.get('preguntas', [])):
                     sql_pregunta = """
-                        INSERT INTO PREGUNTAS (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo)
-                        VALUES (%s, %s, %s, %s, %s)
+                        INSERT INTO PREGUNTAS (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo, vigente)
+                        VALUES (%s, %s, %s, %s, %s, 1)
                     """
                     cursor.execute(sql_pregunta, (
                         id_cuestionario, pregunta_data['pregunta'], index + 1,
@@ -401,8 +394,8 @@ def guardar_o_actualizar_completo(data):
                     # Insertar opciones
                     for opcion_data in pregunta_data.get('opciones', []):
                         sql_opcion = """
-                            INSERT INTO OPCIONES (id_pregunta, opcion, es_correcta_bool, descripcion, adjunto)
-                            VALUES (%s, %s, %s, %s, %s)
+                            INSERT INTO OPCIONES (id_pregunta, opcion, es_correcta_bool, descripcion, adjunto, vigente)
+                            VALUES (%s, %s, %s, %s, %s, 1)
                         """
                         cursor.execute(sql_opcion, (
                             id_pregunta_nueva, opcion_data['opcion'], opcion_data['es_correcta_bool'],
