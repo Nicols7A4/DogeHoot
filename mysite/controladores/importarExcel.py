@@ -74,13 +74,19 @@ def importar_preguntas_ajax():
              return jsonify({'success': False, 'error': 'Error al leer el archivo Excel. Verifica que no esté corrupto o protegido.'}), 400
 
         # --- Validación de Encabezados (NUEVO FORMATO) ---
-        headers = [str(cell.value).strip() if cell.value is not None else "" for cell in sheet[1]] # Limpiar encabezados
+        headers = [str(cell.value).strip().lower() if cell.value is not None else "" for cell in sheet[1]] # Limpiar y normalizar
         if not headers or headers[0] == "":
              return jsonify({'success': False, 'error': "La primera fila (encabezados) del Excel está vacía o es inválida."}), 400
         
-        # Validar que existan las columnas del nuevo formato
-        if 'pregunta' not in headers or 'opcion_c_orrecta' not in headers or 'tiempo_segundos' not in headers:
-            return jsonify({'success': False, 'error': "El archivo Excel debe tener las columnas 'pregunta', 'opcion_c_orrecta' y 'tiempo_segundos'."}), 400
+        # Definir columnas requeridas (en minúsculas para comparación)
+        columnas_requeridas = ['pregunta', 'opcion_1', 'opcion_2', 'opcion_3', 'opcion_4', 'opcion_c_orrecta', 'tiempo_segundos']
+        columnas_faltantes = [col for col in columnas_requeridas if col not in headers]
+        
+        if columnas_faltantes:
+            return jsonify({
+                'success': False, 
+                'error': f"Faltan las siguientes columnas requeridas: {', '.join(columnas_faltantes)}. Verifica que el archivo tenga TODAS las columnas obligatorias."
+            }), 400
 
         # --- Encontrar índices de columnas (NUEVO FORMATO) ---
         try:
@@ -107,10 +113,12 @@ def importar_preguntas_ajax():
 
         # --- Procesamiento SIN GUARDAR EN BD (solo formatear JSON) ---
         preguntas_formateadas = []
+        errores_validacion = []  # Lista para acumular errores
         
         try:
             for row_index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
-                if all(cell is None for cell in row):
+                # Saltar filas completamente vacías
+                if all(cell is None or str(cell).strip() == "" for cell in row):
                     continue
 
                 # Obtener texto de la pregunta
@@ -122,32 +130,51 @@ def importar_preguntas_ajax():
                 # Obtener tiempo en segundos
                 tiempo_segundos_raw = row[idx_tiempo_segundos]
                 
+                # ====== VALIDACIONES POR FILA ======
+                
+                # 1. Validar que la pregunta no esté vacía
                 if not texto_pregunta:
-                    print(f"Omitiendo fila {row_index}: Pregunta vacía.")
+                    errores_validacion.append(f"Fila {row_index}: La pregunta está vacía.")
                     continue
                 
-                # Validar tiempo_segundos
+                # 2. Validar tiempo_segundos
+                if tiempo_segundos_raw is None or str(tiempo_segundos_raw).strip() == "":
+                    errores_validacion.append(f"Fila {row_index}: El campo 'tiempo_segundos' está vacío.")
+                    continue
+                
                 try:
-                    tiempo_segundos = int(tiempo_segundos_raw) if tiempo_segundos_raw is not None else 15
+                    tiempo_segundos = int(tiempo_segundos_raw)
                     if tiempo_segundos < 10 or tiempo_segundos > 100:
-                        return jsonify({'success': False, 'error': f"Fila {row_index}: El tiempo debe estar entre 10 y 100 segundos (recibido: {tiempo_segundos})."}), 400
+                        errores_validacion.append(f"Fila {row_index}: El tiempo debe estar entre 10 y 100 segundos (recibido: {tiempo_segundos}).")
+                        continue
                 except (ValueError, TypeError):
-                    return jsonify({'success': False, 'error': f"Fila {row_index}: Tiempo inválido ({tiempo_segundos_raw}). Debe ser un número entre 10 y 100."}), 400
-                
-                # Validar que el índice de opción correcta sea válido
-                try:
-                    indice_correcta = int(indice_correcta_raw) if indice_correcta_raw is not None else 0
-                    if indice_correcta < 1 or indice_correcta > 4:
-                        raise ValueError(f"El índice de opción correcta debe ser entre 1 y 4, recibido: {indice_correcta}")
-                except (ValueError, TypeError) as e:
-                    print(f"Omitiendo fila {row_index}: Índice de opción correcta inválido ({indice_correcta_raw}). {e}")
+                    errores_validacion.append(f"Fila {row_index}: Tiempo inválido '{tiempo_segundos_raw}'. Debe ser un número entero entre 10 y 100.")
                     continue
                 
-                # Obtener las 4 opciones
+                # 3. Validar que el índice de opción correcta sea válido
+                if indice_correcta_raw is None or str(indice_correcta_raw).strip() == "":
+                    errores_validacion.append(f"Fila {row_index}: El campo 'opcion_c_orrecta' está vacío.")
+                    continue
+                
+                try:
+                    indice_correcta = int(indice_correcta_raw)
+                    if indice_correcta < 1 or indice_correcta > 4:
+                        errores_validacion.append(f"Fila {row_index}: El índice de opción correcta debe ser 1, 2, 3 o 4 (recibido: {indice_correcta}).")
+                        continue
+                except (ValueError, TypeError):
+                    errores_validacion.append(f"Fila {row_index}: Opción correcta inválida '{indice_correcta_raw}'. Debe ser un número del 1 al 4.")
+                    continue
+                
+                # 4. Obtener las 4 opciones y validar
                 opciones = []
+                opciones_vacias = []
+                
                 for i, idx_op in enumerate(idx_opciones, start=1):
                     texto_opcion = str(row[idx_op]).strip() if idx_op < len(row) and row[idx_op] is not None else ""
-                    if texto_opcion:
+                    
+                    if not texto_opcion:
+                        opciones_vacias.append(i)
+                    else:
                         opciones.append({
                             'opcion': texto_opcion,
                             'es_correcta_bool': (i == indice_correcta),
@@ -155,26 +182,28 @@ def importar_preguntas_ajax():
                             'adjunto': None
                         })
                 
-                # Validar que la opción marcada como correcta exista y no esté vacía
-                opciones_validas = [op for op in opciones if op['opcion']]
-                if indice_correcta > len(opciones_validas):
-                    print(f"Omitiendo fila {row_index}: La opción correcta (índice {indice_correcta}) está vacía.")
+                # 5. Validar que al menos haya 2 opciones con texto
+                if len(opciones) < 2:
+                    errores_validacion.append(f"Fila {row_index}: Se necesitan al menos 2 opciones con texto. Solo se encontraron {len(opciones)}.")
                     continue
                 
-                # Validar que haya al menos 2 opciones (1 correcta + 1 incorrecta)
-                if len(opciones) < 2:
-                    print(f"Omitiendo fila {row_index}: Se necesitan al menos 2 opciones (1 correcta y 1 incorrecta).")
+                # 6. Validar que la opción marcada como correcta no esté vacía
+                if indice_correcta in opciones_vacias:
+                    errores_validacion.append(f"Fila {row_index}: La opción correcta (opcion_{indice_correcta}) está vacía. Debes escribir un texto para esa opción.")
                     continue
 
-                # Obtener la URL de la imagen (si existe)
+                # 7. Obtener la URL de la imagen (si existe)
                 url_imagen = None
                 if idx_url_imagen != -1 and idx_url_imagen < len(row):
                     url_imagen_val = row[idx_url_imagen]
                     if url_imagen_val and str(url_imagen_val).strip():
                         url_imagen_str = str(url_imagen_val).strip()
-                        # Validar que sea una URL o dejarlo como está
-                        if url_imagen_str.startswith('http'):
+                        # Validar que sea una URL válida (básico)
+                        if url_imagen_str.startswith('http://') or url_imagen_str.startswith('https://'):
                             url_imagen = url_imagen_str
+                        else:
+                            errores_validacion.append(f"Fila {row_index}: URL de imagen inválida '{url_imagen_str}'. Debe empezar con http:// o https://")
+                            # No es crítico, continuamos sin imagen
 
                 # Formatear pregunta (NO GUARDAR, solo crear objeto JSON)
                 pregunta_obj = {
@@ -189,8 +218,16 @@ def importar_preguntas_ajax():
                 
                 preguntas_formateadas.append(pregunta_obj)
             
+            # Si hubo errores de validación, devolverlos todos
+            if errores_validacion:
+                return jsonify({
+                    'success': False, 
+                    'error': f"Se encontraron {len(errores_validacion)} error(es) en el archivo:",
+                    'errores': errores_validacion
+                }), 400
+            
             if len(preguntas_formateadas) == 0:
-                return jsonify({'success': False, 'error': "El archivo Excel no contenía preguntas válidas para importar."}), 400
+                return jsonify({'success': False, 'error': "El archivo Excel no contenía preguntas válidas para importar. Verifica que haya al menos una fila con datos después de los encabezados."}), 400
 
             # Devolver preguntas formateadas SIN GUARDAR EN BD
             return jsonify({

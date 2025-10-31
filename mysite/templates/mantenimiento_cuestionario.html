@@ -1444,9 +1444,22 @@
                 }, 1500);
 
             } else {
-                messageDiv.textContent = result.error || 'Error desconocido del servidor.';
+                // Manejar errores de validación
+                let errorMsg = result.error || 'Error desconocido del servidor.';
+
+                // Si hay errores múltiples, mostrarlos en lista
+                if (result.errores && Array.isArray(result.errores)) {
+                    errorMsg = result.error + '\n\n';
+                    result.errores.forEach((err, idx) => {
+                        errorMsg += `${idx + 1}. ${err}\n`;
+                    });
+                }
+
+                messageDiv.textContent = errorMsg;
                 messageDiv.className = 'importar-mensaje error';
                 messageDiv.style.display = 'block';
+                messageDiv.style.whiteSpace = 'pre-wrap'; // Permitir saltos de línea
+                messageDiv.style.textAlign = 'left'; // Alinear a la izquierda para listas
                 if (submitButton) submitButton.disabled = false;
             }
         } catch (error) {
