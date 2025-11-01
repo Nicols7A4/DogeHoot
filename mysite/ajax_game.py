@@ -278,6 +278,7 @@ def _start_next_question(pin):
     # Resetear flags de respuesta para modo individual
     for nombre, participante in partida['participantes'].items():
         participante['respondio_esta_pregunta'] = False
+        participante['respondio_pregunta'] = False  # ✅ AGREGAR: Para consistencia con game_events.py
 
     pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
     partida['fase'] = 'question'
@@ -439,10 +440,15 @@ def _compute_current_ranking(partida):
         for g in ranking:
             puntaje_anterior = partida.get('puntajes_pregunta_anterior', {}).get(g['nombre'], g['puntaje'])
             puntos_ganados = g['puntaje'] - puntaje_anterior
+            respondio = g.get('respondio_pregunta', False)
+            
+            print(f"🔍 [AJAX_RANKING_GRUPAL] Grupo '{g['nombre']}': puntaje={g['puntaje']}, puntos_ganados={puntos_ganados}, respondio={respondio}")
+            
             ranking_data.append({
                 'nombre': g['nombre'], 
                 'puntaje': g['puntaje'],
-                'puntos_ganados': puntos_ganados if partida['pregunta_actual_index'] >= 0 else 0
+                'puntos_ganados': puntos_ganados if partida['pregunta_actual_index'] >= 0 else 0,
+                'respondio': respondio  # ✅ AGREGAR FLAG
             })
         return ranking_data
     else:
@@ -453,10 +459,15 @@ def _compute_current_ranking(partida):
         for nombre, data in ranking:
             puntaje_anterior = partida.get('puntajes_pregunta_anterior', {}).get(nombre, data['puntaje'])
             puntos_ganados = data['puntaje'] - puntaje_anterior
+            respondio = data.get('respondio_pregunta', False)
+            
+            print(f"🔍 [AJAX_RANKING_INDIVIDUAL] Jugador '{nombre}': puntaje={data['puntaje']}, puntos_ganados={puntos_ganados}, respondio={respondio}")
+            
             ranking_data.append({
                 'nombre': nombre, 
                 'puntaje': data['puntaje'],
-                'puntos_ganados': puntos_ganados if partida['pregunta_actual_index'] >= 0 else 0
+                'puntos_ganados': puntos_ganados if partida['pregunta_actual_index'] >= 0 else 0,
+                'respondio': respondio  # ✅ AGREGAR FLAG
             })
         return ranking_data
 
@@ -538,9 +549,10 @@ def submit_answer(pin, id_opcion, tiempo_restante):
         if not grupo or grupo.get('respondio_pregunta'):
             return False
         grupo['puntaje'] += puntos
-        grupo['respondio_pregunta'] = True
+        grupo['respondio_pregunta'] = True  # ✅ Esta es la flag que se envía en el ranking
         # Marcar que este participante ya respondió
         participante['respondio_esta_pregunta'] = True
+        participante['respondio_pregunta'] = True  # ✅ AGREGAR: Para consistencia
         participante['respuesta_correcta'] = es_correcta  # Guardar si fue correcta
         participante['id_opcion_respondida'] = id_opcion  # ⭐ Guardar opción respondida
 
@@ -553,6 +565,7 @@ def submit_answer(pin, id_opcion, tiempo_restante):
     # individual
     participante['puntaje'] += puntos
     participante['respondio_esta_pregunta'] = True
+    participante['respondio_pregunta'] = True  # ✅ AGREGAR: Esta es la flag que se envía en el ranking
     participante['respuesta_correcta'] = es_correcta  # Guardar si fue correcta
     participante['id_opcion_respondida'] = id_opcion  # ⭐ Guardar opción respondida
     ctrl_partidas.log_respuesta_en_bd(

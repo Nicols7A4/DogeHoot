@@ -12,7 +12,8 @@ from controladores import preguntas_opciones as cpo
 from controladores import usuarios as ctrl_usuarios # Para actualizar puntos al final
 from controladores import controlador_recompensas as c_rec
 
-partidas_en_juego = {} # Nuestro "cerebro" en memoria
+# ✅ IMPORTAR el diccionario compartido de ajax_game.py
+from ajax_game import partidas_en_juego
 
 # --- FUNCIONES AUXILIARES ---
 def obtener_estado_lobby(pin):
@@ -112,7 +113,13 @@ def al_unirse_jugador(data):
     # El resto de la lógica para añadir al jugador no cambia...
     jugador_ya_existe = nombre_usuario in partida['participantes']
     if not jugador_ya_existe:
-        partida['participantes'][nombre_usuario] = {'grupo': None, 'grupo_numero': 0, 'puntaje': 0, 'id_usuario': id_usuario}
+        partida['participantes'][nombre_usuario] = {
+            'grupo': None, 
+            'grupo_numero': 0, 
+            'puntaje': 0, 
+            'id_usuario': id_usuario,
+            'respondio_pregunta': False  # ✅ Flag para rastrear si respondió esta pregunta
+        }
         if partida['modalidad_grupal']:
             partida['participantes_sin_grupo'].append(nombre_usuario)
         else:
@@ -218,9 +225,14 @@ def enviar_siguiente_pregunta(pin):
         finalizar_juego(pin)
         return
 
-    # Resetear flags de respuesta grupal
+    # Resetear flags de respuesta grupal (pero NO puntaje_anterior aquí)
     for grupo in partida.get('grupos', []):
         grupo['respondio_pregunta'] = False
+    
+    # También para participantes individuales
+    if not partida.get('modalidad_grupal', False):
+        for nombre, data in partida.get('participantes', {}).items():
+            data['respondio_pregunta'] = False  # ✅ Resetear flag individual
 
     pregunta_actual_db = partida['preguntas_data'][partida['pregunta_actual_index']]
     id_pregunta = pregunta_actual_db['id_pregunta']
@@ -271,6 +283,8 @@ def al_recibir_respuesta(data):
     tiempo_total = pregunta_actual_db['tiempo']
 
     puntos = calcular_puntos(tiempo_restante, tiempo_total) if es_correcta else 0
+    
+    print(f"🎯 [RESPUESTA] Usuario '{nombre_usuario}' respondió. Correcta: {es_correcta}, Puntos: {puntos}")
 
     # --- LÓGICA GRUPAL ---
     if partida['modalidad_grupal']:
@@ -289,6 +303,8 @@ def al_recibir_respuesta(data):
         grupo_encontrado['puntaje'] += puntos
         grupo_encontrado['respondio_pregunta'] = True
         
+        print(f"✅ [GRUPO] '{nombre_grupo}' marcado como respondido. Puntaje: {grupo_encontrado['puntaje']}")
+        
         # Guardamos la respuesta en la BD (simplificado)
         # ctrl_partidas.guardar_respuesta_participante(...)
 
@@ -297,6 +313,9 @@ def al_recibir_respuesta(data):
 
     else: # --- LÓGICA INDIVIDUAL ---
         participante['puntaje'] += puntos
+        participante['respondio_pregunta'] = True  # ✅ Marcar que respondió
+        
+        print(f"✅ [INDIVIDUAL] '{nombre_usuario}' marcado como respondido. Puntaje: {participante['puntaje']}")
         # Guardamos la respuesta en la BD (simplificado)
         # ctrl_partidas.guardar_respuesta_participante(...)
         # Avisamos al anfitrión (opcional)
@@ -324,10 +343,39 @@ def mostrar_resultados_pregunta(pin):
                 texto_opcion_correcta = o['opcion']
                 break
 
+    # --- INICIALIZAR puntaje_anterior si es la primera pregunta ---
+    if partida['modalidad_grupal']:
+        for g in partida['grupos']:
+            if 'puntaje_anterior' not in g:
+                g['puntaje_anterior'] = 0
+    else:
+        for nombre, data in partida['participantes'].items():
+            if 'puntaje_anterior' not in data:
+                data['puntaje_anterior'] = 0
+
     # --- ¡AQUÍ ESTÁ LA LÓGICA DE RANKING QUE FALTABA! ---
     if partida['modalidad_grupal']:
         ranking = sorted(partida['grupos'], key=lambda g: g['puntaje'], reverse=True)
-        ranking_data = [{'nombre': g['nombre'], 'puntaje': g['puntaje']} for g in ranking]
+        ranking_data = []
+        for g in ranking:
+            # Calcular puntos ganados en ESTA pregunta
+            puntos_actuales = g['puntaje']
+            # Buscar el puntaje anterior del grupo en el ranking previo (si existe)
+            puntos_anteriores = g.get('puntaje_anterior', 0)
+            puntos_ganados = puntos_actuales - puntos_anteriores
+            
+            respondio = g.get('respondio_pregunta', False)
+            print(f"🔍 [BACKEND] Grupo '{g['nombre']}': puntaje={puntos_actuales}, puntos_ganados={puntos_ganados}, respondio={respondio}")
+            
+            ranking_data.append({
+                'nombre': g['nombre'], 
+                'puntaje': g['puntaje'],
+                'puntos_ganados': puntos_ganados,  # ✅ Agregamos esto
+                'respondio': respondio  # ✅ Agregamos esto
+            })
+            
+            # Guardar el puntaje actual para la próxima pregunta
+            g['puntaje_anterior'] = puntos_actuales
     else:
         # Lógica para ranking individual
         ranking_ordenado = sorted(partida['participantes'].values(), key=lambda p: p['puntaje'], reverse=True)
@@ -337,7 +385,24 @@ def mostrar_resultados_pregunta(pin):
         for p_data in ranking_ordenado:
              for nombre, data in partida['participantes'].items():
                  if data == p_data and nombre not in nombres_usados:
-                     ranking_data.append({'nombre': nombre, 'puntaje': data['puntaje']})
+                     # Calcular puntos ganados en ESTA pregunta
+                     puntos_actuales = data['puntaje']
+                     puntos_anteriores = data.get('puntaje_anterior', 0)
+                     puntos_ganados = puntos_actuales - puntos_anteriores
+                     
+                     respondio = data.get('respondio_pregunta', False)
+                     print(f"🔍 [BACKEND] Jugador '{nombre}': puntaje={puntos_actuales}, puntos_ganados={puntos_ganados}, respondio={respondio}")
+                     
+                     ranking_data.append({
+                         'nombre': nombre, 
+                         'puntaje': data['puntaje'],
+                         'puntos_ganados': puntos_ganados,  # ✅ Agregamos esto
+                         'respondio': respondio  # ✅ NUEVO: Flag individual
+                     })
+                     
+                     # Guardar el puntaje actual para la próxima pregunta
+                     data['puntaje_anterior'] = puntos_actuales
+                     
                      nombres_usados.add(nombre)
                      break
     # --- FIN DE LA LÓGICA DE RANKING ---
@@ -347,6 +412,7 @@ def mostrar_resultados_pregunta(pin):
         'ranking': ranking_data
     }
     
+    print(f"📤 [EMIT] Enviando resultados: {resultados}")
     socketio.emit('mostrar_resultados', resultados, room=pin, namespace='/')
     
     eventlet.spawn(esperar_y_siguiente, pin, 2)

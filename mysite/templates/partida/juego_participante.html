@@ -905,6 +905,9 @@
             if (resultadosYaMostrados) return;
             resultadosYaMostrados = true;
 
+            console.log('📥 [EVENTO] mostrar_resultados recibido:', data);
+            console.log('📊 [RANKING] Datos del ranking:', ranking_actual);
+
             clearInterval(timerInterval);
             switchScreen('waiting-screen');
 
@@ -915,12 +918,25 @@
             const miNombre = "{{ session.get('nombre_usuario', 'Invitado') }}";
             let miPuntaje = 0;
             let puntosGanados = 0;
+            let miGrupoRespondio = false;  // ✅ NUEVO: Viene del backend
+
+            console.log(`🔍 [DEBUG] Buscando en ranking para: miNombre="${miNombre}", miGrupo="${miGrupo}"`);
 
             if (ranking_actual && Array.isArray(ranking_actual)) {
+                console.log(`📋 [DEBUG] Ranking completo:`, ranking_actual);
+
                 const miEntry = ranking_actual.find(r => r.nombre === miNombre || r.nombre === miGrupo);
+
+                console.log(`🎯 [DEBUG] miEntry encontrado:`, miEntry);
+
                 if (miEntry) {
                     miPuntaje = miEntry.puntaje;
                     puntosGanados = miEntry.puntos_ganados || 0;
+                    miGrupoRespondio = miEntry.respondio || false;  // ✅ BACKEND NOS DICE SI RESPONDIMOS
+
+                    console.log(`🔍 [FRONTEND] ${miNombre}: puntaje=${miPuntaje}, puntos_ganados=${puntosGanados}, respondio=${miGrupoRespondio}`);
+                } else {
+                    console.error('❌ [ERROR] No se encontró entrada en el ranking para este jugador/grupo');
                 }
             }
 
@@ -934,40 +950,34 @@
             scoreValue.classList.remove('incorrect', 'not-answered');
             pointsGained.classList.remove('positive', 'zero', 'incorrect', 'not-answered');
 
-            const yoRespondi = miRespuestaLocal && miRespuestaLocal.respondio === true;
+            // ✅ LÓGICA 100% BACKEND - NO USA miRespuestaLocal
 
-            if (yoRespondi) {
-                if (puntosGanados > 0) {
-                    document.getElementById('waiting-title').textContent = 'CORRECTO';
-                    document.getElementById('waiting-title').style.color = '#26890C';
-                    pointsGained.textContent = '+ ' + puntosGanados;
-                    pointsGained.classList.add('positive');
-                } else {
-                    document.getElementById('waiting-title').textContent = 'INCORRECTO';
-                    document.getElementById('waiting-title').style.color = '#E21B3C';
-                    scoreStat.classList.add('incorrect');
-                    scoreLabel.classList.add('incorrect');
-                    scoreValue.classList.add('incorrect');
-                    pointsGained.classList.add('incorrect');
-                    pointsGained.textContent = '+ 0';
-                }
-                scoreValue.textContent = miPuntaje || 0;
-            } else if (modalidadGrupal && puntosGanados > 0) {
+            console.log(`🧪 [TEST] Evaluando condiciones: puntosGanados=${puntosGanados}, miGrupoRespondio=${miGrupoRespondio}`);
+
+            if (puntosGanados > 0) {
+                // 🟢 CASO 1: Gané puntos → Respuesta CORRECTA
+                console.log('✅ [CASO 1] Mostrando: CORRECTO (puntosGanados > 0)');
                 document.getElementById('waiting-title').textContent = 'CORRECTO';
                 document.getElementById('waiting-title').style.color = '#26890C';
                 pointsGained.textContent = '+ ' + puntosGanados;
                 pointsGained.classList.add('positive');
                 scoreValue.textContent = miPuntaje || 0;
-            } else if (modalidadGrupal && puntosGanados === 0 && miRespuestaLocal && miRespuestaLocal.bloqueado) {
+            }
+            else if (miGrupoRespondio) {
+                // 🔴 CASO 2: Mi grupo respondió pero no ganó puntos → INCORRECTO
+                console.log('❌ [CASO 2] Mostrando: INCORRECTO (respondio=true, puntos=0)');
                 document.getElementById('waiting-title').textContent = 'INCORRECTO';
                 document.getElementById('waiting-title').style.color = '#E21B3C';
                 scoreStat.classList.add('incorrect');
                 scoreLabel.classList.add('incorrect');
                 scoreValue.classList.add('incorrect');
                 pointsGained.classList.add('incorrect');
-                scoreValue.textContent = miPuntaje || 0;
                 pointsGained.textContent = '+ 0';
-            } else {
+                scoreValue.textContent = miPuntaje || 0;
+            }
+            else {
+                // ⚪ CASO 3: Mi grupo NO respondió → SIN RESPUESTA
+                console.log('⚪ [CASO 3] Mostrando: SIN RESPUESTA (respondio=false, puntos=0)');
                 document.getElementById('waiting-title').textContent = 'SIN RESPUESTA';
                 document.getElementById('waiting-title').style.color = '#6c757d';
                 scoreStat.classList.add('not-answered');
