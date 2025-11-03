@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Guía del Usuario • DogeHoot</title>
+
+  <!-- SEO básico -->
+  <meta name="description" content="Guía rápida de DogeHoot: crea cuestionarios, inicia partidas con PIN y revisa resultados.">
+  <style>
+    :root { --w: 900px; --gap: 16px; }
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin:0; color:#111; }
+    header { border-bottom: 1px solid #eee; padding: 12px 16px; }
+    header a { text-decoration: none; color: #111; font-weight: 600; }
+    main { max-width: var(--w); margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { margin: 0 0 8px; }
+    .lead { color:#555; margin: 0 0 24px; }
+    .paso { display: grid; gap: var(--gap); margin: 28px 0; }
+    .paso h2 { margin: 0; font-size: 1.25rem; }
+    .card { background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px; padding: 12px; position: relative; }
+    .slider { overflow:hidden; }
+    .slides { position:relative; min-height: 180px; }
+    .slide { display:none; }
+    .slide.is-active { display:block; }
+    .slider-nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(17,24,39,.75); color:#fff; border:none; border-radius:50%; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.25rem; transition:background .2s ease; }
+    .slider-nav:hover { background:rgba(17,24,39,.9); }
+    .slider-nav:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
+    .slider-nav.prev { left:12px; }
+    .slider-nav.next { right:12px; }
+    .slider-indicator { position:absolute; bottom:12px; right:16px; background:rgba(17,24,39,.75); color:#fff; font-size:.85rem; padding:4px 10px; border-radius:999px; }
+    img, video { width: 100%; height: auto; border-radius: 12px; display:block; }
+    .faq { margin-top: 40px; }
+    details { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; margin:10px 0; background:#fff; }
+    summary { cursor:pointer; font-weight:600; }
+    .tip { background:#fffbeb; border:1px solid #f59e0b44; color:#92400e; padding:10px 12px; border-radius:10px; }
+    footer { max-width: var(--w); margin: 32px auto; padding: 0 16px 32px; color:#666; font-size: .9rem;}
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/">← Volver a DogeHoot</a>
+  </header>
+
+  <main>
+    <h1>Guía del Usuario de DogeHoot</h1>
+    <p class="lead">Sigue estos pasos para saber cómo navegar en Dogehoot. Aprende a crear cuestionarios, iniciar partidas con PIN y ver resultados.</p>
+    <!-- <p class="tip">Consejo: si es tu primera vez, usa también la <b>Guía rápida</b> del menú para un tour interactivo.</p> -->
+
+    {% for p in pasos %}
+      {% set imagenes = p.imagenes if p.imagenes is defined else [p.img] %}
+      <section class="paso">
+        <div>
+          <h2>{{ p.titulo }}</h2>
+          <p>{{ p.texto | replace('\n', '<br>') | safe }}</p>
+        </div>
+        <div class="card slider" data-step="{{ loop.index0 }}" tabindex="0">
+          <div class="slides">
+            {% for imagen in imagenes %}
+              <figure class="slide{% if loop.first %} is-active{% endif %}">
+                <img
+                  src="{{ imagen }}"
+                  alt="{{ p.titulo }} - captura {{ loop.index }}"
+                  loading="lazy" decoding="async"
+                  referrerpolicy="no-referrer">
+              </figure>
+            {% endfor %}
+          </div>
+          {% if imagenes|length > 1 %}
+            <button class="slider-nav prev" type="button" aria-label="Imagen anterior">&lsaquo;</button>
+            <button class="slider-nav next" type="button" aria-label="Imagen siguiente">&rsaquo;</button>
+          {% endif %}
+          <div class="slider-indicator" aria-live="polite">
+            <span class="current">1</span>/<span class="total">{{ imagenes|length }}</span>
+          </div>
+        </div>
+      </section>
+    {% endfor %}
+
+    <section class="faq">
+      <h2>Preguntas frecuentes</h2>
+      {% for item in faqs %}
+        <details>
+          <summary>{{ item.q }}</summary>
+          <div style="margin-top:8px">{{ item.a }}</div>
+        </details>
+      {% endfor %}
+    </section>
+  </main>
+
+  <footer>
+    © {{ 2025 }} DogeHoot • Guía para el usuario
+  </footer>
+
+  <script>
+    (function () {
+      var sliders = document.querySelectorAll('.slider');
+      sliders.forEach(function (slider) {
+        var slides = slider.querySelectorAll('.slide');
+        var total = slides.length;
+        var current = slider.querySelector('.slider-indicator .current');
+        var index = 0;
+
+        if (total <= 1) {
+          if (current) {
+            current.textContent = total ? '1' : '0';
+          }
+          slider.querySelectorAll('.slider-nav').forEach(function (btn) { btn.remove(); });
+          return;
+        }
+
+        var prev = slider.querySelector('.slider-nav.prev');
+        var next = slider.querySelector('.slider-nav.next');
+
+        function show(nextIndex) {
+          slides[index].classList.remove('is-active');
+          index = (nextIndex + total) % total;
+          slides[index].classList.add('is-active');
+          if (current) {
+            current.textContent = (index + 1).toString();
+          }
+        }
+
+        prev.addEventListener('click', function () { show(index - 1); });
+        next.addEventListener('click', function () { show(index + 1); });
+
+        slider.addEventListener('keydown', function (event) {
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            show(index - 1);
+          } else if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            show(index + 1);
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

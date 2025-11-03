@@ -1,0 +1,28 @@
+    pasos = [
+        {
+            "titulo": "1) Si eres profesor, Crea cuestionarios!!",
+            "texto": "Define título, preguntas y opciones. Guarda los cambios.",
+            "img": "https://drive.google.com/thumbnail?id=10ppj9ialb4H0w6iTzaSTC7POZMOTX4w6&sz=w1600",  
+        },
+        {
+            "titulo": "2) Iniciar partida",
+            "texto": "Haz clic en Iniciar para generar el PIN.",
+            "img": "https://drive.google.com/uc?export=view&id=ID_DRIVE_INICIAR",
+        },
+        {
+            "titulo": "3) Unirse con PIN",
+            "texto": "Los estudiantes van a /join e ingresan el PIN.",
+            "img": "https://drive.google.com/uc?export=view&id=ID_DRIVE_JOIN",
+        },
+        {
+            "titulo": "4) Ver resultados",
+            "texto": "Monitorea respuestas, tiempo y ranking en vivo.",
+            "img": "https://drive.google.com/uc?export=view&id=ID_DRIVE_RESULTADOS",
+        },
+    ]
+    faqs = [
+        {"q": "¿Qué hago si el PIN dice inválido?", "a": "Reinicia la partida y verifica que compartiste el PIN correcto."},
+        {"q": "¿Cuántos alumnos pueden unirse?", "a": "Depende de tu plan; en general 30–100 concurrentes funcionan bien."},
+        {"q": "Se cayó la conexión de un alumno", "a": "Puede reingresar con el mismo PIN y su nickname."},
+    ]
+    return render_template("guia.html", pasos=pasos, faqs=faqs)

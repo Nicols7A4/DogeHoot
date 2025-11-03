@@ -841,3 +841,54 @@ def restablecer_con_token(token):
 def reporte_partida_page(id_partida):
     # Página HTML que consumirá el endpoint JSON /api/report/partida
     return render_template('reportes_partida.html', id_partida=id_partida)
+
+# Para la pagina "guia.html"
+
+@app.route("/guia")
+def guia():
+    pasos = [
+        {
+            "titulo": "1) Si eres profesor, Crea cuestionarios!!",
+            "texto": "Primero, dirigete al panel de cuestionarios y crea uno nuevo dandole click en 'Agregar Cuestionario'. \nLlena los datos necesarios como el Titulo(1), Categoria(2), Descripcion(3),  y si deseas que otros profesores puedan ver tu cuestionario(4).\nPara agregar preguntas, puedes importar (sigue los pasos que se te indica) o puedes agregarlas manualmente. Finalmente, da click en 'Guardar Cambios'",
+            
+            "imagenes": [
+                "https://drive.google.com/thumbnail?id=10ppj9ialb4H0w6iTzaSTC7POZMOTX4w6&sz=w1600",
+                "https://drive.google.com/thumbnail?id=1mvnVYz4NXBV84AgUdVb6fCvhABowdvUj&sz=w1600",
+                "https://drive.google.com/thumbnail?id=13mLknlovSbpMI2o-LAvA8twLlJGh7yjg&sz=w1600",
+                "https://drive.google.com/thumbnail?id=16bludYRCMIzFYWo8aSCWowNcbuOwOBc_&sz=w1600",
+                "https://drive.google.com/thumbnail?id=1hWTEg3HkyHCVg1pcf1nXgPiB6rusWmvI&sz=w1600",
+            ],
+        },
+        {
+            "titulo": "2) Si eres profesor, Inicia partida",
+            "texto": "Dirigete nuevamente al panel de cuestionarios y selecciona el cuestionario y da click en 'Jugar'.\nConfigura la partida según corresponda y luego da click en 'Lanzar Partida'.\nComparte el PIN con tus estudiantes para que puedan unirse.",
+            "imagenes": [
+                "https://drive.google.com/thumbnail?id=1sqDqVRXRfBjnk5gX3WUYtA8iK5PyT3jt&sz=w1600",
+                "https://drive.google.com/thumbnail?id=18h1oRKGRTWb-3yPu98cOh3blz7oJRY_l&sz=w1600",
+                "https://drive.google.com/thumbnail?id=1iR5upHiXPUBXsoVgdwh18PlrkYg1DA6w&sz=w1600",
+            ],
+        },
+        {
+            "titulo": "3) Si eres estudiante o profesor puedes Unirte a una partida con PIN",
+            "texto": "Dirigete al dashboard e ingresan el PIN de la partida en curso.\nEspera a que tu profesor inicie la partida.",
+            "imagenes": [
+                "https://drive.google.com/thumbnail?id=1-hnGdybQhPY0-qwOOAimBsHBuwcYtmP5&sz=w1600",
+                "https://drive.google.com/thumbnail?id=189ONku0xfKgJR1eiJ9B7zSg4msjGSCDA&sz=w1600",
+            ],
+        },
+        {
+            "titulo": "4) Si eres profesor, Ve los resultados de tus partidas",
+            "texto": "Cuando la partida haya finalizado, puedes darle click al botón 'Ver Reporte'.\nPodrás ver estadísticas detalladas del desempeño de los estudiantes y las preguntas.\nAdemás, puedes descargar el reporte en formato Excel(1), exportar el reporte a onredrive(2) o a drive(3).",
+            "imagenes": [
+                "https://drive.google.com/thumbnail?id=1c9kgA68uxUGNSwFp-U2CTi96t6JrzeTO&sz=w1600",
+                "https://drive.google.com/thumbnail?id=1vfy0wGLRCF236dST6RP_hKCUcgjzWQ6n&sz=w1600",
+            ],
+        },
+    ]
+
+    faqs = [
+        {"q": "¿Qué hago si el PIN dice inválido?", "a": "Reinicia la partida y verifica que compartiste el PIN correcto."},
+        {"q": "¿Cuántos alumnos pueden unirse?", "a": "Depende de tu plan; en general con 30-100 concurrentes funcionan bien."},
+        {"q": "¿Un alumno perdió su conexión antes de que el profesor iniciara la partida?", "a": "Puede reingresar con el mismo PIN y su nombre de usuario."},
+    ]
+    return render_template("guia.html", pasos=pasos, faqs=faqs)
