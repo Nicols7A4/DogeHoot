@@ -1309,8 +1309,9 @@
                         <button class="btn btn-primary btn-sm" onclick="agregarPregunta()">Añadir
                             <kbd>Ctrl+Q</kbd></button>
                         <!-- Test de botón importar -->
-                        <button class="btn btn-importar btn-sm" id="btn-abrir-modal-importar" type="button">Importar
-                            Preguntas</button>
+                        <button class="btn btn-importar btn-sm" id="btn-abrir-modal-importar" type="button">
+                            <i class="fas fa-file-import"></i> Importar Preguntas <kbd id="import-shortcut-key">Ctrl+I</kbd>
+                        </button>
                     </div>
                     {% endif %}
                 </div>
@@ -1635,7 +1636,9 @@
             title.textContent = texto; card.appendChild(title);
             if (!MODO_VISUALIZACION) {
                 const row = document.createElement('div'); row.className = 'slide-row';
-                const del = document.createElement('button'); del.className = 'iconbtn'; del.textContent = 'Eliminar';
+                const del = document.createElement('button'); del.className = 'iconbtn'; 
+                del.textContent = 'Eliminar';
+                del.title = 'Eliminar pregunta (Delete)';
                 del.onclick = async (ev) => { ev.stopPropagation(); if (await mostrarConfirmacion("¿Seguro que desea quitar esta pregunta?")) { cuestionarioData.preguntas.splice(i, 1); if (currentIndex >= cuestionarioData.preguntas.length) currentIndex = Math.max(0, cuestionarioData.preguntas.length - 1); onAnyChange(); renderQuestionsUI(true); } };
                 row.appendChild(del); card.appendChild(row);
             }
@@ -1899,6 +1902,56 @@
     function mostrarConfirmacion(msg) { return crearPopup(msg, [{ text: 'Cancelar', className: 'btn btn-secondary', resolvesTo: false }, { text: 'Aceptar', className: 'btn btn-success', resolvesTo: true }]); }
     function mostrarAlerta(msg) { return crearPopup(msg, [{ text: 'Aceptar', className: 'btn btn-primary', resolvesTo: true }]); }
 
+    // ✅ Detectar sistema operativo para atajos multiplataforma
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    
+    // ✅ Actualizar visualización de teclas según el sistema operativo
+    document.addEventListener('DOMContentLoaded', () => {
+        if (isMac) {
+            // Actualizar el botón de importar para mostrar Cmd en lugar de Ctrl
+            const importShortcut = document.getElementById('import-shortcut-key');
+            if (importShortcut) {
+                importShortcut.textContent = '⌘I';
+            }
+            
+            // Actualizar otros atajos visuales en la interfaz
+            document.querySelectorAll('kbd').forEach(kbd => {
+                const text = kbd.textContent;
+                if (text.includes('Ctrl+')) {
+                    kbd.textContent = text.replace('Ctrl+', '⌘');
+                } else if (text.includes('Alt+')) {
+                    kbd.textContent = text.replace('Alt+', '⌥');
+                }
+            });
+            
+            // Observer para actualizar dinámicamente los botones que se crean después
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) { // Es un elemento
+                            // Actualizar kbd dentro del nodo agregado
+                            const kbds = node.querySelectorAll ? node.querySelectorAll('kbd') : [];
+                            kbds.forEach(kbd => {
+                                const text = kbd.textContent;
+                                if (text.includes('Ctrl+')) {
+                                    kbd.textContent = text.replace('Ctrl+', '⌘');
+                                } else if (text.includes('Alt+')) {
+                                    kbd.textContent = text.replace('Alt+', '⌥');
+                                }
+                            });
+                        }
+                    });
+                });
+            });
+            
+            // Observar cambios en el body
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+    });
+
     // ✅ Función helper para mostrar tooltips de atajos de teclado
     function mostrarTooltipAtajo(mensaje) {
         const tooltip = document.createElement('div');
@@ -1992,7 +2045,7 @@
         },
         // Navegación entre vistas
         viewGeneral: {
-            keys: ['Alt+a'],
+            keys: ['Alt+a', 'Meta+a'],
             description: 'Vista General',
             action: () => {
                 switchView('general');
@@ -2001,7 +2054,7 @@
             }
         },
         viewPreguntas: {
-            keys: ['Alt+d'],
+            keys: ['Alt+d', 'Meta+d'],
             description: 'Vista Preguntas',
             action: () => {
                 switchView('preguntas');
@@ -2011,7 +2064,7 @@
         },
         // Navegación simple con Alt+Flechas
         nextQuestion: {
-            keys: ['Alt+ArrowDown'],
+            keys: ['Alt+ArrowDown', 'Meta+ArrowDown'],
             description: 'Siguiente pregunta',
             action: () => {
                 if (currentView !== 'preguntas') {
@@ -2029,7 +2082,7 @@
             }
         },
         prevQuestion: {
-            keys: ['Alt+ArrowUp'],
+            keys: ['Alt+ArrowUp', 'Meta+ArrowUp'],
             description: 'Pregunta anterior',
             action: () => {
                 if (currentView !== 'preguntas') {
@@ -2092,6 +2145,9 @@
 
     // ✅ Función para mostrar ayuda de atajos
     function mostrarAyudaAtajos() {
+        const ctrlKey = isMac ? '⌘' : 'Ctrl';
+        const altKey = isMac ? '⌥' : 'Alt';
+        
         let helpText = '⌨️ ATAJOS DE TECLADO DISPONIBLES\n\n';
 
         const categorias = {
@@ -2105,14 +2161,19 @@
             shortcuts.forEach(key => {
                 const shortcut = keyboardShortcuts[key];
                 if (shortcut) {
-                    const keysStr = shortcut.keys.join(' / ');
+                    // Tomar solo la primera key y adaptarla al sistema
+                    let keysStr = shortcut.keys[0];
+                    keysStr = keysStr.replace('Ctrl+', ctrlKey + '+')
+                                     .replace('Meta+', ctrlKey + '+')
+                                     .replace('Alt+', altKey + '+');
                     helpText += `  ${keysStr.padEnd(30)} → ${shortcut.description}\n`;
                 }
             });
             helpText += '\n';
         }
 
-        helpText += '💡 TIP: En popups usa Enter para aceptar, Escape para cancelar';
+        helpText += '💡 TIP: En popups usa Enter para aceptar, Escape para cancelar\n';
+        helpText += `\n🖥️ Sistema detectado: ${isMac ? 'macOS' : 'Windows/Linux'}`;
 
         // Usar el sistema de popup mejorado
         mostrarAlerta(helpText);

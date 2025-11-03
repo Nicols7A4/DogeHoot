@@ -397,6 +397,8 @@
             </div>
             <div class="shortcuts-footer">
                 Presiona <kbd>F1</kbd> en cualquier momento para ver esta ayuda • <kbd>Esc</kbd> para cerrar
+                <br>
+                <small>Atajos: <span id="mod-key-hint"><kbd>Alt</kbd></span> en Windows/Linux • <kbd>⌘ Cmd</kbd> en macOS</small>
             </div>
         </div>
     </div>
@@ -660,19 +662,27 @@
             // ==========================================
             // === ATAJOS DE TECLADO GLOBALES ===
             // ==========================================
+            
+            // Detectar si estamos en macOS
+            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            const modifierKey = isMac ? 'metaKey' : 'altKey'; // Cmd en Mac, Alt en Windows/Linux
+            
             document.addEventListener('keydown', function (e) {
                 // Solo activar si no estamos escribiendo en un input/textarea
                 const isTyping = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
                 if (isTyping) return;
 
-                // Alt + H: Ir al Dashboard (Home)
-                if (e.altKey && e.key === 'h') {
+                // Verificar tecla modificadora (Cmd en Mac, Alt en Windows/Linux)
+                const modPressed = isMac ? e.metaKey : e.altKey;
+
+                // Cmd/Alt + H: Ir al Dashboard (Home)
+                if (modPressed && e.key === 'h') {
                     e.preventDefault();
                     window.location.href = "{{ url_for('dashboard') | default('/') }}";
                 }
 
-                // Alt + U: Abrir menú de usuario
-                if (e.altKey && e.key === 'u') {
+                // Cmd/Alt + U: Abrir menú de usuario
+                if (modPressed && e.key === 'u') {
                     e.preventDefault();
                     // Intentar con ambos botones (desktop y mobile)
                     const trigger = document.getElementById('btn-perfil') || document.getElementById('btn-perfil-mobile');
@@ -697,32 +707,32 @@
 
                 // === ATAJOS NUMÉRICOS PARA OPCIONES DEL MENÚ LATERAL ===
 
-                // Alt + 1: Ir a Mi Perfil
-                if (e.altKey && e.key === '1') {
+                // Cmd/Alt + 1: Ir a Mi Perfil
+                if (modPressed && e.key === '1') {
                     e.preventDefault();
                     window.location.href = "{{ url_for('usuario_perfil') }}";
                 }
 
-                // Alt + 2: Ir a Cambiar Contraseña
-                if (e.altKey && e.key === '2') {
+                // Cmd/Alt + 2: Ir a Cambiar Contraseña
+                if (modPressed && e.key === '2') {
                     e.preventDefault();
                     window.location.href = "{{ url_for('pagina_cambiar_contrasena') }}";
                 }
 
-                // Alt + 3: Ir a Mis Skins
-                if (e.altKey && e.key === '3') {
+                // Cmd/Alt + 3: Ir a Mis Skins
+                if (modPressed && e.key === '3') {
                     e.preventDefault();
                     window.location.href = "{{ url_for('mis_skins') }}";
                 }
 
-                // Alt + 4: Ir a Tienda de Skins
-                if (e.altKey && e.key === '4') {
+                // Cmd/Alt + 4: Ir a Tienda de Skins
+                if (modPressed && e.key === '4') {
                     e.preventDefault();
                     window.location.href = "{{ url_for('tienda_skins') }}";
                 }
 
-                // Alt + 5: Ir a Eliminar Cuenta
-                if (e.altKey && e.key === '5') {
+                // Cmd/Alt + 5: Ir a Eliminar Cuenta
+                if (modPressed && e.key === '5') {
                     e.preventDefault();
                     window.location.href = "{{ url_for('eliminar_cuenta') }}";
                 }
@@ -733,6 +743,31 @@
             // ==========================================
             const shortcutsModal = document.getElementById('keyboard-shortcuts-modal');
             const shortcutsCloseBtn = shortcutsModal?.querySelector('.shortcuts-close');
+
+            // Actualizar teclas del modal según sistema operativo
+            if (shortcutsModal) {
+                if (isMac) {
+                    // Reemplazar todos los <kbd>Alt</kbd> por <kbd>Cmd</kbd>
+                    const kbdElements = shortcutsModal.querySelectorAll('.shortcuts-body kbd');
+                    kbdElements.forEach(kbd => {
+                        if (kbd.textContent === 'Alt') {
+                            kbd.textContent = 'Cmd';
+                            kbd.innerHTML = '⌘'; // Símbolo de Command
+                        }
+                    });
+                    // Actualizar el hint del footer
+                    const modKeyHint = document.getElementById('mod-key-hint');
+                    if (modKeyHint) {
+                        modKeyHint.innerHTML = '<kbd>⌘ Cmd</kbd>';
+                    }
+                } else {
+                    // En Windows/Linux, asegurarnos de que muestre Alt
+                    const modKeyHint = document.getElementById('mod-key-hint');
+                    if (modKeyHint) {
+                        modKeyHint.innerHTML = '<kbd>Alt</kbd>';
+                    }
+                }
+            }
 
             function openShortcutsModal() {
                 if (shortcutsModal) {
