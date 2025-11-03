@@ -48,7 +48,7 @@
 
             <div id="menu-perfil-mobile" class="menu-perfil" role="menu" aria-labelledby="btn-perfil-mobile" hidden>
                 <div class="menu-perfil__header">Conectado como<br><strong>{{ user.nombre_usuario }}</strong></div>
-                <button class="menu-item" role="menuitem" data-action="perfil">
+                <button class="menu-item" role="menuitem" data-action="perfil" tabindex="0">
                     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                         <path fill="currentColor"
                             d="M12 12a5 5 0 1 0-5-5 5.006 5.006 0 0 0 5 5Zm0 2c-4.337 0-8 2.163-8 4.5V20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5C20 16.163 16.337 14 12 14Z" />
@@ -56,7 +56,7 @@
                     Perfil
                 </button>
                 <div class="menu-sep" role="separator"></div>
-                <button class="menu-item danger" role="menuitem" data-action="salir">
+                <button class="menu-item danger" role="menuitem" data-action="salir" tabindex="0">
                     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                         <path fill="currentColor"
                             d="M16 13v-2H8V8l-5 4 5 4v-3zM20 3h-8v2h8v14h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z" />
@@ -202,13 +202,13 @@
                         <div id="menu-perfil" class="menu-perfil" role="menu" aria-labelledby="btn-perfil" hidden>
                             <div class="menu-perfil__header">Conectado como<br><strong>{{ user.nombre_usuario
                                     }}</strong></div>
-                            <button class="menu-item" role="menuitem" data-action="perfil"><svg viewBox="0 0 24 24"
-                                    width="18" height="18" aria-hidden="true">
+                            <button class="menu-item" role="menuitem" data-action="perfil" tabindex="0"><svg
+                                    viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                                     <path fill="currentColor"
                                         d="M12 12a5 5 0 1 0-5-5 5.006 5.006 0 0 0 5 5Zm0 2c-4.337 0-8 2.163-8 4.5V20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5C20 16.163 16.337 14 12 14Z" />
                                 </svg> Perfil</button>
                             <div class="menu-sep" role="separator"></div>
-                            <button class="menu-item danger" role="menuitem" data-action="salir"><svg
+                            <button class="menu-item danger" role="menuitem" data-action="salir" tabindex="0"><svg
                                     viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                                     <path fill="currentColor"
                                         d="M16 13v-2H8V8l-5 4 5 4v-3zM20 3h-8v2h8v14h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z" />
@@ -337,15 +337,83 @@
             triggers.forEach((trigger, index) => {
                 const menu = menus[index];
                 if (!trigger || !menu) return;
-                function openMenu() { menu.hidden = false; menu.classList.add('is-open'); trigger.setAttribute('aria-expanded', 'true'); }
-                function closeMenu() { menu.classList.remove('is-open'); trigger.setAttribute('aria-expanded', 'false'); setTimeout(() => { menu.hidden = true }, 160); }
-                trigger.addEventListener('click', e => { e.stopPropagation(); menu.classList.contains('is-open') ? closeMenu() : openMenu(); });
+
+                function openMenu() {
+                    menu.hidden = false;
+                    menu.classList.add('is-open');
+                    trigger.setAttribute('aria-expanded', 'true');
+                    // Enfocar primer elemento del menú
+                    const firstItem = menu.querySelector('.menu-item');
+                    if (firstItem) {
+                        setTimeout(() => firstItem.focus(), 100);
+                    }
+                }
+
+                function closeMenu() {
+                    menu.classList.remove('is-open');
+                    trigger.setAttribute('aria-expanded', 'false');
+                    setTimeout(() => { menu.hidden = true }, 160);
+                }
+
+                trigger.addEventListener('click', e => {
+                    e.stopPropagation();
+                    menu.classList.contains('is-open') ? closeMenu() : openMenu();
+                });
+
                 menu.addEventListener('click', (e) => {
                     const btn = e.target.closest('.menu-item'); if (!btn) return;
                     const action = btn.dataset.action;
                     if (action === 'salir') window.location.href = "{{ url_for('logout') }}";
                     if (action === 'perfil') window.location.href = "{{ url_for('usuario_perfil') }}";
                     closeMenu();
+                });
+
+                // === NAVEGACIÓN CON FLECHAS EN EL MENÚ ===
+                const menuItems = Array.from(menu.querySelectorAll('.menu-item'));
+
+                menu.addEventListener('keydown', (e) => {
+                    if (!menu.classList.contains('is-open')) return;
+
+                    const focusedIndex = menuItems.indexOf(document.activeElement);
+                    let newIndex = -1;
+
+                    switch (e.key) {
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            newIndex = focusedIndex < menuItems.length - 1 ? focusedIndex + 1 : 0;
+                            menuItems[newIndex].focus();
+                            break;
+
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            newIndex = focusedIndex > 0 ? focusedIndex - 1 : menuItems.length - 1;
+                            menuItems[newIndex].focus();
+                            break;
+
+                        case 'Home':
+                            e.preventDefault();
+                            menuItems[0].focus();
+                            break;
+
+                        case 'End':
+                            e.preventDefault();
+                            menuItems[menuItems.length - 1].focus();
+                            break;
+
+                        case 'Escape':
+                            e.preventDefault();
+                            closeMenu();
+                            trigger.focus();
+                            break;
+
+                        case 'Enter':
+                        case ' ':
+                            e.preventDefault();
+                            if (document.activeElement.classList.contains('menu-item')) {
+                                document.activeElement.click();
+                            }
+                            break;
+                    }
                 });
             });
             document.addEventListener('click', e => {
@@ -484,6 +552,77 @@
                     }
                 });
             }
+
+            // ==========================================
+            // === ATAJOS DE TECLADO GLOBALES ===
+            // ==========================================
+            document.addEventListener('keydown', function (e) {
+                // Solo activar si no estamos escribiendo en un input/textarea
+                const isTyping = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+                if (isTyping) return;
+
+                // Alt + H: Ir al Dashboard (Home)
+                if (e.altKey && e.key === 'h') {
+                    e.preventDefault();
+                    window.location.href = "{{ url_for('dashboard') | default('/') }}";
+                }
+
+                // Alt + U: Abrir menú de usuario
+                if (e.altKey && e.key === 'u') {
+                    e.preventDefault();
+                    // Intentar con ambos botones (desktop y mobile)
+                    const trigger = document.getElementById('btn-perfil') || document.getElementById('btn-perfil-mobile');
+                    const menu = document.getElementById('menu-perfil') || document.getElementById('menu-perfil-mobile');
+                    if (trigger && menu) {
+                        if (menu.classList.contains('is-open')) {
+                            menu.classList.remove('is-open');
+                            trigger.setAttribute('aria-expanded', 'false');
+                            setTimeout(() => { menu.hidden = true; }, 160);
+                        } else {
+                            menu.hidden = false;
+                            menu.classList.add('is-open');
+                            trigger.setAttribute('aria-expanded', 'true');
+                            // Enfocar primer elemento
+                            const firstItem = menu.querySelector('.menu-item');
+                            if (firstItem) {
+                                setTimeout(() => firstItem.focus(), 100);
+                            }
+                        }
+                    }
+                }
+
+                // === ATAJOS NUMÉRICOS PARA OPCIONES DEL MENÚ LATERAL ===
+
+                // Alt + 1: Ir a Mi Perfil
+                if (e.altKey && e.key === '1') {
+                    e.preventDefault();
+                    window.location.href = "{{ url_for('usuario_perfil') }}";
+                }
+
+                // Alt + 2: Ir a Cambiar Contraseña
+                if (e.altKey && e.key === '2') {
+                    e.preventDefault();
+                    window.location.href = "{{ url_for('pagina_cambiar_contrasena') }}";
+                }
+
+                // Alt + 3: Ir a Mis Skins
+                if (e.altKey && e.key === '3') {
+                    e.preventDefault();
+                    window.location.href = "{{ url_for('mis_skins') }}";
+                }
+
+                // Alt + 4: Ir a Tienda de Skins
+                if (e.altKey && e.key === '4') {
+                    e.preventDefault();
+                    window.location.href = "{{ url_for('tienda_skins') }}";
+                }
+
+                // Alt + 5: Ir a Eliminar Cuenta
+                if (e.altKey && e.key === '5') {
+                    e.preventDefault();
+                    window.location.href = "{{ url_for('eliminar_cuenta') }}";
+                }
+            });
 
         })();
     </script>
