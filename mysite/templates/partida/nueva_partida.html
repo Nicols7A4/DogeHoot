@@ -1,317 +1,317 @@
 {% extends "layout.html" %}
 
 {% block breadcrumb %}
-    <li><a href="{{ url_for('dashboard') }}">Inicio</a></li>
-    <li class="active">Nueva Partida</li>
+<li><a href="{{ url_for('dashboard') }}">Inicio</a></li>
+<li class="active">Nueva Partida</li>
 {% endblock %}
 
 {% block head %}
-    {{ super() }}
-    <style>
-        /* ===================== */
-        /* Variables             */
-        /* ===================== */
-        :root {
-            --btn-pending-bg: #FFECD1;
-            --btn-pending-text: #F77F00;
-            --btn-inprogress-bg: #E6F2FF;
-            --btn-inprogress-text: #1E88E5;
-            --btn-submitted-bg: #F1E8FF;
-            --btn-submitted-text: #8E5CF6;
-            --btn-success-bg: #E8F9E9;
-            --btn-success-text: #2BB673;
-            --btn-failed-bg: #FFE6E6;
-            --btn-failed-text: #E53935;
-            --btn-expired-bg: #F5F5F5;
-            --btn-expired-text: #9E9E9E;
-            --main-bg: #FFF9ED;
-            --panel-bg: #FFFFFF;
-            --border-soft: #E0E0E0;
-            --text-color: #333333;
-            --text-muted: #6c757d;
-            --panel-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
-            --btn-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
-            --btn-hover-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-        }
+{{ super() }}
+<style>
+    /* ===================== */
+    /* Variables             */
+    /* ===================== */
+    :root {
+        --btn-pending-bg: #FFECD1;
+        --btn-pending-text: #F77F00;
+        --btn-inprogress-bg: #E6F2FF;
+        --btn-inprogress-text: #1E88E5;
+        --btn-submitted-bg: #F1E8FF;
+        --btn-submitted-text: #8E5CF6;
+        --btn-success-bg: #E8F9E9;
+        --btn-success-text: #2BB673;
+        --btn-failed-bg: #FFE6E6;
+        --btn-failed-text: #E53935;
+        --btn-expired-bg: #F5F5F5;
+        --btn-expired-text: #9E9E9E;
+        --main-bg: #FFF9ED;
+        --panel-bg: #FFFFFF;
+        --border-soft: #E0E0E0;
+        --text-color: #333333;
+        --text-muted: #6c757d;
+        --panel-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+        --btn-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        --btn-hover-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+    }
 
-        /* ===================== */
-        /* Contenedor Mobile     */
-        /* ===================== */
+    /* ===================== */
+    /* Contenedor Mobile     */
+    /* ===================== */
+    .config-container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+
+    .config-card {
+        background: var(--panel-bg);
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--panel-shadow);
+        border: 1px solid var(--border-soft);
+    }
+
+    /* ===================== */
+    /* Header                */
+    /* ===================== */
+    .config-header h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        color: var(--text-color);
+        text-align: center;
+    }
+
+    .config-header p {
+        color: var(--text-muted);
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        text-align: center;
+        line-height: 1.5;
+    }
+
+    .config-header p strong {
+        color: var(--btn-inprogress-text);
+        font-weight: 700;
+    }
+
+    /* ===================== */
+    /* Form Groups           */
+    /* ===================== */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: var(--text-color);
+        font-size: 0.9rem;
+    }
+
+    /* ===================== */
+    /* Radio Options         */
+    /* ===================== */
+    .radio-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .radio-options label {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 1rem;
+        background: #F8F9FA;
+        border-radius: var(--radius-sm);
+        border: 2px solid var(--border-soft);
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+    }
+
+    .radio-options label:hover {
+        background: var(--btn-inprogress-bg);
+        border-color: var(--btn-inprogress-text);
+    }
+
+    .radio-options input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: var(--btn-inprogress-text);
+        flex-shrink: 0;
+    }
+
+    .radio-options input[type="radio"]:checked+span {
+        color: var(--btn-inprogress-text);
+    }
+
+    /* ===================== */
+    /* Form Control          */
+    /* ===================== */
+    .form-control {
+        width: 100%;
+        padding: 0.875rem;
+        border: 2px solid var(--border-soft);
+        border-radius: var(--radius-sm);
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        background: #FAFBFC;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--btn-inprogress-text);
+        box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+        background: var(--panel-bg);
+    }
+
+    /* ===================== */
+    /* Hidden State          */
+    /* ===================== */
+    #grupo-cantidad-container.hidden {
+        display: none;
+    }
+
+    /* ===================== */
+    /* Form Actions          */
+    /* ===================== */
+    .form-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: 2px solid transparent;
+        border-radius: var(--radius-sm);
+        padding: 0.875rem 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        width: 100%;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: var(--btn-shadow);
+        text-align: center;
+    }
+
+    .btn:hover {
+        box-shadow: var(--btn-hover-shadow);
+    }
+
+    .btn:active {
+        transform: translateY(1px);
+    }
+
+    .btn-primary {
+        background: var(--btn-success-bg);
+        color: var(--btn-success-text);
+    }
+
+    .btn-primary:hover {
+        border-color: var(--btn-success-text);
+    }
+
+    .btn-secondary {
+        background: var(--btn-expired-bg);
+        color: var(--text-muted);
+    }
+
+    .btn-secondary:hover {
+        border-color: var(--text-muted);
+        background: #E8E8E8;
+    }
+
+    /* ===================== */
+    /* Info Box              */
+    /* ===================== */
+    .info-box {
+        background: var(--btn-inprogress-bg);
+        border: 2px solid var(--btn-inprogress-text);
+        border-radius: var(--radius-sm);
+        padding: 1rem;
+        margin-top: 1rem;
+        font-size: 0.85rem;
+        color: var(--btn-inprogress-text);
+        font-weight: 600;
+        text-align: center;
+        line-height: 1.5;
+    }
+
+    /* ===================== */
+    /* Media Queries         */
+    /* ===================== */
+
+    /* Tablets (768px+) */
+    @media (min-width: 768px) {
         .config-container {
-            max-width: 100%;
-            margin: 0 auto;
-            padding: 1rem;
+            padding: 2rem;
+            max-width: 700px;
         }
 
         .config-card {
-            background: var(--panel-bg);
-            padding: 1.5rem;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--panel-shadow);
-            border: 1px solid var(--border-soft);
+            padding: 2rem;
         }
 
-        /* ===================== */
-        /* Header                */
-        /* ===================== */
         .config-header h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            color: var(--text-color);
-            text-align: center;
+            font-size: 1.75rem;
         }
 
         .config-header p {
-            color: var(--text-muted);
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
-            text-align: center;
-            line-height: 1.5;
+            font-size: 1rem;
         }
 
-        .config-header p strong {
-            color: var(--btn-inprogress-text);
-            font-weight: 700;
-        }
-
-        /* ===================== */
-        /* Form Groups           */
-        /* ===================== */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 700;
-            margin-bottom: 0.75rem;
-            color: var(--text-color);
-            font-size: 0.9rem;
-        }
-
-        /* ===================== */
-        /* Radio Options         */
-        /* ===================== */
         .radio-options {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
+            flex-direction: row;
+            gap: 1rem;
         }
 
         .radio-options label {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            padding: 1rem;
-            background: #F8F9FA;
-            border-radius: var(--radius-sm);
-            border: 2px solid var(--border-soft);
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
+            flex: 1;
+            justify-content: center;
         }
 
-        .radio-options label:hover {
-            background: var(--btn-inprogress-bg);
-            border-color: var(--btn-inprogress-text);
-        }
-
-        .radio-options input[type="radio"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            accent-color: var(--btn-inprogress-text);
-            flex-shrink: 0;
-        }
-
-        .radio-options input[type="radio"]:checked + span {
-            color: var(--btn-inprogress-text);
-        }
-
-        /* ===================== */
-        /* Form Control          */
-        /* ===================== */
-        .form-control {
-            width: 100%;
-            padding: 0.875rem;
-            border: 2px solid var(--border-soft);
-            border-radius: var(--radius-sm);
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.9rem;
-            transition: all 0.2s ease;
-            background: #FAFBFC;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--btn-inprogress-text);
-            box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
-            background: var(--panel-bg);
-        }
-
-        /* ===================== */
-        /* Hidden State          */
-        /* ===================== */
-        #grupo-cantidad-container.hidden {
-            display: none;
-        }
-
-        /* ===================== */
-        /* Form Actions          */
-        /* ===================== */
         .form-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            margin-top: 2rem;
+            flex-direction: row;
+            justify-content: flex-end;
         }
 
         .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            border: 2px solid transparent;
-            border-radius: var(--radius-sm);
-            padding: 0.875rem 1.5rem;
-            font-size: 0.9rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            width: 100%;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: var(--btn-shadow);
-            text-align: center;
+            width: auto;
+            min-width: 150px;
+        }
+    }
+
+    /* Desktop (1024px+) */
+    @media (min-width: 1024px) {
+        .config-container {
+            padding: 3rem 2rem;
         }
 
-        .btn:hover {
-            box-shadow: var(--btn-hover-shadow);
+        .config-card {
+            padding: 2.5rem;
         }
 
-        .btn:active {
-            transform: translateY(1px);
+        .config-header h1 {
+            font-size: 2rem;
         }
 
-        .btn-primary {
-            background: var(--btn-success-bg);
-            color: var(--btn-success-text);
+        .form-group label {
+            font-size: 1rem;
         }
 
-        .btn-primary:hover {
-            border-color: var(--btn-success-text);
+        .radio-options label {
+            font-size: 1rem;
+            padding: 1.125rem;
         }
 
-        .btn-secondary {
-            background: var(--btn-expired-bg);
-            color: var(--text-muted);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--text-muted);
-            background: #E8E8E8;
-        }
-
-        /* ===================== */
-        /* Info Box              */
-        /* ===================== */
-        .info-box {
-            background: var(--btn-inprogress-bg);
-            border: 2px solid var(--btn-inprogress-text);
-            border-radius: var(--radius-sm);
+        .form-control {
+            font-size: 1rem;
             padding: 1rem;
-            margin-top: 1rem;
-            font-size: 0.85rem;
-            color: var(--btn-inprogress-text);
-            font-weight: 600;
-            text-align: center;
-            line-height: 1.5;
         }
 
-        /* ===================== */
-        /* Media Queries         */
-        /* ===================== */
-        
-        /* Tablets (768px+) */
-        @media (min-width: 768px) {
-            .config-container {
-                padding: 2rem;
-                max-width: 700px;
-            }
-
-            .config-card {
-                padding: 2rem;
-            }
-
-            .config-header h1 {
-                font-size: 1.75rem;
-            }
-
-            .config-header p {
-                font-size: 1rem;
-            }
-
-            .radio-options {
-                flex-direction: row;
-                gap: 1rem;
-            }
-
-            .radio-options label {
-                flex: 1;
-                justify-content: center;
-            }
-
-            .form-actions {
-                flex-direction: row;
-                justify-content: flex-end;
-            }
-
-            .btn {
-                width: auto;
-                min-width: 150px;
-            }
+        .btn {
+            font-size: 1rem;
+            padding: 1rem 2rem;
         }
-
-        /* Desktop (1024px+) */
-        @media (min-width: 1024px) {
-            .config-container {
-                padding: 3rem 2rem;
-            }
-
-            .config-card {
-                padding: 2.5rem;
-            }
-
-            .config-header h1 {
-                font-size: 2rem;
-            }
-
-            .form-group label {
-                font-size: 1rem;
-            }
-
-            .radio-options label {
-                font-size: 1rem;
-                padding: 1.125rem;
-            }
-
-            .form-control {
-                font-size: 1rem;
-                padding: 1rem;
-            }
-
-            .btn {
-                font-size: 1rem;
-                padding: 1rem 2rem;
-            }
-        }
-    </style>
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -341,7 +341,8 @@
 
             <div id="grupo-cantidad-container" class="form-group hidden">
                 <label for="cant_grupos">Cantidad de Grupos</label>
-                <input type="number" id="cant_grupos" name="cant_grupos" class="form-control" min="2" max="10" value="2" placeholder="Ingrese cantidad de grupos (2-10)">
+                <input type="number" id="cant_grupos" name="cant_grupos" class="form-control" min="2" max="10" value="2"
+                    placeholder="Ingrese cantidad de grupos (2-10)">
                 <div class="info-box" style="margin-top: 0.75rem;">
                     Los jugadores podrán unirse a cualquier grupo disponible
                 </div>
@@ -356,13 +357,13 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const modalidadRadios = document.querySelectorAll('input[name="modalidad"]');
         const grupoContainer = document.getElementById('grupo-cantidad-container');
         const cantGruposInput = document.getElementById('cant_grupos');
 
         modalidadRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
+            radio.addEventListener('change', function () {
                 if (this.value === 'grupal') {
                     grupoContainer.classList.remove('hidden');
                     cantGruposInput.focus();
@@ -373,7 +374,7 @@
         });
 
         // Validación del input de grupos
-        cantGruposInput.addEventListener('input', function() {
+        cantGruposInput.addEventListener('input', function () {
             const min = parseInt(this.min);
             const max = parseInt(this.max);
             let value = parseInt(this.value);

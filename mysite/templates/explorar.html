@@ -13,14 +13,13 @@
 
 <!-- Sección: Categorías -->
 <div class="explorar-categorias">
-    <button class="categoria active" style="background-color: var(--btn-pending-bg); color: var(--btn-pending-text);" 
-            data-categoria="todos" onclick="filtrarPorCategoriaExplorar('todos')">
+    <button class="categoria active" style="background-color: var(--btn-pending-bg); color: var(--btn-pending-text);"
+        data-categoria="todos" onclick="filtrarPorCategoriaExplorar('todos')">
         Todas las Categorías
     </button>
     {% for cat in categorias %}
-    <button class="categoria categoria-{{ loop.index % 6 }}" 
-            data-categoria="{{ cat.id_categoria }}" 
-            onclick="filtrarPorCategoriaExplorar('{{ cat.id_categoria }}')">
+    <button class="categoria categoria-{{ loop.index % 6 }}" data-categoria="{{ cat.id_categoria }}"
+        onclick="filtrarPorCategoriaExplorar('{{ cat.id_categoria }}')">
         {{ cat.categoria }}
     </button>
     {% endfor %}
@@ -29,12 +28,13 @@
 <!-- Sección: Grid de Cuestionarios -->
 <div class="explorar-grid">
     {% for c in cuestionarios %}
-    <div class="card-quiz-explorar" data-categoria="{{ c.id_categoria }}" data-titulo="{{ c.titulo|lower }}" data-descripcion="{{ c.descripcion|lower }}">
+    <div class="card-quiz-explorar" data-categoria="{{ c.id_categoria }}" data-titulo="{{ c.titulo|lower }}"
+        data-descripcion="{{ c.descripcion|lower }}">
         <div class="card-quiz__media">
             {% if c.imagen_portada %}
-                <img src="{{ url_for('static', filename=c.imagen_portada) }}" alt="{{ c.titulo }}">
+            <img src="{{ url_for('static', filename=c.imagen_portada) }}" alt="{{ c.titulo }}">
             {% else %}
-                <img src="{{ url_for('static', filename='img/registro-aside.png') }}" alt="{{ c.titulo }}">
+            <img src="{{ url_for('static', filename='img/registro-aside.png') }}" alt="{{ c.titulo }}">
             {% endif %}
         </div>
 
@@ -46,28 +46,33 @@
                 <div class="card-quiz__stats-row">
                     <div class="card-quiz__stat">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" 
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         <span>{{ c.nombre_usuario }}</span>
                     </div>
 
                     <div class="card-quiz__stat">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M6 3h9a3 3 0 0 1 3 3v11a2 2 0 0 1-2 2H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10V6a1 1 0 0 0-1-1H6Zm3 4h5a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2Zm0 4h5a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2Z" 
-                                fill="currentColor"/>
+                            <path
+                                d="M6 3h9a3 3 0 0 1 3 3v11a2 2 0 0 1-2 2H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm0 2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10V6a1 1 0 0 0-1-1H6Zm3 4h5a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2Zm0 4h5a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2Z"
+                                fill="currentColor" />
                         </svg>
                         <span>{{ c.categoria }}</span>
                     </div>
                 </div>
 
                 <div class="card-quiz__actions">
-                    <button class="card-quiz__cta card-quiz__cta--play" type="button" 
-                            onclick="window.location.href='{{ url_for('configurar_partida', id_cuestionario=c.id_cuestionario) }}'">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="100 150 320 220" fill="none">
-                            <path d="M254,183.7h0c-72.82-1.22-101.38,22.29-111.25,39-14.72,24.92-27,81.37,7.64,102.23,10.92,6.57,25.37,3.09,37.4-5.82,19-14.09,41.81-22.21,65.49-22.21h5.46c23.68,0,46.47,8.12,65.49,22.21,12,8.91,26.48,12.39,37.4,5.82,34.67-20.86,22.36-77.31,7.64-102.23-9.87-16.72-38.43-40.23-111.25-39h-4Z"
-                                stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
-                            <path d="M201.9,233.93V222.36a2.3,2.3,0,0,0-2.3-2.31H188a2.3,2.3,0,0,0-2.3,2.31v11.57a2.31,2.31,0,0,1-2.31,2.31H171.83a2.3,2.3,0,0,0-2.3,2.3v11.58a2.3,2.3,0,0,0,2.3,2.3h11.58a2.31,2.31,0,0,1,2.31,2.3V266.3a2.3,2.3,0,0,0,2.3,2.3H199.6a2.3,2.3,0,0,0,2.3-2.3V254.72a2.3,2.3,0,0,1,2.3-2.3h11.58a2.3,2.3,0,0,0,2.3-2.3V238.54a2.3,2.3,0,0,0-2.3-2.3H204.2A2.3,2.3,0,0,1,201.9,233.93Z"
+                    <button class="card-quiz__cta card-quiz__cta--play" type="button"
+                        onclick="window.location.href='{{ url_for('configurar_partida', id_cuestionario=c.id_cuestionario) }}'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="100 150 320 220"
+                            fill="none">
+                            <path
+                                d="M254,183.7h0c-72.82-1.22-101.38,22.29-111.25,39-14.72,24.92-27,81.37,7.64,102.23,10.92,6.57,25.37,3.09,37.4-5.82,19-14.09,41.81-22.21,65.49-22.21h5.46c23.68,0,46.47,8.12,65.49,22.21,12,8.91,26.48,12.39,37.4,5.82,34.67-20.86,22.36-77.31,7.64-102.23-9.87-16.72-38.43-40.23-111.25-39h-4Z"
+                                stroke="currentColor" stroke-width="20" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path
+                                d="M201.9,233.93V222.36a2.3,2.3,0,0,0-2.3-2.31H188a2.3,2.3,0,0,0-2.3,2.31v11.57a2.31,2.31,0,0,1-2.31,2.31H171.83a2.3,2.3,0,0,0-2.3,2.3v11.58a2.3,2.3,0,0,0,2.3,2.3h11.58a2.31,2.31,0,0,1,2.31,2.3V266.3a2.3,2.3,0,0,0,2.3,2.3H199.6a2.3,2.3,0,0,0,2.3-2.3V254.72a2.3,2.3,0,0,1,2.3-2.3h11.58a2.3,2.3,0,0,0,2.3-2.3V238.54a2.3,2.3,0,0,0-2.3-2.3H204.2A2.3,2.3,0,0,1,201.9,233.93Z"
                                 fill="currentColor" />
                             <circle cx="328.06" cy="228.14" r="8.09" fill="currentColor" />
                             <circle cx="328.06" cy="260.51" r="8.09" fill="currentColor" />
@@ -77,10 +82,13 @@
                         Jugar!
                     </button>
 
-                    <form id="formClonarExp{{ c.id_cuestionario }}" method="POST" action="/cuestionarios/clonar/{{ c.id_cuestionario }}" 
-                          style="display: inline;" onsubmit="event.preventDefault(); confirmarClonarExplorar(event, '{{ c.titulo }}', {{ c.id_cuestionario }});">
+                    <form id="formClonarExp{{ c.id_cuestionario }}" method="POST"
+                        action="/cuestionarios/clonar/{{ c.id_cuestionario }}" style="display: inline;"
+                        onsubmit="event.preventDefault(); confirmarClonarExplorar(event, '{{ c.titulo }}', {{ c.id_cuestionario }});">
                         <button class="card-quiz__cta card-quiz__cta--clone" type="submit">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"></path>
                             </svg>
@@ -93,7 +101,8 @@
     </div>
     {% else %}
     <div class="sin-cuestionarios">
-        <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -108,29 +117,32 @@
 <div id="modalClonarExplorar" class="modal-overlay">
     <div class="modal-contenido">
         <div class="modal-header">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
             <h2>¿Clonar Cuestionario?</h2>
         </div>
-        
+
         <div class="modal-body">
             <p class="modal-titulo-cuestionario">"<span id="modalClonarTituloExplorar"></span>"</p>
-            <p class="modal-descripcion">Se creará una copia en <strong>Mis Cuestionarios</strong> que podrás editar libremente.</p>
+            <p class="modal-descripcion">Se creará una copia en <strong>Mis Cuestionarios</strong> que podrás editar
+                libremente.</p>
             <ul class="modal-lista">
                 <li>✓ El cuestionario clonado será <strong>NO público</strong></li>
                 <li>✓ Incluye todas las preguntas y opciones</li>
                 <li>✓ Puedes editarlo y personalizarlo a tu gusto</li>
             </ul>
         </div>
-        
+
         <div class="modal-footer">
             <button type="button" class="modal-btn modal-btn-cancelar" onclick="cerrarModalClonarExplorar()">
                 Cancelar
             </button>
             <button type="button" class="modal-btn modal-btn-confirmar" onclick="confirmarClonarModalExplorar()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                 </svg>
@@ -142,29 +154,29 @@
 
 <script>
     // Detectar parámetro de búsqueda en la URL y sincronizar con input del NAV
-    window.addEventListener('DOMContentLoaded', function() {
+    window.addEventListener('DOMContentLoaded', function () {
         const urlParams = new URLSearchParams(window.location.search);
         const terminoBusqueda = urlParams.get('buscar');
         const inputNav = document.getElementById('inputBuscarNav');
-        
+
         // Sincronizar el input del NAV con el término de búsqueda
         if (terminoBusqueda && inputNav) {
             inputNav.value = terminoBusqueda;
         }
-        
+
         // Aplicar búsqueda inicial si viene de URL
         if (terminoBusqueda) {
             buscarEnExplorar(terminoBusqueda);
         }
-        
+
         // Hacer que el input del NAV funcione en tiempo real
         if (inputNav) {
-            inputNav.addEventListener('input', function() {
+            inputNav.addEventListener('input', function () {
                 const termino = this.value;
                 buscarEnExplorar(termino);
-                
+
                 // Actualizar URL sin recargar página
-                const nuevaUrl = termino 
+                const nuevaUrl = termino
                     ? window.location.pathname + '?buscar=' + encodeURIComponent(termino)
                     : window.location.pathname;
                 window.history.replaceState({}, '', nuevaUrl);
@@ -175,11 +187,11 @@
     function buscarEnExplorar(termino) {
         const filtro = (termino || '').toLowerCase();
         const tarjetas = document.querySelectorAll('.card-quiz-explorar');
-        
+
         tarjetas.forEach(tarjeta => {
             const titulo = tarjeta.dataset.titulo || '';
             const descripcion = tarjeta.dataset.descripcion || '';
-            
+
             if (titulo.includes(filtro) || descripcion.includes(filtro)) {
                 tarjeta.style.display = '';
             } else {
@@ -194,10 +206,10 @@
         if (inputNav) {
             inputNav.value = '';
         }
-        
+
         // Limpiar URL
         window.history.replaceState({}, '', window.location.pathname);
-        
+
         document.querySelectorAll('.categoria').forEach(cat => {
             cat.classList.remove('active');
         });
@@ -219,16 +231,16 @@
 
     function confirmarClonarExplorar(event, titulo, idCuestionario) {
         event.preventDefault();
-        
+
         // Mostrar modal de confirmación
         const modal = document.getElementById('modalClonarExplorar');
         const tituloElemento = document.getElementById('modalClonarTituloExplorar');
         tituloElemento.textContent = titulo;
         modal.style.display = 'flex';
-        
+
         // Guardar el ID del formulario para enviarlo después
         window.idFormularioClonarExp = idCuestionario;
-        
+
         return false;
     }
 
@@ -251,7 +263,7 @@
     }
 
     // Cerrar modal al hacer clic fuera
-    window.onclick = function(event) {
+    window.onclick = function (event) {
         const modal = document.getElementById('modalClonarExplorar');
         if (event.target === modal) {
             cerrarModalClonarExplorar();
@@ -382,8 +394,13 @@
     }
 
     @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
     }
 
     .modal-contenido {
@@ -402,6 +419,7 @@
             opacity: 0;
             transform: translateY(20px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
