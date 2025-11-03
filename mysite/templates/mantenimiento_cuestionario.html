@@ -1,13 +1,13 @@
 {% extends "layout.html" %}
 {% block breadcrumb %}
-    <li><a href="{{ url_for('dashboard') }}">Inicio</a></li>
-    <li><a href="{{ url_for('cuestionarios') }}">Mis Cuestionarios</a></li>
-    
-    {% if modo == 'nuevo' %}
-        <li class="active">Agregar Cuestionario</li>
-    {% else %}
-        <li class="active">Editar Cuestionario</li>
-    {% endif %}
+<li><a href="{{ url_for('dashboard') }}">Inicio</a></li>
+<li><a href="{{ url_for('cuestionarios') }}">Mis Cuestionarios</a></li>
+
+{% if modo == 'nuevo' %}
+<li class="active">Agregar Cuestionario</li>
+{% else %}
+<li class="active">Editar Cuestionario</li>
+{% endif %}
 {% endblock %}
 {% block head %}
 {{ super() }}
@@ -1918,12 +1918,6 @@
     // ✅ Actualizar visualización de teclas según el sistema operativo
     document.addEventListener('DOMContentLoaded', () => {
         if (isMac) {
-            // Actualizar el botón de importar para mostrar Cmd en lugar de Ctrl
-            const importShortcut = document.getElementById('import-shortcut-key');
-            if (importShortcut) {
-                importShortcut.textContent = '⌘I';
-            }
-
             // Actualizar otros atajos visuales en la interfaz
             document.querySelectorAll('kbd').forEach(kbd => {
                 const text = kbd.textContent;
@@ -2015,7 +2009,7 @@
             }
         },
         newQuestion: {
-            keys: ['Ctrl+Q', 'Meta+Q'],
+            keys: ['Ctrl+Q', 'Alt+Q'],
             description: 'Nueva pregunta',
             action: () => {
                 if (MODO_VISUALIZACION) {
@@ -2055,7 +2049,7 @@
         },
         // Navegación entre vistas
         viewGeneral: {
-            keys: ['Alt+a', 'Meta+a'],
+            keys: ['Alt+a'],
             description: 'Vista General',
             action: () => {
                 switchView('general');
@@ -2064,7 +2058,7 @@
             }
         },
         viewPreguntas: {
-            keys: ['Alt+d', 'Meta+d'],
+            keys: ['Alt+d'],
             description: 'Vista Preguntas',
             action: () => {
                 switchView('preguntas');
@@ -2074,7 +2068,7 @@
         },
         // Navegación simple con Alt+Flechas
         nextQuestion: {
-            keys: ['Alt+ArrowDown', 'Meta+ArrowDown'],
+            keys: ['Alt+ArrowDown'],
             description: 'Siguiente pregunta',
             action: () => {
                 if (currentView !== 'preguntas') {
@@ -2092,7 +2086,7 @@
             }
         },
         prevQuestion: {
-            keys: ['Alt+ArrowUp', 'Meta+ArrowUp'],
+            keys: ['Alt+ArrowUp'],
             description: 'Pregunta anterior',
             action: () => {
                 if (currentView !== 'preguntas') {
@@ -2126,7 +2120,7 @@
             }
         },
         importQuestions: {
-            keys: ['Ctrl+I', 'Meta+I'],
+            keys: ['Ctrl+I', 'Alt+I'],
             description: 'Importar preguntas desde Excel',
             action: () => {
                 if (MODO_VISUALIZACION) {
@@ -2174,7 +2168,6 @@
                     // Tomar solo la primera key y adaptarla al sistema
                     let keysStr = shortcut.keys[0];
                     keysStr = keysStr.replace('Ctrl+', ctrlKey + '+')
-                        .replace('Meta+', ctrlKey + '+')
                         .replace('Alt+', altKey + '+');
                     helpText += `  ${keysStr.padEnd(30)} → ${shortcut.description}\n`;
                 }
@@ -2183,7 +2176,7 @@
         }
 
         helpText += '💡 TIP: En popups usa Enter para aceptar, Escape para cancelar\n';
-        helpText += `\n🖥️ Sistema detectado: ${isMac ? 'macOS' : 'Windows/Linux'}`;
+        helpText += `\n🖥️ Sistema detectado: ${isMac ? 'macOS (⌘ = Cmd, ⌥ = Option)' : 'Windows/Linux'}`;
 
         // Usar el sistema de popup mejorado
         mostrarAlerta(helpText);

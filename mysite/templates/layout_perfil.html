@@ -497,7 +497,7 @@
             <div class="shortcuts-footer">
                 Presiona <kbd>F1</kbd> en cualquier momento para ver esta ayuda • <kbd>Esc</kbd> para cerrar
                 <br>
-                <small>Atajos: <span id="mod-key-hint"><kbd>Alt</kbd></span> en Windows/Linux • <kbd>⌘ Cmd</kbd> en
+                <small>Atajos: <span id="mod-key-hint"><kbd>Alt</kbd></span> en Windows/Linux • <kbd>⌥ Option</kbd> en
                     macOS</small>
             </div>
         </div>
@@ -797,15 +797,14 @@
 
             // Detectar si estamos en macOS
             const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-            const modifierKey = isMac ? 'metaKey' : 'altKey'; // Cmd en Mac, Alt en Windows/Linux
 
             document.addEventListener('keydown', function (e) {
                 // Solo activar si no estamos escribiendo en un input/textarea
                 const isTyping = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
                 if (isTyping) return;
 
-                // Verificar tecla modificadora (Cmd en Mac, Alt en Windows/Linux)
-                const modPressed = isMac ? e.metaKey : e.altKey;
+                // Verificar tecla modificadora (Option/Alt en todas las plataformas)
+                const modPressed = e.altKey;
 
                 // Cmd/Alt + H: Ir al Dashboard (Home)
                 if (modPressed && e.key === 'h') {
@@ -879,18 +878,17 @@
             // Actualizar teclas del modal según sistema operativo
             if (shortcutsModal) {
                 if (isMac) {
-                    // Reemplazar todos los <kbd>Alt</kbd> por <kbd>Cmd</kbd>
+                    // Reemplazar todos los <kbd>Alt</kbd> por <kbd>⌥ Option</kbd>
                     const kbdElements = shortcutsModal.querySelectorAll('.shortcuts-body kbd');
                     kbdElements.forEach(kbd => {
                         if (kbd.textContent === 'Alt') {
-                            kbd.textContent = 'Cmd';
-                            kbd.innerHTML = '⌘'; // Símbolo de Command
+                            kbd.innerHTML = '⌥'; // Símbolo de Option
                         }
                     });
                     // Actualizar el hint del footer
                     const modKeyHint = document.getElementById('mod-key-hint');
                     if (modKeyHint) {
-                        modKeyHint.innerHTML = '<kbd>⌘ Cmd</kbd>';
+                        modKeyHint.innerHTML = '<kbd>⌥ Option</kbd>';
                     }
                 } else {
                     // En Windows/Linux, asegurarnos de que muestre Alt
