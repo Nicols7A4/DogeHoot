@@ -261,6 +261,112 @@
 
     </footer>
 
+    <!-- Modal de Atajos de Teclado (F1) -->
+    <div id="keyboard-shortcuts-modal" class="keyboard-shortcuts-modal">
+        <div class="shortcuts-content">
+            <div class="shortcuts-header">
+                <h2>Atajos de Teclado</h2>
+                <button class="shortcuts-close" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="shortcuts-body">
+                <div class="shortcuts-section">
+                    <h3>🧭 Navegación Global</h3>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Ir al Dashboard</span>
+                        <div class="shortcut-keys">
+                            <kbd>Alt</kbd><kbd>H</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Abrir menú de usuario</span>
+                        <div class="shortcut-keys">
+                            <kbd>Alt</kbd><kbd>U</kbd>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="shortcuts-section">
+                    <h3>📱 Navegación Rápida</h3>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Ir a Inicio</span>
+                        <div class="shortcut-keys">
+                            <kbd>Alt</kbd><kbd>1</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Ir a Explorar</span>
+                        <div class="shortcut-keys">
+                            <kbd>Alt</kbd><kbd>2</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Ir a Marketplace</span>
+                        <div class="shortcut-keys">
+                            <kbd>Alt</kbd><kbd>3</kbd>
+                        </div>
+                    </div>
+                    {% if tipo_usuario == 'P' %}
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Ir a Mis Cuestionarios</span>
+                        <div class="shortcut-keys">
+                            <kbd>Alt</kbd><kbd>4</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Ir a Mis Partidas</span>
+                        <div class="shortcut-keys">
+                            <kbd>Alt</kbd><kbd>5</kbd>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="shortcuts-section">
+                    <h3>⌨️ Menú de Usuario</h3>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Navegar hacia abajo</span>
+                        <div class="shortcut-keys">
+                            <kbd>↓</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Navegar hacia arriba</span>
+                        <div class="shortcut-keys">
+                            <kbd>↑</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Ir al primer elemento</span>
+                        <div class="shortcut-keys">
+                            <kbd>Home</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Ir al último elemento</span>
+                        <div class="shortcut-keys">
+                            <kbd>End</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Cerrar menú</span>
+                        <div class="shortcut-keys">
+                            <kbd>Esc</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-description">Seleccionar opción</span>
+                        <div class="shortcut-keys">
+                            <kbd>Enter</kbd> o <kbd>Espacio</kbd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="shortcuts-footer">
+                Presiona <kbd>F1</kbd> en cualquier momento para ver esta ayuda • <kbd>Esc</kbd> para cerrar
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // --- Lógica del Modal de Mensajes ---
@@ -471,6 +577,54 @@
                 }
                 {% endif %}
             });
+
+            // ==========================================
+            // === MODAL DE ATAJOS DE TECLADO (F1) ===
+            // ==========================================
+            const shortcutsModal = document.getElementById('keyboard-shortcuts-modal');
+            const shortcutsCloseBtn = shortcutsModal?.querySelector('.shortcuts-close');
+
+            function openShortcutsModal() {
+                if (shortcutsModal) {
+                    shortcutsModal.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+
+            function closeShortcutsModal() {
+                if (shortcutsModal) {
+                    shortcutsModal.classList.remove('show');
+                    document.body.style.overflow = '';
+                }
+            }
+
+            // F1: Abrir modal de atajos
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'F1') {
+                    e.preventDefault();
+                    openShortcutsModal();
+                }
+
+                // Escape: Cerrar modal si está abierto
+                if (e.key === 'Escape' && shortcutsModal?.classList.contains('show')) {
+                    e.preventDefault();
+                    closeShortcutsModal();
+                }
+            });
+
+            // Cerrar modal al hacer clic en el botón de cerrar
+            if (shortcutsCloseBtn) {
+                shortcutsCloseBtn.addEventListener('click', closeShortcutsModal);
+            }
+
+            // Cerrar modal al hacer clic fuera del contenido
+            if (shortcutsModal) {
+                shortcutsModal.addEventListener('click', (e) => {
+                    if (e.target === shortcutsModal) {
+                        closeShortcutsModal();
+                    }
+                });
+            }
         });
     </script>
 

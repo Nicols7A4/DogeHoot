@@ -1050,7 +1050,7 @@
             display: none !important;
         }
 
-        /* También ocultar el botón de ayuda F1 en móvil */
+        /* También ocultar el botón de ayuda de atajos en móvil */
         .bottom-action-bar button[onclick="mostrarAyudaAtajos()"] {
             display: none !important;
         }
@@ -1232,10 +1232,10 @@
 <div class="editor-container {% if modo_visualizacion %}modo-visualizacion{% endif %}">
     <div class="topbar-tabs">
         <button id="tab-general" class="tab-btn active" type="button">
-            Datos generales <kbd>Alt+1</kbd>
+            Datos generales <kbd>Alt+A</kbd>
         </button>
         <button id="tab-preguntas" class="tab-btn" type="button">
-            Preguntas y respuestas <kbd>Alt+2</kbd>
+            Preguntas y respuestas <kbd>Alt+D</kbd>
         </button>
     </div>
 
@@ -1381,7 +1381,7 @@
         Cancelar <kbd>Ctrl+Z</kbd>
     </button>
     <button class="btn btn-secondary" onclick="mostrarAyudaAtajos()" title="Ver todos los atajos de teclado">
-        <i class="fas fa-keyboard"></i> <kbd>F1</kbd>
+        <i class="fas fa-keyboard"></i> <kbd>?</kbd>
     </button>
     {% else %}
     <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Ir al Dashboard</a>
@@ -1992,7 +1992,7 @@
         },
         // Navegación entre vistas
         viewGeneral: {
-            keys: ['Alt+1'],
+            keys: ['Alt+a'],
             description: 'Vista General',
             action: () => {
                 switchView('general');
@@ -2001,7 +2001,7 @@
             }
         },
         viewPreguntas: {
-            keys: ['Alt+2'],
+            keys: ['Alt+d'],
             description: 'Vista Preguntas',
             action: () => {
                 switchView('preguntas');
@@ -2081,7 +2081,7 @@
         },
         // Utilidades
         help: {
-            keys: ['F1', '?'],
+            keys: ['?'],
             description: 'Mostrar ayuda de atajos',
             action: () => {
                 mostrarAyudaAtajos();
@@ -2139,7 +2139,6 @@
                 // Casos especiales sin modificadores
                 if (keyCombo === 'Escape') return e.key === 'Escape';
                 if (keyCombo === '?') return e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey;
-                if (keyCombo === 'F1') return e.key === 'F1';
                 if (keyCombo === 'Delete') return e.key === 'Delete' && !e.ctrlKey && !e.metaKey && !e.altKey;
 
                 // Atajos con modificadores
