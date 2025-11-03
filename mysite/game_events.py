@@ -1,5 +1,5 @@
 # game_events.py, url_for
-from flask import session, url_for
+from flask import session, url_for, request
 from flask_socketio import join_room, leave_room, emit
 from main import socketio, app # Importamos app para usar 'with app.app_context()'
 import time
@@ -76,13 +76,22 @@ def al_unirse_jugador(data):
     if not pin: return
     join_room(pin)
 
-    # --- ¡CAMBIO CLAVE! ---
+    # --- VALIDACIÓN: Verificar que la partida no esté finalizada ---
+    partida_db = ctrl_partidas.obtener_partida_por_pin(pin)
+    if not partida_db:
+        socketio.emit('error_partida', {
+            'mensaje': 'El código de sesión no es válido.'
+        }, room=request.sid)
+        return
+    
+    if partida_db.get('estado') == 'FINALIZADA':
+        socketio.emit('error_partida', {
+            'mensaje': 'Esta partida ya ha finalizado. No puedes unirte.'
+        }, room=request.sid)
+        return
+
     # Si la partida no está en memoria (jugador llegó antes), la cargamos de la BD
     if pin not in partidas_en_juego:
-        partida_db = ctrl_partidas.obtener_partida_por_pin(pin)
-        if not partida_db: 
-            return # El PIN es inválido
-
         # Inicializamos la partida en memoria (igual que en 'al_iniciar_panel')
         grupos = []
         if partida_db['modalidad']:
@@ -106,9 +115,20 @@ def al_unirse_jugador(data):
             "grupos": grupos,
             "participantes_sin_grupo": []
         }
-    # --- FIN DEL CAMBIO ---
 
     partida = partidas_en_juego[pin]
+    
+    # --- VALIDACIÓN: Verificar si el id_usuario ya existe en la partida ---
+    if id_usuario:  # Solo validar si el usuario está logueado
+        for participante_nombre, participante_data in partida['participantes'].items():
+            if participante_data.get('id_usuario') == id_usuario:
+                # El usuario ya está en la partida, no lo agregamos de nuevo
+                # Solo actualizamos su sesión/room
+                socketio.emit('ya_en_partida', {
+                    'mensaje': 'Ya estás en esta partida.',
+                    'nombre': participante_nombre
+                }, room=request.sid)
+                return
     
     # El resto de la lógica para añadir al jugador no cambia...
     jugador_ya_existe = nombre_usuario in partida['participantes']
@@ -190,6 +210,13 @@ def al_iniciar_juego(data):
     
     partida = partidas_en_juego[pin]
     if partida['estado'] != 'E':
+        return
+
+    # --- VALIDACIÓN: Verificar que el cuestionario tenga preguntas ---
+    if not partida.get('preguntas_data') or len(partida['preguntas_data']) == 0:
+        socketio.emit('error_juego', {
+            'mensaje': 'Este cuestionario no tiene preguntas. No se puede iniciar el juego.'
+        }, room=pin, namespace='/')
         return
 
     # --- BLOQUE DEL BUG ELIMINADO ---

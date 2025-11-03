@@ -1,5 +1,10 @@
 {% extends "layout.html" %}
+{% block title %}Mis Partidas{% endblock %}
 
+{% block breadcrumb %}
+    <li><a href="{{ url_for('dashboard') }}">Inicio</a></li>
+    <li class="active">Mis Partidas</li>
+{% endblock %}
 {% block head %}
 {{ super() }}
 <style>

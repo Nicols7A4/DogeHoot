@@ -2,6 +2,11 @@
 
 {% block title %}Tienda de Skins{% endblock %}
 
+{% block breadcrumb %}
+    <li><a href="{{ url_for('dashboard') }}">Inicio</a></li>
+    <li class="active">Tienda</li>
+{% endblock %}
+
 {% block head %}
 {{ super() }}
 <style>

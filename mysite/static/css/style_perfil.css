@@ -380,27 +380,185 @@ button.failed:hover { border-color: var(--btn-failed-text); }
 /* Menú de perfil (compartido) */
 .perfil-wrap { position: relative; }
 .menu-perfil {
-    position: absolute; top: calc(100% + 10px); right: 0; width: 220px;
-    background: var(--panel-bg); border-radius: 12px; border: 1px solid var(--border-soft);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1); padding: 8px; z-index: 300;
-    display: flex; flex-direction: column; gap: 5px; opacity: 0;
-    transform: translateY(10px); transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+    position: absolute; 
+    top: calc(100% + 12px); 
+    right: 0; 
+    min-width: 240px;
+    background: var(--panel-bg); 
+    border-radius: var(--btn-radius); 
+    border: 0.5px solid var(--border-soft);
+    box-shadow: var(--panel-shadow);
+    padding: 10px; 
+    z-index: 1000;
+    display: flex; 
+    flex-direction: column; 
+    gap: var(--btn-gap); 
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95); 
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    transform-origin: top right;
+}
+
+.menu-perfil.is-open { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+    pointer-events: auto; 
+}
+
+.menu-perfil__header { 
+    padding: 16px; 
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid rgba(224, 224, 224, 0.5);
+}
+
+.menu-perfil__avatar-wrapper {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+}
+
+.menu-perfil__avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.menu-perfil__marco {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 115%;
+    height: 115%;
+    border-radius: 50%;
+    object-fit: contain;
     pointer-events: none;
 }
-.menu-perfil.is-open { opacity: 1; transform: translateY(0); pointer-events: auto; }
-.menu-perfil__header { padding: 10px 12px; font-size: 13px; color: var(--text-muted); line-height: 1.4; }
-.menu-perfil__header strong { font-size: 14px; color: var(--text-color); }
-.menu-sep { height: 1px; background: var(--border-soft); margin: 4px 0; }
-.menu-item {
-    display: flex; align-items: center; gap: 10px; width: 100%;
-    padding: 10px 12px; border-radius: 8px; border: none; background: transparent;
-    cursor: pointer; text-align: left; font-size: 14px; font-weight: 500;
-    color: var(--text-color); transition: background-color 0.2s ease, color 0.2s ease;
+
+.menu-perfil__info {
+    flex: 1;
+    min-width: 0;
 }
-.menu-item svg { color: var(--text-muted); transition: color 0.2s ease; }
-.menu-item:hover { background-color: #f5f5f5; }
-.menu-item.danger:hover { background-color: var(--btn-failed-bg); color: var(--btn-failed-text); }
-.menu-item.danger:hover svg { color: var(--btn-failed-text); }
+
+.menu-perfil__label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.menu-perfil__nombre { 
+    font-size: 1rem; 
+    color: var(--text-color);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.menu-perfil__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    background: #F5F5F5;
+    color: #6c757d;
+    border-radius: 12px;
+    margin-top: 4px;
+    border: 1px solid #E0E0E0;
+}
+
+.menu-perfil__badge svg {
+    width: 13px;
+    height: 13px;
+}
+
+.menu-sep { 
+    height: 1px; 
+    background: var(--border-soft);
+    border: none;
+    margin: 4px 0; 
+}
+
+.menu-item {
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    width: 100%;
+    padding: var(--btn-padding-y) var(--btn-padding-x); 
+    border-radius: var(--btn-radius); 
+    border: 2px solid transparent; 
+    background: var(--btn-inprogress-bg);
+    color: var(--btn-inprogress-text);
+    cursor: pointer; 
+    text-align: left; 
+    font-size: var(--btn-font-size); 
+    font-weight: bold;
+    box-shadow: var(--btn-shadow);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.menu-item svg { 
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.menu-item:hover { 
+    transform: translateY(-2px);
+    box-shadow: var(--btn-hover-shadow);
+    border-color: var(--btn-inprogress-text);
+}
+
+.menu-item:hover svg { 
+    transform: scale(1.1) rotate(6deg);
+}
+
+.menu-item:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* Botón de Ayuda con estilo submitted (morado) */
+.menu-item[data-action="ayuda"] {
+    background: var(--btn-submitted-bg);
+    color: var(--btn-submitted-text);
+}
+
+.menu-item[data-action="ayuda"]:hover {
+    border-color: var(--btn-submitted-text);
+}
+
+/* Botón de Cerrar Sesión con estilo danger (rojo) */
+.menu-item.danger {
+    background: var(--btn-failed-bg);
+    color: var(--btn-failed-text);
+}
+
+.menu-item.danger:hover { 
+    border-color: var(--btn-failed-text);
+}
+
+.menu-item.danger:hover svg {
+    transform: scale(1.1) rotate(-6deg);
+}
 
 /* Avatar + Marco (base, móvil y desktop) */
 /* Asegura que el marco se centre y superponga perfectamente al avatar */
@@ -694,3 +852,65 @@ button.failed:hover { border-color: var(--btn-failed-text); }
     .delete-account-container { grid-template-columns: 1fr 1.2fr; }
 }
 /* (Reglas duplicadas removidas para evitar conflicto) */
+
+/* ======================================= */
+/* ESTILOS PARA LA BARRA DE NAVEGACIÓN (BREADCRUMBS) */
+/* ======================================= */
+.breadcrumb-nav {
+    padding: 0.75rem 1rem;
+    margin: 0.5rem 0 0.5rem 0; /* Ajustado para el layout de perfil */
+    background: var(--panel-bg, #FFFFFF);
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid var(--border-soft, #E0E0E0);
+    box-shadow: var(--panel-shadow, 0 4px 14px rgba(0, 0, 0, 0.05));
+    flex-shrink: 0; 
+}
+
+/* En móvil, lo movemos dentro del dashboard */
+@media (max-width: 1023px) {
+    .breadcrumb-nav {
+        margin: 0 0 1rem 0;
+        border-radius: 12px;
+    }
+}
+
+.breadcrumb-list {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.breadcrumb-list li {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* El separador '>' */
+.breadcrumb-list li + li::before {
+    content: '>'; /* <-- ¡Usamos el '>' como definimos! */
+    display: inline-block;
+    padding: 0 0.6rem;
+    color: var(--text-muted, #6c757d);
+    font-weight: 400;
+}
+
+/* Enlaces (páginas anteriores) */
+.breadcrumb-list li a {
+    color: var(--btn-inprogress-text, #1E88E5);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+.breadcrumb-list li a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Página actual (último item) */
+.breadcrumb-list li.active {
+    color: var(--text-muted, #6c757d);
+    font-weight: 500;
+}

@@ -2,6 +2,13 @@
 
 {% block title %}Cambiar Contraseña{% endblock %}
 
+{% block breadcrumb %}
+    <li><a href="{{ url_for('dashboard') }}">Inicio</a></li>
+    <li><a href="{{ url_for('usuario_perfil') }}">Mi Perfil</a></li>
+    <li class="active">Contraseña</li>
+{% endblock %}
+
+
 {% block head %}
     {{ super() }} <link rel="stylesheet" href="{{ url_for('static', filename='css/password.css') }}">
 {% endblock %}

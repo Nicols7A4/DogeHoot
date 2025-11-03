@@ -32,19 +32,48 @@ def verificar_partida_activa(id_cuestionario):
             conexion.close()
 
 
-def crear_partida(id_cuestionario, modalidad_grupal=False, cant_grupos=None):
+def crear_partida(id_cuestionario, modalidad_grupal=False, cant_grupos=None, id_usuario_anfitrion=None):
     """
     Crea una nueva partida, guardando la cantidad de grupos si es necesario.
     Devuelve (True, pin) en caso de éxito, o (False, "mensaje de error").
+    
+    Args:
+        id_cuestionario: ID del cuestionario
+        modalidad_grupal: Boolean, True si es modo grupal
+        cant_grupos: Número de grupos (solo para modo grupal)
+        id_usuario_anfitrion: ID del usuario que lanza la partida
     """
-    # 1. Verificamos que no haya otra partida en curso
+    # 0. Validar que id_usuario_anfitrion no sea None
+    if id_usuario_anfitrion is None:
+        return False, "Error: se requiere un usuario anfitrión para crear la partida."
+    
+    # 1. Validar que el cuestionario existe y está publicado
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                SELECT id_cuestionario, vigente 
+                FROM CUESTIONARIO 
+                WHERE id_cuestionario = %s
+            """, (id_cuestionario,))
+            cuestionario = cursor.fetchone()
+            
+            if not cuestionario:
+                return False, "El cuestionario seleccionado no existe."
+            
+            if cuestionario['vigente'] != 1:  # vigente != 1
+                return False, "El cuestionario no está publicado. Publícalo antes de crear una partida."
+    finally:
+        conexion.close()
+    
+    # 2. Verificamos que no haya otra partida en curso
     if verificar_partida_activa(id_cuestionario):
         return False, "Ya existe una partida activa para este cuestionario. Finalízala antes de crear una nueva."
 
     conexion = obtener_conexion()
     try:
         with conexion.cursor() as cursor:
-            # 2. Generamos un PIN único
+            # 3. Generamos un PIN único
             pin = _generar_pin()
             while True:
                 cursor.execute("SELECT id_partida FROM PARTIDA WHERE pin = %s", (pin,))
@@ -52,17 +81,16 @@ def crear_partida(id_cuestionario, modalidad_grupal=False, cant_grupos=None):
                     break
                 pin = _generar_pin()
 
-            # --- ¡CAMBIOS AQUÍ! ---
-            # 3. Insertamos la nueva partida, incluyendo cant_grupos
+            # 4. Insertamos la nueva partida, incluyendo cant_grupos y id_usuario_anfitrion
             sql = """
-                INSERT INTO PARTIDA (pin, id_cuestionario, modalidad, estado, fecha_hora_inicio, fecha_hora_fin, cant_grupos)
-                VALUES (%s, %s, %s, 'E', %s, NULL, %s)
+                INSERT INTO PARTIDA (pin, id_cuestionario, id_usuario_anfitrion, modalidad, estado, fecha_hora_inicio, fecha_hora_fin, cant_grupos)
+                VALUES (%s, %s, %s, %s, 'E', %s, NULL, %s)
             """
 
             # Si la modalidad no es grupal, nos aseguramos de que cant_grupos sea NULL
             grupos_para_db = cant_grupos if modalidad_grupal else None
 
-            cursor.execute(sql, (pin, id_cuestionario, modalidad_grupal, datetime.now(), grupos_para_db))
+            cursor.execute(sql, (pin, id_cuestionario, id_usuario_anfitrion, modalidad_grupal, datetime.now(), grupos_para_db))
 
         conexion.commit()
         return True, pin
@@ -78,23 +106,25 @@ def crear_partida(id_cuestionario, modalidad_grupal=False, cant_grupos=None):
 def obtener_partidas_por_usuario(id_usuario):
     """
     Obtiene una lista de todas las partidas (activas y finalizadas)
-    de los cuestionarios que pertenecen a un usuario.
+    donde el usuario es el anfitrión (lanzó la partida) O es el creador del cuestionario.
     """
     conexion = obtener_conexion()
     partidas = []
     try:
         with conexion.cursor() as cursor:
-            # Hacemos un JOIN para vincular Partida -> Cuestionario -> Usuario
+            # Obtenemos partidas donde el usuario es anfitrión O creador del cuestionario
             sql = """
-                SELECT
+                SELECT DISTINCT
                     P.id_partida, P.pin, P.estado, P.fecha_hora_inicio, P.modalidad,
-                    C.titulo AS cuestionario_titulo
+                    C.titulo AS cuestionario_titulo,
+                    P.id_usuario_anfitrion,
+                    C.id_usuario AS id_creador_cuestionario
                 FROM PARTIDA AS P
                 JOIN CUESTIONARIO AS C ON P.id_cuestionario = C.id_cuestionario
-                WHERE C.id_usuario = %s
+                WHERE P.id_usuario_anfitrion = %s OR C.id_usuario = %s
                 ORDER BY P.fecha_hora_inicio DESC
             """
-            cursor.execute(sql, (id_usuario,))
+            cursor.execute(sql, (id_usuario, id_usuario))
             partidas = cursor.fetchall()
     finally:
         if conexion:

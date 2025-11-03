@@ -301,15 +301,19 @@ def dashboard():
     # 2. Obtiene el ID del usuario de la sesión
     id_usuario_actual = session['user_id']
 
-    # 3. Llama al controlador para obtener solo los cuestionarios de ese usuario
-    mis_cuestionarios = cc.obtener_con_filtros(id_usuario=id_usuario_actual)
+    # 3. Obtiene los cuestionarios MÁS JUGADOS (excluyendo los del usuario actual)
+    cuestionarios_populares = cc.obtener_mas_jugados(limite=9, excluir_usuario=id_usuario_actual)
 
-    # 4. Pasa la lista de cuestionarios a la plantilla
+    # 4. Obtiene todas las categorías para el filtro
+    categorias = ctrl_cat.obtener_todas()
+
+    # 5. Pasa los datos a la plantilla
     return render_template(
         'dashboard.html',
         nombre_usuario=session['nombre_usuario'],
         tipo_usuario=session['tipo_usuario'],
-        cuestionarios=mis_cuestionarios  # ¡Aquí van los datos!
+        cuestionarios=cuestionarios_populares,
+        categorias=categorias
     )
 
 
@@ -345,7 +349,8 @@ def cuestionarios_nuevo():
         nombre_usuario=session.get('nombre_usuario'), # Usamos .get() por seguridad
         tipo_usuario=session['tipo_usuario'],
         cuestionario_data=None, # Indicador de que es nuevo
-        categorias=categorias
+        categorias=categorias,
+        modo='nuevo'
     )
 
 
@@ -376,10 +381,57 @@ def cuestionarios_editar(id_cuestionario):
 
 @app.route("/cuestionarios/explorar")
 def cuestionarios_explorar():
-    return "/cuestionarios/explorar"
+    if 'user_id' not in session:
+        return redirect(url_for('auth'))
+    
+    id_usuario_actual = session['user_id']
+    
+    # Obtener todos los cuestionarios públicos (excluyendo los del usuario)
+    todos_cuestionarios = cc.obtener_publicos(excluir_usuario=id_usuario_actual)
+    
+    # Obtener categorías para filtros
+    categorias = ctrl_cat.obtener_todas()
+    
+    return render_template(
+        'explorar.html',
+        nombre_usuario=session['nombre_usuario'],
+        tipo_usuario=session['tipo_usuario'],
+        cuestionarios=todos_cuestionarios,
+        categorias=categorias
+    )
 
 
 @app.route("/reportes")
+
+
+@app.route('/cuestionarios/clonar/<int:id_cuestionario>', methods=['POST'])
+def clonar_cuestionario(id_cuestionario):
+    """Clona un cuestionario público para el usuario actual"""
+    print(f"[DEBUG CLONAR] Ruta llamada con id_cuestionario={id_cuestionario}")
+    print(f"[DEBUG CLONAR] Método: {request.method}")
+    print(f"[DEBUG CLONAR] Session: {session.get('user_id')}")
+    
+    if 'user_id' not in session:
+        flash('Debes iniciar sesión para clonar cuestionarios.', 'warning')
+        return redirect(url_for('auth'))
+    
+    id_usuario = session['user_id']
+    print(f"[DEBUG CLONAR] ID Usuario: {id_usuario}")
+    
+    # Llamar al controlador para clonar
+    exito, resultado = cc.clonar_cuestionario(id_cuestionario, id_usuario)
+    
+    print(f"[DEBUG CLONAR] Resultado: exito={exito}, resultado={resultado}")
+    
+    if exito:
+        flash(f'¡Cuestionario clonado exitosamente! Ahora puedes editarlo en "Mis Cuestionarios".', 'success')
+        return redirect(url_for('cuestionarios'))
+    else:
+        flash(resultado, 'danger')
+        return redirect(url_for('dashboard'))
+
+
+@app.route("/reportes", methods=['GET', 'POST'])
 def reportes():
     return "/reportes"
 
@@ -597,8 +649,13 @@ def lanzar_partida():
 
     es_grupal = (modalidad == 'grupal')
 
-    # Llamamos al controlador para crear la partida en la BD
-    exito, resultado = ctrl_partidas.crear_partida(id_cuestionario, es_grupal, cant_grupos)
+    # Llamamos al controlador para crear la partida en la BD, pasando el ID del usuario que la lanza
+    exito, resultado = ctrl_partidas.crear_partida(
+        id_cuestionario, 
+        es_grupal, 
+        cant_grupos,
+        id_usuario_anfitrion=session['user_id']  # Usuario que lanza la partida
+    )
 
     if exito:
         pin_de_juego = resultado
@@ -632,6 +689,16 @@ def lobby(pin):
     if 'user_id' not in session:
         # Podrías permitir invitados, pero por ahora requerimos sesión
         return redirect(url_for('auth'))
+
+    # Verificar que la partida existe y no está finalizada
+    partida = ctrl_partidas.obtener_partida_por_pin(pin)
+    if not partida:
+        flash('El código de sesión no es válido.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    if partida.get('estado') == 'FINALIZADA':
+        flash('Esta partida ya ha finalizado. No puedes unirte.', 'warning')
+        return redirect(url_for('dashboard'))
 
     return render_template('partida/lobby_participante.html', pin=pin)
     # return render_template('juego_participante.html', pin=pin)

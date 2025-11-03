@@ -85,7 +85,92 @@ def obtener_con_filtros(id_usuario=None, id_categoria=None, es_publico=None):
                 query += " AND es_publico = %s"
                 params.append(es_publico)
 
+            query += " ORDER BY CU.fecha_hora_creacion DESC"
+
             cursor.execute(query, tuple(params))
+            cuestionarios = cursor.fetchall()
+    finally:
+        if conexion:
+            conexion.close()
+    return cuestionarios
+
+
+def obtener_mas_jugados(limite=9, excluir_usuario=None):
+    """
+    Obtiene los cuestionarios más jugados basado en el número de partidas.
+    
+    Args:
+        limite: Número máximo de cuestionarios a devolver
+        excluir_usuario: ID del usuario cuyos cuestionarios se excluirán
+    
+    Returns:
+        Lista de cuestionarios ordenados por popularidad
+    """
+    conexion = obtener_conexion()
+    cuestionarios = []
+    try:
+        with conexion.cursor() as cursor:
+            query = """
+                SELECT CU.*, CA.categoria, U.nombre_usuario, COUNT(P.id_partida) as num_partidas
+                FROM CUESTIONARIO CU
+                JOIN CATEGORIA CA ON CA.id_categoria = CU.id_categoria
+                JOIN USUARIO U ON U.id_usuario = CU.id_usuario
+                LEFT JOIN PARTIDA P ON P.id_cuestionario = CU.id_cuestionario
+                WHERE CU.vigente = TRUE AND CU.es_publico = 1
+            """
+            params = []
+
+            if excluir_usuario:
+                query += " AND CU.id_usuario != %s"
+                params.append(excluir_usuario)
+
+            query += """
+                GROUP BY CU.id_cuestionario
+                ORDER BY num_partidas DESC, CU.fecha_hora_creacion DESC
+                LIMIT %s
+            """
+            params.append(limite)
+
+            cursor.execute(query, tuple(params))
+            cuestionarios = cursor.fetchall()
+    finally:
+        if conexion:
+            conexion.close()
+    return cuestionarios
+
+
+def obtener_publicos(id_categoria=None, excluir_usuario=None):
+    """
+    Obtiene cuestionarios públicos de todos los profesores, opcionalmente filtrados por categoría.
+    
+    Args:
+        id_categoria: Filtrar por categoría específica
+        excluir_usuario: ID del usuario cuyos cuestionarios se excluirán
+    """
+    conexion = obtener_conexion()
+    cuestionarios = []
+    try:
+        with conexion.cursor() as cursor:
+            query = """
+                SELECT CU.*, CA.categoria, U.nombre_usuario
+                FROM CUESTIONARIO CU
+                JOIN CATEGORIA CA ON CA.id_categoria = CU.id_categoria
+                JOIN USUARIO U ON U.id_usuario = CU.id_usuario
+                WHERE CU.vigente = TRUE AND CU.es_publico = 1
+            """
+            params = []
+
+            if excluir_usuario:
+                query += " AND CU.id_usuario != %s"
+                params.append(excluir_usuario)
+
+            if id_categoria:
+                query += " AND CU.id_categoria = %s"
+                params.append(id_categoria)
+
+            query += " ORDER BY CU.fecha_hora_creacion DESC"
+
+            cursor.execute(query, tuple(params) if params else ())
             cuestionarios = cursor.fetchall()
     finally:
         if conexion:
@@ -408,6 +493,114 @@ def guardar_o_actualizar_completo(data):
     except Exception as e:
         conexion.rollback()
         raise e
+    finally:
+        if conexion:
+            conexion.close()
+
+
+def clonar_cuestionario(id_cuestionario_original, id_usuario_nuevo):
+    """
+    Clona un cuestionario completo (con preguntas y opciones) para un nuevo usuario.
+    El cuestionario clonado se crea como NO público (vigente=0) por defecto.
+    
+    Args:
+        id_cuestionario_original: ID del cuestionario a clonar
+        id_usuario_nuevo: ID del usuario que clonará el cuestionario
+    
+    Returns:
+        tuple: (success: bool, result: int|str) 
+               - Si tiene éxito: (True, id_cuestionario_nuevo)
+               - Si falla: (False, mensaje_error)
+    """
+    print(f"[CONTROLADOR CLONAR] Iniciando clonación: cuestionario={id_cuestionario_original}, usuario={id_usuario_nuevo}")
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            # 1. Obtener datos del cuestionario original Y verificar que no sea el mismo creador
+            cursor.execute("""
+                SELECT titulo, descripcion, id_categoria, id_usuario
+                FROM CUESTIONARIO
+                WHERE id_cuestionario = %s
+            """, (id_cuestionario_original,))
+            cuestionario_orig = cursor.fetchone()
+            
+            print(f"[CONTROLADOR CLONAR] Cuestionario encontrado: {cuestionario_orig}")
+            
+            if not cuestionario_orig:
+                print(f"[CONTROLADOR CLONAR] ERROR: Cuestionario no existe")
+                return False, "El cuestionario no existe o no está disponible."
+            
+            # 2. Verificar que el usuario no sea el mismo creador
+            if cuestionario_orig['id_usuario'] == id_usuario_nuevo:
+                print(f"[CONTROLADOR CLONAR] ERROR: Usuario intenta clonar su propio cuestionario")
+                return False, "No puedes clonar tu propio cuestionario. Ya lo tienes en tus cuestionarios."
+            
+            # 3. Verificar que el cuestionario original esté publicado
+            cursor.execute("SELECT vigente FROM CUESTIONARIO WHERE id_cuestionario = %s", (id_cuestionario_original,))
+            estado = cursor.fetchone()
+            print(f"[CONTROLADOR CLONAR] Estado vigente: {estado}")
+            if not estado or estado['vigente'] != 1:
+                print(f"[CONTROLADOR CLONAR] ERROR: Cuestionario no está publicado")
+                return False, "Solo se pueden clonar cuestionarios publicados."
+            
+            # 4. Crear el nuevo cuestionario (vigente pero NO público por defecto)
+            nuevo_titulo = f"{cuestionario_orig['titulo']} (Copia)"
+            print(f"[CONTROLADOR CLONAR] Creando nuevo cuestionario: {nuevo_titulo}")
+            cursor.execute("""
+                INSERT INTO CUESTIONARIO (titulo, descripcion, es_publico, fecha_hora_creacion, 
+                                         id_usuario, id_categoria, id_cuestionario_original, vigente)
+                VALUES (%s, %s, 0, NOW(), %s, %s, %s, 1)
+            """, (nuevo_titulo, cuestionario_orig['descripcion'], id_usuario_nuevo, 
+                  cuestionario_orig['id_categoria'], id_cuestionario_original))
+            
+            id_cuestionario_nuevo = cursor.lastrowid
+            print(f"[CONTROLADOR CLONAR] Cuestionario creado con ID: {id_cuestionario_nuevo}")
+            
+            # 5. Clonar todas las preguntas
+            cursor.execute("""
+                SELECT id_pregunta, pregunta, num_pregunta, puntaje_base, tiempo, adjunto, vigente
+                FROM PREGUNTAS
+                WHERE id_cuestionario = %s AND vigente = 1
+                ORDER BY num_pregunta
+            """, (id_cuestionario_original,))
+            preguntas = cursor.fetchall()
+            
+            print(f"[CONTROLADOR CLONAR] Clonando {len(preguntas)} preguntas")
+            
+            for pregunta in preguntas:
+                # Insertar pregunta clonada
+                cursor.execute("""
+                    INSERT INTO PREGUNTAS (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo, adjunto, vigente)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (id_cuestionario_nuevo, pregunta['pregunta'], pregunta['num_pregunta'],
+                      pregunta['puntaje_base'], pregunta['tiempo'], pregunta['adjunto'], pregunta['vigente']))
+                
+                id_pregunta_nueva = cursor.lastrowid
+                
+                # 6. Clonar opciones de esta pregunta
+                cursor.execute("""
+                    SELECT opcion, es_correcta_bool, descripcion, adjunto, vigente
+                    FROM OPCIONES
+                    WHERE id_pregunta = %s AND vigente = 1
+                    ORDER BY id_opcion
+                """, (pregunta['id_pregunta'],))
+                opciones = cursor.fetchall()
+                
+                for opcion in opciones:
+                    cursor.execute("""
+                        INSERT INTO OPCIONES (id_pregunta, opcion, es_correcta_bool, descripcion, adjunto, vigente)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (id_pregunta_nueva, opcion['opcion'], opcion['es_correcta_bool'], 
+                          opcion['descripcion'], opcion['adjunto'], opcion['vigente']))
+        
+        conexion.commit()
+        print(f"[CONTROLADOR CLONAR] ✅ Clonación exitosa! ID nuevo: {id_cuestionario_nuevo}")
+        return True, id_cuestionario_nuevo
+        
+    except Exception as e:
+        conexion.rollback()
+        print(f"[CONTROLADOR CLONAR] ❌ Error: {e}")
+        return False, f"Error al clonar el cuestionario: {str(e)}"
     finally:
         if conexion:
             conexion.close()
