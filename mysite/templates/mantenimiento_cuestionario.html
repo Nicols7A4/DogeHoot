@@ -1310,7 +1310,8 @@
                             <kbd>Ctrl+Q</kbd></button>
                         <!-- Test de botón importar -->
                         <button class="btn btn-importar btn-sm" id="btn-abrir-modal-importar" type="button">
-                            <i class="fas fa-file-import"></i> Importar Preguntas <kbd id="import-shortcut-key">Ctrl+I</kbd>
+                            <i class="fas fa-file-import"></i> Importar Preguntas <kbd
+                                id="import-shortcut-key">Ctrl+I</kbd>
                         </button>
                     </div>
                     {% endif %}
@@ -1636,7 +1637,7 @@
             title.textContent = texto; card.appendChild(title);
             if (!MODO_VISUALIZACION) {
                 const row = document.createElement('div'); row.className = 'slide-row';
-                const del = document.createElement('button'); del.className = 'iconbtn'; 
+                const del = document.createElement('button'); del.className = 'iconbtn';
                 del.textContent = 'Eliminar';
                 del.title = 'Eliminar pregunta (Delete)';
                 del.onclick = async (ev) => { ev.stopPropagation(); if (await mostrarConfirmacion("¿Seguro que desea quitar esta pregunta?")) { cuestionarioData.preguntas.splice(i, 1); if (currentIndex >= cuestionarioData.preguntas.length) currentIndex = Math.max(0, cuestionarioData.preguntas.length - 1); onAnyChange(); renderQuestionsUI(true); } };
@@ -1904,7 +1905,7 @@
 
     // ✅ Detectar sistema operativo para atajos multiplataforma
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-    
+
     // ✅ Actualizar visualización de teclas según el sistema operativo
     document.addEventListener('DOMContentLoaded', () => {
         if (isMac) {
@@ -1913,7 +1914,7 @@
             if (importShortcut) {
                 importShortcut.textContent = '⌘I';
             }
-            
+
             // Actualizar otros atajos visuales en la interfaz
             document.querySelectorAll('kbd').forEach(kbd => {
                 const text = kbd.textContent;
@@ -1923,7 +1924,7 @@
                     kbd.textContent = text.replace('Alt+', '⌥');
                 }
             });
-            
+
             // Observer para actualizar dinámicamente los botones que se crean después
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
@@ -1943,7 +1944,7 @@
                     });
                 });
             });
-            
+
             // Observar cambios en el body
             observer.observe(document.body, {
                 childList: true,
@@ -2147,7 +2148,7 @@
     function mostrarAyudaAtajos() {
         const ctrlKey = isMac ? '⌘' : 'Ctrl';
         const altKey = isMac ? '⌥' : 'Alt';
-        
+
         let helpText = '⌨️ ATAJOS DE TECLADO DISPONIBLES\n\n';
 
         const categorias = {
@@ -2164,8 +2165,8 @@
                     // Tomar solo la primera key y adaptarla al sistema
                     let keysStr = shortcut.keys[0];
                     keysStr = keysStr.replace('Ctrl+', ctrlKey + '+')
-                                     .replace('Meta+', ctrlKey + '+')
-                                     .replace('Alt+', altKey + '+');
+                        .replace('Meta+', ctrlKey + '+')
+                        .replace('Alt+', altKey + '+');
                     helpText += `  ${keysStr.padEnd(30)} → ${shortcut.description}\n`;
                 }
             });
