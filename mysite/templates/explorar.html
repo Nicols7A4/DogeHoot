@@ -2,6 +2,13 @@
 
 {% block title %}Explorar Cuestionarios - DogeHoot{% endblock %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item">
+    <a href="{{ url_for('dashboard') }}">Inicio</a>
+</li>
+<li class="breadcrumb-item active" aria-current="page">Explorar</li>
+{% endblock %}
+
 {% block content %}
 
 <!-- Sección: Categorías -->
