@@ -633,3 +633,58 @@ body {
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     }
 }
+
+/* --- ESTILOS PARA LA BARRA DE NAVEGACIÓN (BREADCRUMBS) --- */
+.breadcrumb-nav {
+  /* Posición: Justo debajo del nav superior, pero fuera del 'dashboard' con scroll */
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0 0.5rem 0; /* Espaciado (top, horizontal, bottom, horizontal) */
+  background: var(--panel-bg, #FFFFFF);
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid var(--border-soft, #E0E0E0);
+  box-shadow: var(--panel-shadow, 0 4px 14px rgba(0, 0, 0, 0.05));
+  flex-shrink: 0; /* Evita que se encoja */
+}
+
+.breadcrumb-list {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.breadcrumb-list li {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  width: auto;
+  letter-spacing: normal;
+}
+
+/* El separador '/' */
+.breadcrumb-list li + li::before {
+  content: '>';
+  display: inline-block;
+  padding: 0 0.6rem;
+  color: var(--text-muted, #6c757d);
+  font-weight: 400;
+}
+
+/* Enlaces (páginas anteriores) */
+.breadcrumb-list li a {
+  color: var(--btn-inprogress-text, #1E88E5); /* Azul de "in-progress" */
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.breadcrumb-list li a:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+/* Página actual (último item) */
+.breadcrumb-list li.active {
+  color: var(--text-muted, #6c757d);
+  font-weight: 500;
+}

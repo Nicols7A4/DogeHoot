@@ -219,6 +219,12 @@
             </div>
         </nav>
 
+        <nav aria-label="breadcrumb" class="breadcrumb-nav">
+            <ol class="breadcrumb-list">
+                {% block breadcrumb %}
+                {% endblock %}
+            </ol>
+        </nav>
         <main class="dashboard">
             <div class="contenido">
                 {% block content %}{% endblock %}

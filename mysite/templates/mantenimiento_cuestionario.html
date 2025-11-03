@@ -1,5 +1,14 @@
 {% extends "layout.html" %}
-
+{% block breadcrumb %}
+    <li><a href="{{ url_for('dashboard') }}">Inicio</a></li>
+    <li><a href="{{ url_for('cuestionarios') }}">Mis Cuestionarios</a></li>
+    
+    {% if modo == 'nuevo' %}
+        <li class="active">Agregar Cuestionario</li>
+    {% else %}
+        <li class="active">Editar Cuestionario</li>
+    {% endif %}
+{% endblock %}
 {% block head %}
 {{ super() }}
 <style>

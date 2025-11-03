@@ -345,7 +345,8 @@ def cuestionarios_nuevo():
         nombre_usuario=session.get('nombre_usuario'), # Usamos .get() por seguridad
         tipo_usuario=session['tipo_usuario'],
         cuestionario_data=None, # Indicador de que es nuevo
-        categorias=categorias
+        categorias=categorias,
+        modo='nuevo'
     )
 
 
