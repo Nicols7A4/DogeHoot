@@ -102,6 +102,54 @@ def obtener_partidas_por_usuario(id_usuario):
     return partidas
 
 
+def cancelar_partida(pin, id_usuario):
+    """
+    Cancela (elimina) una partida que esté en estado 'E' (En Espera).
+    Solo el propietario del cuestionario puede cancelar la partida.
+    
+    Retorna:
+        (True, "mensaje") si se canceló correctamente
+        (False, "mensaje de error") si no se pudo cancelar
+    """
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            # Verificar que la partida existe, está en espera y pertenece al usuario
+            sql = """
+                SELECT P.id_partida, P.estado
+                FROM PARTIDA AS P
+                JOIN CUESTIONARIO AS C ON P.id_cuestionario = C.id_cuestionario
+                WHERE P.pin = %s AND C.id_usuario = %s
+            """
+            cursor.execute(sql, (pin.upper(), id_usuario))
+            partida = cursor.fetchone()
+            
+            if not partida:
+                return False, "No se encontró la partida o no tienes permiso para cancelarla."
+            
+            id_partida, estado = partida
+            
+            if estado != 'E':
+                return False, "Solo se pueden cancelar partidas que estén en espera."
+            
+            # Eliminar participantes asociados (si los hay)
+            cursor.execute("DELETE FROM PARTICIPANTE WHERE id_partida = %s", (id_partida,))
+            
+            # Eliminar la partida
+            cursor.execute("DELETE FROM PARTIDA WHERE id_partida = %s", (id_partida,))
+            
+        conexion.commit()
+        return True, "Partida cancelada exitosamente."
+    
+    except Exception as e:
+        conexion.rollback()
+        print(f"Error al cancelar partida: {e}")
+        return False, "Ocurrió un error al cancelar la partida."
+    finally:
+        if conexion:
+            conexion.close()
+
+
 
 
 def finalizar_partida(id_partida, ranking_data=None):

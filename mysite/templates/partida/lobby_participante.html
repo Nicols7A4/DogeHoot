@@ -270,7 +270,7 @@
             margin-top: 1rem;
         }
 
-        #sin-grupo-container > div:first-of-type {
+        #sin-grupo-container>div:first-of-type {
             background: #FAFBFC;
             border-radius: var(--radius-md);
             padding: 1.25rem;
@@ -330,7 +330,7 @@
         /* ===================== */
         /* Media Queries         */
         /* ===================== */
-        
+
         /* Tablets (768px+) */
         @media (min-width: 768px) {
             body {
@@ -501,7 +501,7 @@
 
 <body>
     <div class="container">
-        <div class="screen active">
+        <div class="screen active" id="lobby-screen">
             <div class="lobby-header">Sala de Espera</div>
             <div class="lobby-subheader">PIN: <span>{{ pin }}</span></div>
             <div class="lobby-body">
@@ -679,22 +679,30 @@
                 renderLobby(data.lobby);
 
                 pollLobbyInterval = setInterval(async () => {
-                    const r = await fetch(`/api/lobby/state?pin=${encodeURIComponent(pin)}`);
-                    if (r.ok) {
-                        const l = await r.json();
-                        renderLobby(l);
+                    try {
+                        const r = await fetch(`/api/lobby/state?pin=${encodeURIComponent(pin)}`);
+                        if (r.ok) {
+                            const l = await r.json();
+                            renderLobby(l);
+                        }
+                    } catch (e) {
+                        console.error('Error en polling lobby', e);
                     }
                 }, 800);
 
                 pollStatusInterval = setInterval(async () => {
-                    const r = await fetch(`/api/game/status?pin=${encodeURIComponent(pin)}`);
-                    if (r.ok) {
-                        const s = await r.json();
-                        if (s.estado === 'J' && s.url) {
-                            clearInterval(pollLobbyInterval);
-                            clearInterval(pollStatusInterval);
-                            window.location.href = s.url;
+                    try {
+                        const r = await fetch(`/api/game/status?pin=${encodeURIComponent(pin)}`);
+                        if (r.ok) {
+                            const s = await r.json();
+                            if (s.estado === 'J' && s.url) {
+                                clearInterval(pollLobbyInterval);
+                                clearInterval(pollStatusInterval);
+                                window.location.href = s.url;
+                            }
                         }
+                    } catch (e) {
+                        console.error('Error en polling status', e);
                     }
                 }, 600);
             } catch (e) {

@@ -58,12 +58,25 @@
         cursor: pointer;
         font-size: .85rem;
         white-space: nowrap;
-        flex-shrink: 0
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .tab-btn kbd {
+        font-size: 0.65rem;
+        padding: 0.1rem 0.3rem;
+        opacity: 0.7;
     }
 
     .tab-btn.active {
         background: var(--panel-bg);
         box-shadow: var(--panel-shadow)
+    }
+
+    .tab-btn.active kbd {
+        opacity: 1;
     }
 
     .bottom-action-bar {
@@ -138,6 +151,89 @@
 
     .btn-primary:hover {
         border-color: var(--btn-inprogress-text)
+    }
+
+    /* Estilo para atajos de teclado */
+    kbd {
+        display: inline-block;
+        padding: 0.15rem 0.4rem;
+        font-size: 0.75rem;
+        font-family: 'Courier New', monospace;
+        color: #333;
+        background-color: #f4f4f4;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        margin-left: 0.3rem;
+        vertical-align: middle;
+    }
+
+    .btn kbd {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: inherit;
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-success kbd {
+        background-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Animación de pulso para feedback del atajo */
+    @keyframes pulse-save {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.3);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .btn-save-pulse {
+        animation: pulse-save 0.3s ease-in-out;
+    }
+
+    /* Tooltip para feedback de atajos */
+    .keyboard-tooltip {
+        position: fixed;
+        bottom: calc(var(--bottom-nav-height) + var(--action-bar-height) + 10px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        z-index: 9999;
+        pointer-events: none;
+        animation: fadeInOut 2s ease-in-out forwards;
+    }
+
+    @keyframes fadeInOut {
+        0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px);
+        }
+
+        10% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        90% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        100% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px);
+        }
     }
 
     .btn-outline {
@@ -948,6 +1044,18 @@
         display: block;
     }
 
+    /* Ocultar atajos de teclado en modo responsivo (móvil y tablet) */
+    @media (max-width: 1023px) {
+        kbd {
+            display: none !important;
+        }
+
+        /* También ocultar el botón de ayuda F1 en móvil */
+        .bottom-action-bar button[onclick="mostrarAyudaAtajos()"] {
+            display: none !important;
+        }
+    }
+
     /* ========== TABLET ========== */
     @media (min-width:768px) {
         .editor-container {
@@ -1123,8 +1231,12 @@
 {% block content %}
 <div class="editor-container {% if modo_visualizacion %}modo-visualizacion{% endif %}">
     <div class="topbar-tabs">
-        <button id="tab-general" class="tab-btn active" type="button">Datos generales</button>
-        <button id="tab-preguntas" class="tab-btn" type="button">Preguntas y respuestas</button>
+        <button id="tab-general" class="tab-btn active" type="button">
+            Datos generales <kbd>Alt+1</kbd>
+        </button>
+        <button id="tab-preguntas" class="tab-btn" type="button">
+            Preguntas y respuestas <kbd>Alt+2</kbd>
+        </button>
     </div>
 
     <div class="views-wrapper">
@@ -1194,7 +1306,8 @@
                     {% if not modo_visualizacion %}
                     <div style="display:flex;gap:.3rem;flex-wrap:wrap">
                         <button class="btn btn-outline btn-sm" id="btn-volver-general" type="button">Volver</button>
-                        <button class="btn btn-primary btn-sm" onclick="agregarPregunta()">Añadir</button>
+                        <button class="btn btn-primary btn-sm" onclick="agregarPregunta()">Añadir
+                            <kbd>Ctrl+Q</kbd></button>
                         <!-- Test de botón importar -->
                         <button class="btn btn-importar btn-sm" id="btn-abrir-modal-importar" type="button">Importar
                             Preguntas</button>
@@ -1261,8 +1374,15 @@
 <!-- Barra de acciones inferior -->
 <div class="bottom-action-bar">
     {% if not modo_visualizacion %}
-    <button id="btn-save" class="btn btn-success" onclick="guardarTodo()" disabled>Guardar cambios</button>
-    <button id="btn-cancel" class="btn btn-secondary" onclick="cancelarTodo()" disabled>Cancelar</button>
+    <button id="btn-save" class="btn btn-success" onclick="guardarTodo()" disabled>
+        Guardar cambios <kbd>Ctrl+S</kbd>
+    </button>
+    <button id="btn-cancel" class="btn btn-secondary" onclick="cancelarTodo()" disabled>
+        Cancelar <kbd>Ctrl+Z</kbd>
+    </button>
+    <button class="btn btn-secondary" onclick="mostrarAyudaAtajos()" title="Ver todos los atajos de teclado">
+        <i class="fas fa-keyboard"></i> <kbd>F1</kbd>
+    </button>
     {% else %}
     <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Ir al Dashboard</a>
     {% endif %}
@@ -1721,16 +1841,348 @@
     }
     function crearPopup(message, buttons) {
         return new Promise((resolve) => {
-            const overlay = document.createElement('div'); overlay.className = 'popup-overlay';
-            const box = document.createElement('div'); box.className = 'popup-box';
-            const p = document.createElement('p'); p.textContent = message;
-            const btns = document.createElement('div'); btns.className = 'popup-buttons';
-            buttons.forEach(b => { const bt = document.createElement('button'); bt.textContent = b.text; bt.className = b.className; bt.onclick = () => { document.body.removeChild(overlay); resolve(b.resolvesTo); }; btns.appendChild(bt); });
-            box.appendChild(p); box.appendChild(btns); overlay.appendChild(box); document.body.appendChild(overlay);
+            const overlay = document.createElement('div');
+            overlay.className = 'popup-overlay';
+            overlay.style.display = 'flex'; // Asegurar que se muestre
+
+            const box = document.createElement('div');
+            box.className = 'popup-box';
+
+            const p = document.createElement('p');
+            p.style.whiteSpace = 'pre-wrap'; // Respetar saltos de línea
+            p.textContent = message;
+
+            const btns = document.createElement('div');
+            btns.className = 'popup-buttons';
+
+            const closePopup = (result) => {
+                if (overlay.parentNode) {
+                    document.body.removeChild(overlay);
+                }
+                document.removeEventListener('keydown', handlePopupKey);
+                resolve(result);
+            };
+
+            buttons.forEach((b, index) => {
+                const bt = document.createElement('button');
+                bt.textContent = b.text;
+                bt.className = b.className;
+                bt.dataset.result = b.resolvesTo;
+                bt.onclick = () => closePopup(b.resolvesTo);
+                if (index === buttons.length - 1) {
+                    bt.focus(); // Auto-focus en último botón (normalmente "Aceptar")
+                }
+                btns.appendChild(bt);
+            });
+
+            // Manejador de teclado para el popup
+            const handlePopupKey = (e) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    // Escape = Cancelar (primer botón) o cerrar
+                    closePopup(buttons[0].resolvesTo);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    // Enter = Aceptar (último botón)
+                    closePopup(buttons[buttons.length - 1].resolvesTo);
+                }
+            };
+
+            document.addEventListener('keydown', handlePopupKey);
+
+            box.appendChild(p);
+            box.appendChild(btns);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
         });
     }
     function mostrarConfirmacion(msg) { return crearPopup(msg, [{ text: 'Cancelar', className: 'btn btn-secondary', resolvesTo: false }, { text: 'Aceptar', className: 'btn btn-success', resolvesTo: true }]); }
     function mostrarAlerta(msg) { return crearPopup(msg, [{ text: 'Aceptar', className: 'btn btn-primary', resolvesTo: true }]); }
+
+    // ✅ Función helper para mostrar tooltips de atajos de teclado
+    function mostrarTooltipAtajo(mensaje) {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'keyboard-tooltip';
+        tooltip.textContent = mensaje;
+        document.body.appendChild(tooltip);
+
+        // Remover después de la animación (2s)
+        setTimeout(() => {
+            if (tooltip.parentNode) {
+                document.body.removeChild(tooltip);
+            }
+        }, 2000);
+    }
+
+    // ✅ SISTEMA CENTRALIZADO DE ATAJOS DE TECLADO
+    const keyboardShortcuts = {
+        // Atajos de acciones principales
+        save: {
+            keys: ['Ctrl+S', 'Meta+S'],
+            description: 'Guardar cambios',
+            action: () => {
+                const btnSave = document.getElementById('btn-save');
+                if (btnSave && !btnSave.disabled && !MODO_VISUALIZACION) {
+                    btnSave.classList.add('btn-save-pulse');
+                    setTimeout(() => btnSave.classList.remove('btn-save-pulse'), 300);
+                    guardarTodo();
+                    return true;
+                } else if (MODO_VISUALIZACION) {
+                    mostrarTooltipAtajo('⚠️ No puedes guardar en modo visualización');
+                } else {
+                    mostrarTooltipAtajo('ℹ️ No hay cambios para guardar');
+                }
+                return false;
+            }
+        },
+        cancel: {
+            keys: ['Ctrl+Z', 'Meta+Z'],
+            description: 'Deshacer cambios',
+            action: () => {
+                const btnCancel = document.getElementById('btn-cancel');
+                if (btnCancel && !btnCancel.disabled && !MODO_VISUALIZACION) {
+                    cancelarTodo();
+                    return true;
+                } else if (MODO_VISUALIZACION) {
+                    mostrarTooltipAtajo('⚠️ No puedes cancelar en modo visualización');
+                } else {
+                    mostrarTooltipAtajo('ℹ️ No hay cambios para cancelar');
+                }
+                return false;
+            }
+        },
+        newQuestion: {
+            keys: ['Ctrl+Q', 'Meta+Q'],
+            description: 'Nueva pregunta',
+            action: () => {
+                if (MODO_VISUALIZACION) {
+                    mostrarTooltipAtajo('⚠️ No puedes crear preguntas en modo visualización');
+                    return false;
+                }
+                agregarPregunta();
+                mostrarTooltipAtajo('✅ Nueva pregunta creada');
+                return true;
+            }
+        },
+        deleteQuestion: {
+            keys: ['Delete'],
+            description: 'Eliminar pregunta actual',
+            action: () => {
+                if (currentView !== 'preguntas') {
+                    mostrarTooltipAtajo('ℹ️ Debes estar en vista de preguntas');
+                    return false;
+                }
+                if (MODO_VISUALIZACION) {
+                    mostrarTooltipAtajo('⚠️ No puedes eliminar en modo visualización');
+                    return false;
+                }
+                if (cuestionarioData.preguntas.length === 0) {
+                    mostrarTooltipAtajo('⚠️ No hay preguntas para eliminar');
+                    return false;
+                }
+                if (navigationMode === 'options') {
+                    mostrarTooltipAtajo('⚠️ Sal del modo opciones primero (Escape)');
+                    return false;
+                }
+
+                // Llamar a eliminarPregunta con confirmación
+                eliminarPregunta(currentIndex);
+                return true;
+            }
+        },
+        // Navegación entre vistas
+        viewGeneral: {
+            keys: ['Alt+1'],
+            description: 'Vista General',
+            action: () => {
+                switchView('general');
+                mostrarTooltipAtajo('📋 Vista General');
+                return true;
+            }
+        },
+        viewPreguntas: {
+            keys: ['Alt+2'],
+            description: 'Vista Preguntas',
+            action: () => {
+                switchView('preguntas');
+                mostrarTooltipAtajo('❓ Vista Preguntas');
+                return true;
+            }
+        },
+        // Navegación simple con Alt+Flechas
+        nextQuestion: {
+            keys: ['Alt+ArrowDown'],
+            description: 'Siguiente pregunta',
+            action: () => {
+                if (currentView !== 'preguntas') {
+                    mostrarTooltipAtajo('ℹ️ Debes estar en vista de preguntas');
+                    return false;
+                }
+                if (cuestionarioData.preguntas.length === 0) {
+                    return false;
+                }
+
+                currentIndex = (currentIndex + 1) % cuestionarioData.preguntas.length;
+                renderQuestionsUI(true);
+                mostrarTooltipAtajo(`📄 Pregunta ${currentIndex + 1} de ${cuestionarioData.preguntas.length}`);
+                return true;
+            }
+        },
+        prevQuestion: {
+            keys: ['Alt+ArrowUp'],
+            description: 'Pregunta anterior',
+            action: () => {
+                if (currentView !== 'preguntas') {
+                    mostrarTooltipAtajo('ℹ️ Debes estar en vista de preguntas');
+                    return false;
+                }
+                if (cuestionarioData.preguntas.length === 0) {
+                    return false;
+                }
+
+                currentIndex = currentIndex - 1;
+                if (currentIndex < 0) {
+                    currentIndex = cuestionarioData.preguntas.length - 1;
+                }
+                renderQuestionsUI(true);
+                mostrarTooltipAtajo(`📄 Pregunta ${currentIndex + 1} de ${cuestionarioData.preguntas.length}`);
+                return true;
+            }
+        },
+        closeModal: {
+            keys: ['Escape'],
+            description: 'Cerrar modal',
+            action: () => {
+                // Cerrar modal de importación si está abierto
+                const modalOverlay = document.getElementById('modal-importar-overlay');
+                if (modalOverlay && modalOverlay.style.display !== 'none') {
+                    cerrarModalImportar();
+                    return true;
+                }
+                return false;
+            }
+        },
+        importQuestions: {
+            keys: ['Ctrl+I', 'Meta+I'],
+            description: 'Importar preguntas desde Excel',
+            action: () => {
+                if (MODO_VISUALIZACION) {
+                    mostrarTooltipAtajo('⚠️ No puedes importar en modo visualización');
+                    return false;
+                }
+                if (!CUESTIONARIO_ID) {
+                    mostrarTooltipAtajo('⚠️ Guarda el cuestionario primero');
+                    return false;
+                }
+                abrirModalImportar();
+                mostrarTooltipAtajo('📥 Modal de importación abierto');
+                return true;
+            }
+        },
+        // Utilidades
+        help: {
+            keys: ['F1', '?'],
+            description: 'Mostrar ayuda de atajos',
+            action: () => {
+                mostrarAyudaAtajos();
+                return true;
+            }
+        }
+    };
+
+    // ✅ Función para mostrar ayuda de atajos
+    function mostrarAyudaAtajos() {
+        let helpText = '⌨️ ATAJOS DE TECLADO DISPONIBLES\n\n';
+
+        const categorias = {
+            '🎯 ACCIONES': ['save', 'cancel', 'newQuestion', 'deleteQuestion', 'importQuestions'],
+            '🧭 NAVEGACIÓN': ['viewGeneral', 'viewPreguntas', 'nextQuestion', 'prevQuestion'],
+            '🔧 UTILIDADES': ['closeModal', 'help']
+        };
+
+        for (const [categoria, shortcuts] of Object.entries(categorias)) {
+            helpText += `━━━ ${categoria} ━━━\n`;
+            shortcuts.forEach(key => {
+                const shortcut = keyboardShortcuts[key];
+                if (shortcut) {
+                    const keysStr = shortcut.keys.join(' / ');
+                    helpText += `  ${keysStr.padEnd(30)} → ${shortcut.description}\n`;
+                }
+            });
+            helpText += '\n';
+        }
+
+        helpText += '💡 TIP: En popups usa Enter para aceptar, Escape para cancelar';
+
+        // Usar el sistema de popup mejorado
+        mostrarAlerta(helpText);
+    }
+
+    // ✅ Manejador global de atajos de teclado
+    function handleKeyboardShortcut(e) {
+        // No procesar atajos si estamos escribiendo en un input/textarea
+        const activeElement = document.activeElement;
+        const isTyping = activeElement && (
+            activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.isContentEditable
+        );
+
+        // Permitir solo algunos atajos mientras se escribe
+        const allowedWhileTyping = ['save', 'cancel', 'closeModal', 'help', 'importQuestions'];
+
+        for (const [key, shortcut] of Object.entries(keyboardShortcuts)) {
+            // Verificar si el atajo coincide con la tecla presionada
+            const matches = shortcut.keys.some(keyCombo => {
+                const parts = keyCombo.split('+');
+
+                // Casos especiales sin modificadores
+                if (keyCombo === 'Escape') return e.key === 'Escape';
+                if (keyCombo === '?') return e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey;
+                if (keyCombo === 'F1') return e.key === 'F1';
+                if (keyCombo === 'Delete') return e.key === 'Delete' && !e.ctrlKey && !e.metaKey && !e.altKey;
+
+                // Atajos con modificadores
+                const needsCtrl = parts.includes('Ctrl');
+                const needsMeta = parts.includes('Meta');
+                const needsAlt = parts.includes('Alt');
+                const mainKey = parts[parts.length - 1];
+
+                // Para teclas de flecha, comparar directamente con e.key
+                if (mainKey.startsWith('Arrow')) {
+                    return (
+                        e.key === mainKey &&
+                        (!needsCtrl || e.ctrlKey) &&
+                        (!needsMeta || e.metaKey) &&
+                        (!needsAlt || e.altKey)
+                    );
+                }
+
+                // Para otras teclas, comparar en minúsculas
+                return (
+                    e.key.toLowerCase() === mainKey.toLowerCase() &&
+                    (!needsCtrl || e.ctrlKey) &&
+                    (!needsMeta || e.metaKey) &&
+                    (!needsAlt || e.altKey)
+                );
+            });
+
+            if (matches) {
+                // Si estamos escribiendo, solo permitir ciertos atajos
+                if (isTyping && !allowedWhileTyping.includes(key)) {
+                    continue;
+                }
+
+                e.preventDefault();
+                const success = shortcut.action();
+
+                if (success) {
+                    console.log(`⌨️ Atajo ejecutado: ${shortcut.keys[0]} (${shortcut.description})`);
+                }
+                break;
+            }
+        }
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         originalCuestionarioData = JSON.parse(JSON.stringify(cuestionarioData));
@@ -1752,6 +2204,9 @@
         updateActionButtons();
         updateResponsiveMode();
         window.addEventListener('resize', updateResponsiveMode);
+
+        // ✅ ACTIVAR MANEJADOR GLOBAL DE ATAJOS DE TECLADO
+        document.addEventListener('keydown', handleKeyboardShortcut);
 
         // TEST EXCEL EN DOMContentLoaded
         const btnAbrirModal = document.getElementById('btn-abrir-modal-importar');

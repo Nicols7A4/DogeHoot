@@ -199,11 +199,10 @@ def remove_player(pin):
     if nombre_usuario in partida['participantes_sin_grupo']:
         partida['participantes_sin_grupo'].remove(nombre_usuario)
 
-    # Remover de los grupos
+    # Remover de los grupos (solo si hay grupos)
     for g in partida['grupos']:
         if nombre_usuario in g['miembros']:
             g['miembros'].remove(nombre_usuario)
-            partida['participantes'][nombre_usuario]['grupo_numero'] = 0
             break
 
     return True

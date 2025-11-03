@@ -409,9 +409,27 @@
             color: white;
         }
 
+        .btn-danger {
+            background: var(--btn-failed-text);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c62828;
+        }
+
         .host-footer {
             margin-top: 1.25rem;
             text-align: center;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .host-footer .btn {
+            flex: 0 1 auto;
+            min-width: 200px;
         }
 
         /* ===================== */
@@ -1083,12 +1101,20 @@
                 }
                 renderLobby(data.lobby);
                 if (data.estado === 'E') {
+                    // La partida está en espera, mostrar botón de cancelar
+                    const btnCancelar = document.getElementById('btn-cancelar-partida');
+                    if (btnCancelar) btnCancelar.style.display = 'inline-block';
+
                     pollLobbyInterval = setInterval(async () => {
                         const r = await fetch(`/api/lobby/state?pin=${encodeURIComponent(pin)}`);
                         const l = await r.json();
                         renderLobby(l);
                     }, 1500);
                 } else {
+                    // El juego ya comenzó, ocultar botón de cancelar
+                    const btnCancelar = document.getElementById('btn-cancelar-partida');
+                    if (btnCancelar) btnCancelar.style.display = 'none';
+
                     startGamePolling();
                 }
             } catch (e) {

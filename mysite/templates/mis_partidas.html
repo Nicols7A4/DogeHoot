@@ -105,6 +105,7 @@
         margin-top: 1rem;
         padding-top: 1rem;
         border-top: 1px solid #f0f0f0;
+        align-items: stretch;
     }
 
     .pin-display {
@@ -161,6 +162,34 @@
         transform: translateY(-2px);
         text-decoration: none;
         color: white;
+    }
+
+    .btn-cancelar {
+        display: inline-block;
+        padding: 0.625rem 1.25rem;
+        background-color: #dc3545;
+        color: white;
+        text-decoration: none;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .btn-cancelar:hover {
+        background-color: #c82333;
+        transform: translateY(-2px);
+        text-decoration: none;
+        color: white;
+    }
+
+    .btn-cancelar:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
     }
 
     /* Badges de estado */
@@ -233,8 +262,16 @@
 
         .card-actions {
             flex-direction: row;
+            flex-wrap: wrap;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
+            gap: 0.75rem;
+        }
+
+        .card-actions .btn-panel,
+        .card-actions .btn-reporte,
+        .card-actions .btn-cancelar {
+            flex: 0 1 auto;
         }
     }
 
@@ -297,7 +334,8 @@
         .table-actions {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
 
         .pin-display-table {
@@ -440,4 +478,5 @@
         {% endfor %}
     </div>
 </div>
+
 {% endblock %}

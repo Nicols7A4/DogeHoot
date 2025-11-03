@@ -197,7 +197,7 @@
             justify-content: center;
             border: none;
             border-radius: 8px;
-            padding: 2rem 1rem;
+            padding: 2rem 1rem 2rem 3rem;
             font-size: 1.1rem;
             font-weight: 900;
             cursor: pointer;
@@ -210,6 +210,30 @@
             letter-spacing: 0.3px;
             color: white;
             min-height: 100px;
+        }
+
+        /* Número de atajo de teclado */
+        .btn .key-number {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 900;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover .key-number {
+            background: rgba(255, 255, 255, 0.5);
+            border-color: rgba(255, 255, 255, 0.8);
+            transform: scale(1.1);
         }
 
         .btn:hover:not(:disabled) {
@@ -876,11 +900,23 @@
 
             const answerGrid = document.getElementById('answer-grid');
             answerGrid.innerHTML = '';
-            (data.opciones || []).forEach(op => {
+            (data.opciones || []).forEach((op, index) => {
                 const btn = document.createElement('button');
                 btn.className = 'btn';
-                btn.textContent = op.texto;
+
+                // Agregar número de atajo
+                const keyNumber = document.createElement('span');
+                keyNumber.className = 'key-number';
+                keyNumber.textContent = (index + 1);
+                btn.appendChild(keyNumber);
+
+                // Agregar texto de la opción
+                const textSpan = document.createElement('span');
+                textSpan.textContent = op.texto;
+                btn.appendChild(textSpan);
+
                 btn.dataset.opcionId = op.id;
+                btn.dataset.keyIndex = (index + 1);
                 btn.onclick = () => enviarRespuesta(op.id);
                 answerGrid.appendChild(btn);
             });
@@ -1046,6 +1082,7 @@
         async function pollCurrent() {
             try {
                 const res = await fetch('/api/game/current?pin=' + encodeURIComponent(pin));
+
                 if (!res.ok) return;
                 const cur = await res.json();
 
@@ -1116,6 +1153,36 @@
                 console.error('Error al unirse al juego', e);
             }
         }
+
+        // ✅ ATAJOS DE TECLADO para responder (1-6)
+        document.addEventListener('keydown', (e) => {
+            // Solo procesar si es un número del 1 al 6
+            if (!/^[1-6]$/.test(e.key)) return;
+
+            // Solo si estamos en la pantalla de pregunta
+            const questionScreen = document.getElementById('question-screen');
+            if (!questionScreen.classList.contains('active')) return;
+
+            // Si ya respondió, no hacer nada
+            if (respondido) return;
+
+            const keyNum = parseInt(e.key);
+            const buttons = document.querySelectorAll('.btn-grid .btn');
+
+            // Si existe un botón en esa posición
+            if (buttons[keyNum - 1] && !buttons[keyNum - 1].disabled) {
+                e.preventDefault();
+
+                // Simular clic en el botón
+                buttons[keyNum - 1].click();
+
+                // Feedback visual adicional
+                buttons[keyNum - 1].style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    buttons[keyNum - 1].style.transform = '';
+                }, 100);
+            }
+        });
 
         joinGame();
         setInterval(pollCurrent, 500);
