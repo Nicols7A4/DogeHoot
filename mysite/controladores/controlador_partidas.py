@@ -12,17 +12,37 @@ def _generar_pin():
     caracteres = string.ascii_uppercase + string.digits
     return ''.join(random.choices(caracteres, k=6))
 
-def verificar_partida_activa(id_cuestionario):
+def verificar_partida_activa(id_cuestionario, id_usuario_anfitrion=None):
     """
     Verifica si ya existe una partida activa (en Espera 'E' o Proceso 'P')
-    para un cuestionario específico. Devuelve True si existe, False si no.
+    para un cuestionario específico Y un anfitrión específico.
+    
+    Args:
+        id_cuestionario: ID del cuestionario
+        id_usuario_anfitrion: ID del usuario anfitrión. Si se proporciona, solo verifica
+                              partidas activas de ese usuario. Si es None, verifica todas.
+    
+    Devuelve True si existe, False si no.
     """
     conexion = obtener_conexion()
     try:
         with conexion.cursor() as cursor:
             # Buscamos partidas que NO estén finalizadas ('F')
-            sql = "SELECT id_partida FROM PARTIDA WHERE id_cuestionario = %s AND estado != 'F'"
-            cursor.execute(sql, (id_cuestionario,))
+            if id_usuario_anfitrion is not None:
+                # Verificar solo partidas activas de este usuario específico
+                sql = """
+                    SELECT id_partida 
+                    FROM PARTIDA 
+                    WHERE id_cuestionario = %s 
+                    AND id_usuario_anfitrion = %s 
+                    AND estado != 'F'
+                """
+                cursor.execute(sql, (id_cuestionario, id_usuario_anfitrion))
+            else:
+                # Verificar todas las partidas activas (comportamiento antiguo)
+                sql = "SELECT id_partida FROM PARTIDA WHERE id_cuestionario = %s AND estado != 'F'"
+                cursor.execute(sql, (id_cuestionario,))
+            
             partida_activa = cursor.fetchone()
 
             # Si fetchone() encuentra algo, significa que ya hay una partida activa
@@ -66,9 +86,9 @@ def crear_partida(id_cuestionario, modalidad_grupal=False, cant_grupos=None, id_
     finally:
         conexion.close()
     
-    # 2. Verificamos que no haya otra partida en curso
-    if verificar_partida_activa(id_cuestionario):
-        return False, "Ya existe una partida activa para este cuestionario. Finalízala antes de crear una nueva."
+    # 2. Verificamos que no haya otra partida en curso PARA ESTE USUARIO
+    if verificar_partida_activa(id_cuestionario, id_usuario_anfitrion):
+        return False, "Ya tienes una partida activa con este cuestionario. Finalízala antes de crear una nueva."
 
     conexion = obtener_conexion()
     try:
