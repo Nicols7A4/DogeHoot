@@ -698,6 +698,10 @@
             });
 
             // --- Búsqueda en Nav ---
+
+            {% if tipo_usuario == 'P' %}
+
+
             const inputBuscar = document.getElementById('inputBuscarNav');
             const btnBuscar = document.getElementById('btnBuscarNav');
 
@@ -727,6 +731,8 @@
                     }
                 });
             }
+
+            {% endif %}
 
             // --- Lógica de Modales (Global) ---
             const modal = document.getElementById('app-modal');
