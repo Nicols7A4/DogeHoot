@@ -18,8 +18,11 @@ sys.modules.setdefault('main', sys.modules.get('__main__'))
 from controladores.controlador_recompensas import otorgar_recompensas
 from controladores.foto_perfil import perfil_bp
 
+# from flask_jwt import JWT, jwt_required
+from User import authenticate, identity
 
 app = Flask(__name__)
+# jwt = JWT(app, authenticate, identity)
 
 # Registrar blueprint de perfil (controlador independiente)
 app.register_blueprint(perfil_bp) #agregado por pame. NOTA: Se puede borrar
