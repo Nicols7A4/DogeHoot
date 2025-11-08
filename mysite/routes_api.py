@@ -222,6 +222,13 @@ def api_correo_activo():
 # ------------------------------------------------------------------------------
 # CUESTIONARIOS Y SUS PARTES
 
+@app.route("/api/obtener_cuestionarios", methods=['GET'])
+def api_obtenercuestionarios():
+    try:
+        cuestionarios = cc.obtener_cuestionarios_todos()
+        return jsonify({"data":cuestionarios}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
 
 @app.route("/api/cuestionarios", methods=['GET'])
 def api_get_cuestionarios():
@@ -434,6 +441,13 @@ def api_delete_pregunta_imagen(id_pregunta):
 
 
 # --- PREGUNTAS ---
+@app.route("/api/obtener_preguntas", methods=['GET'])
+def api_obtener_preguntas():
+    try:
+        cuestionarios = cpo.obtener_preguntas_todos()
+        return jsonify({"data":cuestionarios}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
 
 @app.route("/api/cuestionarios/<int:id_cuestionario>/preguntas", methods=['GET'])
 def api_get_preguntas(id_cuestionario):
@@ -479,6 +493,15 @@ def api_delete_pregunta(id_pregunta):
 
 
 # --- OPCIONES ---
+
+@app.route("/api/obtener_opciones", methods=['GET'])
+def api_obtener_opciones():
+    try:
+        cuestionarios = cpo.obtener_opciones_todas()
+        return jsonify({"data":cuestionarios}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
+
 
 @app.route("/api/preguntas/<int:id_pregunta>/opciones", methods=['GET'])
 def api_get_opciones(id_pregunta):
@@ -921,7 +944,10 @@ def api_solicitar_restablecimiento():
         # Consulta adicional para diferenciar si es "no verificado" o "no existe"
         usuario_any = ctrl.obtener_por_correo_sin_filtros(correo)
         if usuario_any and usuario_any.get('vigente') and not usuario_any.get('verificado'):
-            return jsonify({"mensaje": "No has verificado el correo que has ingresado."}), 200
+            return jsonify({"error": "Este correo no ha sido verificado. Por favor, verifica tu correo antes de restablecer la contraseña."}), 400
+        else:
+            # El correo no existe en la base de datos
+            return jsonify({"error": "No existe una cuenta registrada con este correo electrónico."}), 404
 
     # Si llegó acá, está vigente y verificado → envía correo
     try:
