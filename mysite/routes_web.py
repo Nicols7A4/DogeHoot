@@ -887,8 +887,12 @@ def restablecer_con_token(token):
         password = request.form.get('password')
         password2 = request.form.get('password2')
 
-        if not password or len(password) < 8:
-            flash('La contraseña debe tener al menos 8 caracteres.', 'danger')
+        if not password:
+            flash('Debes ingresar una nueva contraseña.', 'danger')
+            return render_template('restablecer_contrasena.html')
+
+        if not ctrl_usuarios.contrasena_cumple_politica(password):
+            flash('La contraseña debe tener al menos 8 caracteres e incluir minúsculas, mayúsculas, números y símbolos.', 'danger')
             return render_template('restablecer_contrasena.html')
 
         if password != password2:
@@ -959,3 +963,4 @@ def guia():
         {"q": "¿Un alumno perdió su conexión antes de que el profesor iniciara la partida?", "a": "Puede reingresar con el mismo PIN y su nombre de usuario."},
     ]
     return render_template("guia.html", pasos=pasos, faqs=faqs)
+

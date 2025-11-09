@@ -30,6 +30,38 @@
                     <div class="input-group">
                         <label for="password">Nueva Contraseña:</label>
                         <input id="password" type="password" name="password" placeholder="Ingresa tu nueva contraseña" required>
+                        <ul id="password-criteria" aria-live="polite">
+                            <li id="crit-length">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                8+ carac.
+                            </li>
+                            <li id="crit-lower">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                minúscula
+                            </li>
+                            <li id="crit-upper">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                mayúscula
+                            </li>
+                            <li id="crit-number">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                número
+                            </li>
+                            <li id="crit-special">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                símbolo
+                            </li>
+                        </ul>
                     </div>
                     <div class="input-group">
                         <label for="password2">Confirmar Contraseña:</label>
@@ -43,15 +75,94 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const flashModal = document.getElementById('flash-modal');
-            const closeButton = flashModal.querySelector('.close-button');
+            const closeButton = flashModal?.querySelector('.close-button');
+            const form = document.querySelector('.formulario');
+            const passwordInput = document.getElementById('password');
+            const submitBtn = form?.querySelector('button[type="submit"]');
+            const criteriaEls = {
+                length: document.getElementById('crit-length'),
+                lower: document.getElementById('crit-lower'),
+                upper: document.getElementById('crit-upper'),
+                number: document.getElementById('crit-number'),
+                special: document.getElementById('crit-special'),
+            };
+
             if (flashModal && flashModal.dataset.hasMessages === 'true') {
                 flashModal.style.display = 'flex';
             }
             function closeModal() { if (flashModal) flashModal.style.display = 'none'; }
             if (closeButton) closeButton.addEventListener('click', closeModal);
-            if (flashModal) flashModal.addEventListener('click', function(event) {
-                if (event.target === flashModal) closeModal();
-            });
+            if (flashModal) {
+                flashModal.addEventListener('click', function(event) {
+                    if (event.target === flashModal) closeModal();
+                });
+            }
+
+            const rules = {
+                length: (v) => v.length >= 8,
+                lower: (v) => /[a-z]/.test(v),
+                upper: (v) => /[A-Z]/.test(v),
+                number: (v) => /\d/.test(v),
+                special: (v) => /[^A-Za-z0-9\s]/.test(v),
+            };
+
+            const lastStates = {
+                length: false,
+                lower: false,
+                upper: false,
+                number: false,
+                special: false,
+            };
+
+            function applyState(allValid, hasInput) {
+                if (!passwordInput) return allValid;
+                if (!hasInput) {
+                    passwordInput.classList.remove('valid-password', 'invalid-password');
+                    if (submitBtn) submitBtn.disabled = true;
+                    return false;
+                }
+                passwordInput.classList.toggle('valid-password', allValid);
+                passwordInput.classList.toggle('invalid-password', !allValid);
+                if (submitBtn) submitBtn.disabled = !allValid;
+                return allValid;
+            }
+
+            function evaluatePassword() {
+                if (!passwordInput) return false;
+                const value = passwordInput.value ?? '';
+                let allValid = true;
+
+                Object.keys(rules).forEach((key) => {
+                    const ok = rules[key](value);
+                    const el = criteriaEls[key];
+                    if (el) {
+                        el.classList.toggle('valid', ok);
+                        if (ok && !lastStates[key]) {
+                            el.classList.remove('just-validated');
+                            void el.offsetWidth;
+                            el.classList.add('just-validated');
+                        }
+                    }
+                    lastStates[key] = ok;
+                    if (!ok) allValid = false;
+                });
+
+                return applyState(allValid, value.length > 0);
+            }
+
+            if (passwordInput) {
+                passwordInput.addEventListener('input', evaluatePassword);
+                evaluatePassword();
+            }
+
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    if (!evaluatePassword()) {
+                        event.preventDefault();
+                        passwordInput?.focus();
+                    }
+                });
+            }
         });
     </script>
 </body>
