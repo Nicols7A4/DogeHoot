@@ -881,7 +881,7 @@ def restablecer_con_token(token):
     id_usuario = ctrl_usuarios.verificar_token_restablecimiento(token)
     if id_usuario is None:
         flash('El enlace de restablecimiento es inválido o ha expirado.', 'danger')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     if request.method == 'POST':
         password = request.form.get('password')
@@ -903,7 +903,7 @@ def restablecer_con_token(token):
         ctrl_usuarios.actualizar_contrasena(id_usuario, password)
 
         flash('Tu contraseña ha sido actualizada con éxito. Ahora puedes iniciar sesión.', 'success')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     return render_template('restablecer_contrasena.html')
 
