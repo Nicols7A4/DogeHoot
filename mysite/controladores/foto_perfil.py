@@ -19,7 +19,7 @@ def _unique_name(user_id, ext):
 def actualizar_foto_perfil():
     if 'user_id' not in session:
         flash("Inicia sesión para cambiar tu foto.", "error")
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     file = request.files.get('foto')
     if not file or file.filename == '':

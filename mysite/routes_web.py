@@ -18,7 +18,7 @@ from controladores import controlador_partidas as ctrl_partidas
 def inicio():
     if 'user_id' not in session:
         # flash('Debes iniciar sesión para ver esta página.', 'warning')
-        return redirect(url_for("auth"))
+        return redirect(url_for("auth_page"))
 
     return redirect(url_for("dashboard"))
 
@@ -66,10 +66,10 @@ def inicio():
 #             return redirect(url_for("auth"))
 #     else:
 #         flash("Solicitud no válida.", "warning")
-#         return redirect(url_for("auth"))
+#         return redirect(url_for("auth_page"))
 
-@app.route("/auth", methods=["GET", "POST"])
-def auth():
+@app.route("/auth_page", methods=["GET", "POST"])
+def auth_page():
     if request.method == 'POST':
 
         # --- LÓGICA DE LOGIN (Esta parte está bien) ---
@@ -170,7 +170,7 @@ def auth():
 # def verificar():
 #     email = request.args.get('email')
 #     # if not email:
-#     #     return redirect(url_for('auth'))
+#     #     return redirect(url_for('auth_page'))
 
 #     valido = ctrl_usuarios.esta_pendiente_de_verificacion(email)
 
@@ -185,7 +185,7 @@ def auth():
 
 #         if resultado == "OK":
 #             flash('¡Cuenta verificada! Ahora puedes iniciar sesión.', 'success')
-#             return redirect(url_for('auth')) # Lo mandamos de vuelta a /auth para que inicie sesión
+#             return redirect(url_for('auth_page')) # Lo mandamos de vuelta a /auth para que inicie sesión
 #         else:
 #             flash(resultado, 'danger')
 #             return redirect(url_for('verificar', email=email_form))
@@ -200,7 +200,7 @@ def auth():
 #     email = request.args.get('email')
 #     # Esta verificación sí es importante, por si alguien llega sin un correo en la URL
 #     # if not email:
-#     #   return redirect(url_for('auth'))
+#     #   return redirect(url_for('auth_page'))
 
 #     # --- Lógica para el método POST (cuando se envía el formulario) ---
 #     if request.method == 'POST':
@@ -210,7 +210,7 @@ def auth():
 
 #         if resultado == "OK":
 #             flash('¡Cuenta verificada! Ahora puedes iniciar sesión.', 'success')
-#             return redirect(url_for('auth'))
+#             return redirect(url_for('auth_page'))
 #         else:
 #             flash(resultado, 'danger')
 #             return redirect(url_for('verificar', email=email_form))
@@ -224,14 +224,14 @@ def auth():
 def verificar():
     email = request.args.get('email')
     # if not email:
-    #     return redirect(url_for('auth'))
+    #     return redirect(url_for('auth_page'))
     if request.method == 'POST':
         codigo = request.form.get('codigo')
         email_form = request.form.get('email')
         resultado = ctrl_usuarios.verificar_y_activar_usuario(email_form, codigo)
         if resultado == "OK":
             flash('¡Cuenta verificada! Ahora puedes iniciar sesión.', 'success')
-            return redirect(url_for('auth')) # Lo mandamos de vuelta a /auth para que inicie sesión
+            return redirect(url_for('auth_page')) # Lo mandamos de vuelta a /auth para que inicie sesión
         else:
             flash(resultado, 'danger')
             return redirect(url_for('verificar', email=email_form))
@@ -250,7 +250,7 @@ def verificar():
 def reenviar_codigo():
     email = request.form.get('email')
     if not email:
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     # 1. Llama al controlador para generar un nuevo código
     exito, resultado = ctrl_usuarios.regenerar_codigo(email)
@@ -279,7 +279,7 @@ def reenviar_codigo():
 def logout():
     session.clear()
     #flash('Has cerrado sesión.', 'info')
-    return redirect(url_for('auth'))
+    return redirect(url_for('auth_page'))
 
 
 # ------------------------------------------------------------------------------
@@ -296,7 +296,7 @@ def dashboard():
     # 1. Verifica si el usuario ha iniciado sesión
     if 'user_id' not in session:
         # flash('Debes iniciar sesión para ver esta página.', 'warning')
-        return redirect(url_for('auth')) # Redirige al login si no está en sesión
+        return redirect(url_for('auth_page')) # Redirige al login si no está en sesión
 
     # 2. Obtiene el ID del usuario de la sesión
     id_usuario_actual = session['user_id']
@@ -321,7 +321,7 @@ def dashboard():
 def cuestionarios():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver esta página.', 'warning')
-        return redirect(url_for('auth')) # Redirige al login si no está en sesión
+        return redirect(url_for('auth_page')) # Redirige al login si no está en sesión
 
     id_usuario_actual = session['user_id']
 
@@ -340,7 +340,7 @@ def cuestionarios():
 def cuestionarios_nuevo():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para crear un cuestionario.', 'warning')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     categorias = ctrl_cat.obtener_todas()
 
@@ -382,7 +382,7 @@ def cuestionarios_editar(id_cuestionario):
 @app.route("/cuestionarios/explorar")
 def cuestionarios_explorar():
     if 'user_id' not in session:
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
     
     id_usuario_actual = session['user_id']
     
@@ -413,7 +413,7 @@ def clonar_cuestionario(id_cuestionario):
     
     if 'user_id' not in session:
         flash('Debes iniciar sesión para clonar cuestionarios.', 'warning')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
     
     id_usuario = session['user_id']
     print(f"[DEBUG CLONAR] ID Usuario: {id_usuario}")
@@ -445,7 +445,7 @@ def reportes_detalle(id_partida):
 def mis_partidas():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver tus partidas.', 'warning')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     # Obtenemos el ID del usuario de la sesión
     id_usuario_actual = session['user_id']
@@ -467,7 +467,7 @@ def mis_partidas():
 def usuario_perfil():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver tu perfil.', 'warning')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     user = g.user or {}  # ya lo cargó before_request
     stats = {
@@ -570,14 +570,14 @@ def perfil_update():
 def pagina_cambiar_contrasena():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver esta página.', 'warning')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
     return render_template('cambio_contrasenia.html')
 
 @app.route("/perfil/eliminar_cuenta")
 def eliminar_cuenta():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver tu perfil.', 'warning')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     user = g.user or {}  # ya lo cargó before_request
 
@@ -622,7 +622,7 @@ def generar_partida(id_cuestionario):
 def configurar_partida(id_cuestionario):
     if 'user_id' not in session:
         flash('Debes iniciar sesión para crear una partida.', 'warning')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     # Obtenemos los datos del cuestionario para mostrar su título
     cuestionario = cc.obtener_por_id(id_cuestionario)
@@ -640,7 +640,7 @@ def configurar_partida(id_cuestionario):
 @app.route('/partida/lanzar', methods=['POST'])
 def lanzar_partida():
     if 'user_id' not in session:
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     # Obtenemos los datos del formulario
     id_cuestionario = request.form.get('id_cuestionario', type=int)
@@ -671,7 +671,7 @@ def lanzar_partida():
 @app.route("/partida/<string:pin>/panel_anfitrion")
 def partida_panel(pin):
     if 'user_id' not in session:
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
     partida = ctrl_partidas.obtener_partida_por_pin(pin)
     if not partida:
         flash('La partida indicada no existe.', 'warning')
@@ -688,7 +688,7 @@ def partida_panel(pin):
 def lobby(pin):
     if 'user_id' not in session:
         # Podrías permitir invitados, pero por ahora requerimos sesión
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     # Verificar que la partida existe y no está finalizada
     partida = ctrl_partidas.obtener_partida_por_pin(pin)
@@ -710,7 +710,7 @@ def lobby(pin):
 @app.route('/juego/<string:pin>')
 def pagina_juego(pin):
     if 'user_id' not in session:
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
     return render_template('partida/juego_participante.html', pin=pin)
 
 @app.route("/partida/<int:id_partida>/juego")
@@ -755,7 +755,7 @@ def admin_skins():
 def tienda_skins():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para acceder a la tienda.', 'warning')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     id_usuario = session['user_id']
     user = ctrl_usuarios.obtener_por_id(id_usuario) or {}
@@ -803,7 +803,7 @@ def api_comprar_skin(id_skin):
 def mis_skins():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver tus skins.', 'warning')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     id_usuario = session['user_id']
     user = ctrl_usuarios.obtener_por_id(id_usuario)
@@ -881,7 +881,7 @@ def restablecer_con_token(token):
     id_usuario = ctrl_usuarios.verificar_token_restablecimiento(token)
     if id_usuario is None:
         flash('El enlace de restablecimiento es inválido o ha expirado.', 'danger')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     if request.method == 'POST':
         password = request.form.get('password')
@@ -903,7 +903,7 @@ def restablecer_con_token(token):
         ctrl_usuarios.actualizar_contrasena(id_usuario, password)
 
         flash('Tu contraseña ha sido actualizada con éxito. Ahora puedes iniciar sesión.', 'success')
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth_page'))
 
     return render_template('restablecer_contrasena.html')
 

@@ -18,16 +18,21 @@ sys.modules.setdefault('main', sys.modules.get('__main__'))
 from controladores.controlador_recompensas import otorgar_recompensas
 from controladores.foto_perfil import perfil_bp
 
-# from flask_jwt import JWT, jwt_required
-# from User import authenticate, identity
+from flask_jwt import JWT, jwt_required
+from User_auth import authenticate, identity
 
 app = Flask(__name__)
-# jwt = JWT(app, authenticate, identity)
+
+# ⚠️ IMPORTANTE: Configurar SECRET_KEY ANTES de inicializar JWT
+app.config['SECRET_KEY'] = 'Tralalero Tralala'
+
+# Configurar JWT para usar 'correo' en lugar de 'username'
+# app.config['JWT_AUTH_USERNAME_KEY'] = 'correo'
+
+jwt = JWT(app, authenticate, identity)
 
 # Registrar blueprint de perfil (controlador independiente)
 app.register_blueprint(perfil_bp) #agregado por pame. NOTA: Se puede borrar
-# app.secret_key = 'Tralalero Tralala'
-app.config['SECRET_KEY'] = 'Tralalero Tralala'
 
 # TEST EXCEL, Línea de prueba para el Importar Cuestionario
 app.register_blueprint(importar_bp)
