@@ -1,6 +1,7 @@
 # controladores/usuarios.py
 from bd import obtener_conexion
 import random
+import re
 from datetime import datetime, timedelta
 from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
@@ -508,6 +509,23 @@ def actualizar_contrasena(id_usuario, nueva_contrasena):
         if conexion:
             conexion.close()
 
+
+def contrasena_cumple_politica(contrasena: str) -> bool:
+    # Validate password according to the registration rules used on sign-up.
+    if not contrasena:
+        return False
+    if len(contrasena) < 8:
+        return False
+    if not re.search(r'[a-z]', contrasena):
+        return False
+    if not re.search(r'[A-Z]', contrasena):
+        return False
+    if not re.search(r'\d', contrasena):
+        return False
+    if not re.search(r'[^A-Za-z0-9\s]', contrasena):
+        return False
+    return True
+
 def correo_activo(correo: str, require_verificado: bool = False) -> bool:
     """
     Verifica si el correo pertenece a un usuario activo (vigente=TRUE).
@@ -575,3 +593,4 @@ def sumar_puntos(id_usuario, puntos_a_sumar):
     finally:
         if conexion:
             conexion.close()
+
