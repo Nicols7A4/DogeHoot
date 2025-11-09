@@ -667,38 +667,41 @@ def _serialize_partida_row(row): # Función para convertir los datetime a string
 
 
 @app.route("/api_registrarpartida", methods=["POST"])
+@jwt_required()
 def api_registrarpartida():
     """
     Crea un registro completo en la tabla PARTIDA.
     """
-    data = request.get_json(silent=True) or {}
-    pin = data.get("pin")
-    id_cuestionario = data.get("id_cuestionario")
-    modalidad = data.get("modalidad")
-    estado = data.get("estado")
-    fecha_hora_inicio = data.get("fecha_hora_inicio")
-
-    if not all([pin, id_cuestionario, modalidad, estado, fecha_hora_inicio]):
-        return jsonify({"error": "pin, id_cuestionario, modalidad, estado y fecha_hora_inicio son obligatorios."}), 400
-
-    campos = [
-        ("pin", pin),
-        ("id_cuestionario", id_cuestionario),
-        ("id_usuario_anfitrion", data.get("id_usuario_anfitrion")),
-        ("modalidad", modalidad),
-        ("estado", estado),
-        ("fecha_hora_inicio", fecha_hora_inicio),
-        ("fecha_hora_fin", data.get("fecha_hora_fin")),
-        ("cant_grupos", data.get("cant_grupos")),
-        ("recompensas_otorgadas", data.get("recompensas_otorgadas", 0)),
-    ]
-
-    columnas = ", ".join(col for col, val in campos if val is not None)
-    valores = [val for _, val in campos if val is not None]
-    placeholders = ", ".join(["%s"] * len(valores))
-
+    rpta = {"code": 0, "data": {}, "message": ""}
     conexion = None
     try:
+        data = request.get_json(silent=True) or {}
+        pin = data.get("pin")
+        id_cuestionario = data.get("id_cuestionario")
+        modalidad = data.get("modalidad")
+        estado = data.get("estado")
+        fecha_hora_inicio = data.get("fecha_hora_inicio")
+
+        if not all([pin, id_cuestionario, modalidad, estado, fecha_hora_inicio]):
+            rpta["message"] = "pin, id_cuestionario, modalidad, estado y fecha_hora_inicio son obligatorios."
+            return jsonify(rpta), 400
+
+        campos = [
+            ("pin", pin),
+            ("id_cuestionario", id_cuestionario),
+            ("id_usuario_anfitrion", data.get("id_usuario_anfitrion")),
+            ("modalidad", modalidad),
+            ("estado", estado),
+            ("fecha_hora_inicio", fecha_hora_inicio),
+            ("fecha_hora_fin", data.get("fecha_hora_fin")),
+            ("cant_grupos", data.get("cant_grupos")),
+            ("recompensas_otorgadas", data.get("recompensas_otorgadas", 0)),
+        ]
+
+        columnas = ", ".join(col for col, val in campos if val is not None)
+        valores = [val for _, val in campos if val is not None]
+        placeholders = ", ".join(["%s"] * len(valores))
+
         conexion = obtener_conexion()
         with conexion.cursor() as cursor:
             cursor.execute(
@@ -707,52 +710,75 @@ def api_registrarpartida():
             )
             conexion.commit()
             nuevo_id = cursor.lastrowid
-        return jsonify({"mensaje": "Partida creada correctamente", "id_partida": nuevo_id}), 201
+
+        rpta["code"] = 1
+        rpta["data"] = {"id_partida": nuevo_id}
+        rpta["message"] = "Partida creada correctamente"
+        return jsonify(rpta), 201
     except Exception as e:
         if conexion:
             conexion.rollback()
-        return jsonify({"error": "No se pudo crear la partida", "detalle": str(e)}), 500
+        rpta["message"] = f"No se pudo crear la partida: {e}"
+        return jsonify(rpta), 500
     finally:
         if conexion:
             conexion.close()
 
 
 @app.route("/api_obtenerpartidas", methods=["GET"])
+@jwt_required()
 def api_obtenerpartidas():
+    rpta = {"code": 0, "data": {}, "message": ""}
     conexion = None
     try:
         conexion = obtener_conexion()
         with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
             cursor.execute("SELECT * FROM PARTIDA ORDER BY id_partida DESC")
             partidas = [_serialize_partida_row(row) for row in cursor.fetchall()]
-        return jsonify({"data": partidas})
+
+        rpta["code"] = 1
+        rpta["data"] = partidas
+        rpta["message"] = "Partidas obtenidas correctamente"
+        return jsonify(rpta)
     except Exception as e:
-        return jsonify({"error": "No se pudieron obtener las partidas", "detalle": str(e)}), 500
+        rpta["message"] = f"No se pudieron obtener las partidas: {e}"
+        return jsonify(rpta), 500
     finally:
         if conexion:
             conexion.close()
 
 
 @app.route("/api_obtenerpartidaporid/<int:id_partida>", methods=["GET"])
+@jwt_required()
 def api_obtenerpartidaporid(id_partida):
+    rpta = {"code": 0, "data": {}, "message": ""}
     conexion = None
     try:
         conexion = obtener_conexion()
         with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
             cursor.execute("SELECT * FROM PARTIDA WHERE id_partida = %s", (id_partida,))
             partida = cursor.fetchone()
+
         if not partida:
-            return jsonify({"error": "Partida no encontrada"}), 404
-        return jsonify({"data": _serialize_partida_row(partida)})
+            rpta["message"] = "Partida no encontrada"
+            return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["data"] = _serialize_partida_row(partida)
+        rpta["message"] = "Partida obtenida correctamente"
+        return jsonify(rpta)
     except Exception as e:
-        return jsonify({"error": "No se pudo obtener la partida", "detalle": str(e)}), 500
+        rpta["message"] = f"No se pudo obtener la partida: {e}"
+        return jsonify(rpta), 500
     finally:
         if conexion:
             conexion.close()
 
 
 @app.route("/api_actualizarpartida/<int:id_partida>", methods=["PUT"])
+@jwt_required()
 def api_actualizarpartida(id_partida):
+    rpta = {"code": 0, "data": {}, "message": ""}
     data = request.get_json(silent=True) or {}
     campos_validos = {
         "pin", "id_cuestionario", "id_usuario_anfitrion", "modalidad",
@@ -767,7 +793,8 @@ def api_actualizarpartida(id_partida):
             valores.append(data[campo])
 
     if not sets:
-        return jsonify({"error": "No se enviaron campos a actualizar."}), 400
+        rpta["message"] = "No se enviaron campos a actualizar."
+        return jsonify(rpta), 400
 
     valores.append(id_partida)
     conexion = None
@@ -780,19 +807,26 @@ def api_actualizarpartida(id_partida):
             )
             conexion.commit()
             if cursor.rowcount == 0:
-                return jsonify({"error": "Partida no encontrada"}), 404
-        return jsonify({"mensaje": "Partida actualizada correctamente"})
+                rpta["message"] = "Partida no encontrada"
+                return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["message"] = "Partida actualizada correctamente"
+        return jsonify(rpta)
     except Exception as e:
         if conexion:
             conexion.rollback()
-        return jsonify({"error": "No se pudo actualizar la partida", "detalle": str(e)}), 500
+        rpta["message"] = f"No se pudo actualizar la partida: {e}"
+        return jsonify(rpta), 500
     finally:
         if conexion:
             conexion.close()
 
 
 @app.route("/api_eliminarpartida/<int:id_partida>", methods=["DELETE"])
+@jwt_required()
 def api_eliminarpartida(id_partida):
+    rpta = {"code": 0, "data": {}, "message": ""}
     conexion = None
     try:
         conexion = obtener_conexion()
@@ -800,12 +834,17 @@ def api_eliminarpartida(id_partida):
             cursor.execute("DELETE FROM PARTIDA WHERE id_partida = %s", (id_partida,))
             conexion.commit()
             if cursor.rowcount == 0:
-                return jsonify({"error": "Partida no encontrada"}), 404
-        return jsonify({"mensaje": "Partida eliminada correctamente"})
+                rpta["message"] = "Partida no encontrada"
+                return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["message"] = "Partida eliminada correctamente"
+        return jsonify(rpta)
     except Exception as e:
         if conexion:
             conexion.rollback()
-        return jsonify({"error": "No se pudo eliminar la partida", "detalle": str(e)}), 500
+        rpta["message"] = f"No se pudo eliminar la partida: {e}"
+        return jsonify(rpta), 500
     finally:
         if conexion:
             conexion.close()
