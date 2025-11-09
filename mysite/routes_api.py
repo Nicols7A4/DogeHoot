@@ -54,19 +54,116 @@ def api_test():
     return jsonify({"mensaje": "La API funciona correctamente"})
 
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 # USUARIOS
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 
 
-@app.route("/api/obtener_usuarios", methods=['GET'])
-@jwt_required()
-def api_get_usuarios():
+@app.route("/api_obtener_usuarios", methods=['GET'])
+# @jwt_required()
+def fn_api_obtener_usuarios():
     try:
         usuarios = ctrl.obtener_todos()
         return jsonify({"data":usuarios}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500 
 
+@app.route("/api_obtener_usuario_por_id/<int:id_usuario>", methods=['GET'])
+# @jwt_required()
+def fn_api_obtener_usuario_por_id(id_usuario):
+    try:
+        # id_usuario = request.args.get('id_usuario', type=int)
+        usuario = ctrl.obtener_por_id(id_usuario)
+        return jsonify({"data":usuario}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
+
+@app.route("/api_registrar_usuario", methods=['POST'])
+def fn_api_registrar_usuario():
+    data = request.get_json(force=True) or {}
+    nombre_completo = (data.get("nombre_completo") or "").strip()
+    nombre_usuario  = (data.get("nombre_usuario")  or "").strip()
+    correo          = (data.get("correo")          or "").strip().lower()
+    contrasena      = (data.get("contrasena")      or "")
+    tipo            = (data.get("tipo")            or "E").strip()
+
+    if not (nombre_completo and nombre_usuario and correo and contrasena):
+        return jsonify({"error": "Faltan campos obligatorios"}), 400
+
+    modo = (request.args.get("modo") or "pendiente").lower()
+    if modo == "directo":
+        ok, msg = ctrl.crear_usuario(nombre_completo, nombre_usuario, correo, contrasena, tipo)
+        return (jsonify({"ok": True, "mensaje": msg}), 201) if ok else (jsonify({"error": msg}), 409)
+
+    ok, resultado = ctrl.crear_usuario_pendiente(nombre_completo, nombre_usuario, correo, contrasena, tipo)
+    if ok:
+        return jsonify({"ok": True, "codigo_verificacion": resultado}), 201
+    return jsonify({"error": resultado}), 409
+
+@app.route("/api_actualizar_usuario/<int:id_usuario>", methods=['PUT'])
+def fn_api_actulizar_usuario():
+    try:
+        data = request.get_json(force=True) or {}
+        id_usuario = data.get("id_usuario")
+        # Lógica para actualizar un usuario
+        actual = ctrl.obtener_por_id(id_usuario)
+        if not actual:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        data = request.get_json(force=True) or {}
+
+        # merge con valores actuales
+        nombre_completo = (data.get("nombre_completo") or actual["nombre_completo"]).strip()
+        nombre_usuario  = (data.get("nombre_usuario")  or actual["nombre_usuario"]).strip()
+        correo          = (data.get("correo")          or actual["correo"]).strip().lower()
+        tipo            = (data.get("tipo")            or actual["tipo"]).strip()
+        puntos          = int(data.get("puntos")  if data.get("puntos")  is not None else actual["puntos"])
+        monedas         = int(data.get("monedas") if data.get("monedas") is not None else actual["monedas"])
+        vigente         = bool(data.get("vigente") if data.get("vigente") is not None else actual["vigente"])
+
+        # unicidad correo / nombre_usuario (excluyendo mi propio id)
+        conexion = obtener_conexion()
+        try:
+            with conexion.cursor() as c:
+                c.execute("SELECT id_usuario FROM USUARIO WHERE correo=%s AND id_usuario<>%s LIMIT 1", (correo, id_usuario))
+                if c.fetchone():
+                    return jsonify({"error":"El correo ya está en uso", "campo":"correo"}), 409
+                c.execute("SELECT id_usuario FROM USUARIO WHERE nombre_usuario=%s AND id_usuario<>%s LIMIT 1", (nombre_usuario, id_usuario))
+                if c.fetchone():
+                    return jsonify({"error":"El nombre de usuario ya está en uso", "campo":"nombre_usuario"}), 409
+        finally:
+            if conexion:
+                conexion.close()
+
+        ctrl.actualizar(id_usuario, nombre_completo, nombre_usuario, correo, tipo, puntos, monedas, vigente)
+        actualizado = ctrl.obtener_por_id(id_usuario)
+        actualizado.pop("contraseña", None)
+        return jsonify(actualizado), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
+
+@app.route("/api_eliminar_usuario/<int:id_usuario>", methods=['DELETE'])
+def fn_api_eliminar_usuario():
+    try:
+        data = request.get_json(force=True) or {}
+        id_usuario = data.get("id_usuario")
+        # Lógica para eliminar (o desactivar) un usuario
+        if not ctrl.obtener_por_id(id_usuario):
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        ok = ctrl.desactivar(id_usuario)  # True/False
+        if not ok:
+            # No se afectó ninguna fila
+            return jsonify({"error": "No se pudo desactivar el usuario"}), 500
+
+        return jsonify({"ok": True, "id_usuario": id_usuario, "vigente": False}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
+
+
+# ---------------------------------------------------------------
 
 @app.route("/api/usuarios", methods=['POST'])
 def api_create_usuario():
@@ -224,8 +321,85 @@ def api_correo_activo():
     except Exception:
         traceback.print_exc()  # <-- log más útil
         return jsonify({"ok": False, "error": "interno"}), 500
-# ------------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 # CUESTIONARIOS Y SUS PARTES
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
+@app.route("/api_obtener_cuestionarios", methods=['GET'])
+def fn_api_obtener_cuestionarios():
+    try:
+        cuestionarios = cc.obtener_cuestionarios_todos()
+        return jsonify({"data":cuestionarios}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
+
+@app.route("/api_obtener_cuestionario_por_id/<int:id_cuestionario>", methods=['GET'])
+def fn_api_obtener_cuestionario_por_id(id_cuestionario):
+    try:
+        cuestionario = cc.obtener_cuestionario_por_id(id_cuestionario)
+        return jsonify({"data":cuestionario}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
+
+@app.route("/api_registar_cuestionario", methods=['POST'])
+def fn_api_registrar_cuestionario():
+    try:
+        data = request.json
+        cc.crear(
+            titulo=data['titulo'],
+            descripcion=data['descripcion'],
+            es_publico=data['es_publico'],
+            id_usuario=data['id_usuario'],
+            id_categoria=data['id_categoria'],
+            id_cuestionario_original=data.get('id_cuestionario_original') # .get() para campos opcionales
+        )
+        return jsonify({"mensaje": "Cuestionario creado con éxito"}), 201
+    except KeyError:
+        return jsonify({"error": "Faltan datos requeridos"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api_actualizar_cuestionario", methods=['PUT'])
+def fn_api_actualizar_cuestionario():
+    try:
+        data = request.json
+        cc.actualizar(
+            id_cuestionario=data['id_cuestionario'],
+            titulo=data['titulo'],
+            descripcion=data['descripcion'],
+            es_publico=data['es_publico'],
+            #id_usuario=data['id_usuario'],
+            id_categoria=data['id_categoria'],
+            vigente=data['vigente']
+        )
+        return jsonify({"mensaje": "Cuestionario actualizado con éxito"}), 201
+    except KeyError:
+        return jsonify({"error": "Faltan datos requeridos"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/cuestionarios/<int:id_cuestionario>", methods=['DELETE'])
+def fn_api_eliminar_cuestionario(id_cuestionario):
+    try:
+        data = request.get_json(force=True) or {}
+        id_cuestionario = data.get("id_cuestionario")
+        # Llama a la función del controlador para desactivar
+        exito = cc.desactivar(id_cuestionario)
+
+        if exito:
+            return jsonify({"mensaje": "Cuestionario desactivado correctamente"}), 200
+        else:
+            return jsonify({"error": "Cuestionario no encontrado"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------
 
 @app.route("/api/obtener_cuestionarios", methods=['GET'])
 def api_obtenercuestionarios():
@@ -249,7 +423,6 @@ def api_get_cuestionarios():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/cuestionarios", methods=['POST'])
 def api_create_cuestionario():
     try:
@@ -268,14 +441,12 @@ def api_create_cuestionario():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/cuestionarios/<int:id_cuestionario>", methods=['GET'])
 def api_get_cuestionario(id_cuestionario):
     cuestionario = cc.obtener_por_id(id_cuestionario)
     if cuestionario:
         return jsonify({"data": cuestionario}), 200
     return jsonify({"mensaje": "Cuestionario no encontrado"}), 404
-
 
 @app.route("/api/cuestionarios", methods=['PUT'])
 def api_update_cuestionario():
@@ -296,7 +467,6 @@ def api_update_cuestionario():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/cuestionarios/<int:id_cuestionario>", methods=['DELETE'])
 def api_delete_cuestionario(id_cuestionario):
     try:
@@ -310,7 +480,6 @@ def api_delete_cuestionario(id_cuestionario):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/api/cuestionarios/guardar-completo", methods=['POST'])
 def api_guardar_cuestionario_completo():
@@ -397,6 +566,70 @@ def api_guardar_cuestionario_basico():
         return jsonify({"success": False, "error": "Error interno del servidor."}), 500
 
 
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# PREGUNTAS
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+@app.route("/api_obtener_preguntas", methods=['GET'])
+def fn_api_obtener_preguntas():
+    try:
+        cuestionarios = cpo.obtener_preguntas_todos()
+        return jsonify({"data":cuestionarios}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
+
+@app.route("/api_obtener_pregunta_por_id/<int:id_pregunta>", methods=['GET'])
+def fn_api_obtener_pregunta_por_id(id_pregunta):
+    try:
+        pregunta = cpo.obtener_pregunta_por_id(id_pregunta)
+        return jsonify({"data": pregunta}) if pregunta else (jsonify({"error": "Pregunta no encontrada"}), 404)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
+
+@app.route("/api_registrar_pregunta", methods=['POST'])
+def fn_api_registrar_pregunta():
+    try:
+        data = request.json
+        cpo.crear_pregunta(
+            id_cuestionario=data['id_cuestionario'],
+            pregunta=data['pregunta'],
+            num_pregunta=data['num_pregunta'],
+            puntaje_base=data['puntaje_base'],
+            adjunto=data.get('adjunto')
+        )
+        return jsonify({"mensaje": "Pregunta creada con éxito"}), 201
+    except KeyError:
+        return jsonify({"error": "Faltan datos requeridos"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api_actualizar_pregunta>", methods=['PUT'])
+def fn_api_actualizar_pregunta():
+    try:
+        data = request.json
+        cpo.actualizar_pregunta(
+            data['id_pregunta'],
+            data['pregunta'], 
+            data['puntaje_base']
+        )
+        return jsonify({"mensaje": "Pregunta actualizada"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
+
+@app.route("/api_eliminar_pregunta", methods=['DELETE'])
+def fn_api_eliminar_pregunta():
+    try:
+        data = request.json
+        cpo.eliminar_pregunta(data['id_pregunta'])
+        return jsonify({"mensaje": "Pregunta eliminada"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------
+
+
 @app.route("/api/preguntas/<int:id_pregunta>/imagen", methods=['POST'])
 def api_upload_pregunta_imagen(id_pregunta):
     if 'imagen' not in request.files:
@@ -433,7 +666,6 @@ def api_upload_pregunta_imagen(id_pregunta):
 
     return jsonify({"error": "Tipo de archivo no permitido"}), 400
 
-
 @app.route("/api/preguntas/<int:id_pregunta>/imagen", methods=['DELETE'])
 def api_delete_pregunta_imagen(id_pregunta):
     exito = cpo.quitar_imagen_pregunta(id_pregunta)
@@ -441,8 +673,6 @@ def api_delete_pregunta_imagen(id_pregunta):
         return jsonify({"mensaje": "Imagen eliminada con éxito"}), 200
     else:
         return jsonify({"error": "No se pudo eliminar la imagen"}), 500
-
-
 
 
 # --- PREGUNTAS ---
@@ -497,15 +727,67 @@ def api_delete_pregunta(id_pregunta):
     return jsonify({"mensaje": "Pregunta eliminada"})
 
 
-# --- OPCIONES ---
 
-@app.route("/api/obtener_opciones", methods=['GET'])
-def api_obtener_opciones():
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# OPCIONES
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
+@app.route("/api_obtener_opciones", methods=['GET'])
+def fn_api_obtener_opciones():
     try:
         cuestionarios = cpo.obtener_opciones_todas()
         return jsonify({"data":cuestionarios}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500 
+
+@app.route("/api_obtener_opcion_por_id/<int:id_opcion>", methods=['GET'])
+def fn_api_get_opcion_por_id(id_opcion):
+    try:
+        opcion = cpo.obtener_opcion_por_id(id_opcion)
+        return jsonify({"data": opcion}) if opcion else (jsonify({"error": "Opción no encontrada"}), 404)
+    except Exception as e:
+            return jsonify({"error": str(e)}), 500 
+
+@app.route("/api_registar_opcion", methods=['POST'])
+def fn_api_registrar_opcion():
+    try:
+        data = request.json
+        cpo.crear_opcion(
+            id_pregunta=['id_pregunta'],
+            opcion=data['opcion'],
+            es_correcta_bool=data['es_correcta_bool']
+            # descripcion=data.get('descripcion'),
+            # adjunto=data.get('adjunto')
+        )
+        return jsonify({"mensaje": "Opción creada con éxito"}), 201
+    except KeyError:
+        return jsonify({"error": "Faltan datos requeridos"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api_actualizar_opcion>", methods=['PUT'])
+def fn_api_actualizar_opcion():
+    try:
+        data = request.json
+        cpo.actualizar_opcion(data['id_opcion'], data['opcion'])
+        return jsonify({"mensaje": "Opción actualizada"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api_eliminar_opcion", methods=['DELETE'])
+def fn_api_delete_opcion():
+    try:
+        data = request.json
+        cpo.eliminar_opcion(data['id_opcion'])
+        return jsonify({"mensaje": "Opción eliminada"})
+    except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------
+
 
 
 @app.route("/api/preguntas/<int:id_pregunta>/opciones", methods=['GET'])

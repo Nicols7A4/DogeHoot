@@ -72,6 +72,18 @@ def obtener_cuestionarios_todos():
         if conexion: conexion.close()
     return cuestionarios
 
+def obtener_cuestionario_por_id(id):
+    conexion = obtener_conexion()
+    cuestionarios = []
+    try:
+        with conexion.cursor() as cursor:
+            query = "SELECT * FROM CUESTIONARIO WHERE id_cuestionario = %s;"
+            cursor.execute(query, (id))
+            cuestionarios = cursor.fetchone()
+    finally:
+        if conexion: conexion.close()
+    return cuestionarios
+
 def obtener_con_filtros(id_usuario=None, id_categoria=None, es_publico=None):
     """Obtiene una lista de cuestionarios aplicando filtros opcionales."""
     conexion = obtener_conexion()
