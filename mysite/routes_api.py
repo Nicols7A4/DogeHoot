@@ -648,6 +648,166 @@ def api_finalizar_partida(id_partida):
         }), 500
 
 
+#----APIS CRUD PARTIDA_JWS hecho por Pame u.u ---
+
+def _serialize_partida_row(row): # Función para convertir los datetime a strings
+    if not row:
+        return None
+    serializable = dict(row)
+    for campo in ("fecha_hora_inicio", "fecha_hora_fin"):
+        valor = serializable.get(campo)
+        if isinstance(valor, datetime):
+            serializable[campo] = valor.isoformat()
+    return serializable
+
+
+@app.route("/api_registrarpartida", methods=["POST"])
+def api_registrarpartida():
+    """
+    Crea un registro completo en la tabla PARTIDA.
+    """
+    data = request.get_json(silent=True) or {}
+    pin = data.get("pin")
+    id_cuestionario = data.get("id_cuestionario")
+    modalidad = data.get("modalidad")
+    estado = data.get("estado")
+    fecha_hora_inicio = data.get("fecha_hora_inicio")
+
+    if not all([pin, id_cuestionario, modalidad, estado, fecha_hora_inicio]):
+        return jsonify({"error": "pin, id_cuestionario, modalidad, estado y fecha_hora_inicio son obligatorios."}), 400
+
+    campos = [
+        ("pin", pin),
+        ("id_cuestionario", id_cuestionario),
+        ("id_usuario_anfitrion", data.get("id_usuario_anfitrion")),
+        ("modalidad", modalidad),
+        ("estado", estado),
+        ("fecha_hora_inicio", fecha_hora_inicio),
+        ("fecha_hora_fin", data.get("fecha_hora_fin")),
+        ("cant_grupos", data.get("cant_grupos")),
+        ("recompensas_otorgadas", data.get("recompensas_otorgadas", 0)),
+    ]
+
+    columnas = ", ".join(col for col, val in campos if val is not None)
+    valores = [val for _, val in campos if val is not None]
+    placeholders = ", ".join(["%s"] * len(valores))
+
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                f"INSERT INTO PARTIDA ({columnas}) VALUES ({placeholders})",
+                valores
+            )
+            conexion.commit()
+            nuevo_id = cursor.lastrowid
+        return jsonify({"mensaje": "Partida creada correctamente", "id_partida": nuevo_id}), 201
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        return jsonify({"error": "No se pudo crear la partida", "detalle": str(e)}), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_obtenerpartidas", methods=["GET"])
+def api_obtenerpartidas():
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM PARTIDA ORDER BY id_partida DESC")
+            partidas = [_serialize_partida_row(row) for row in cursor.fetchall()]
+        return jsonify({"data": partidas})
+    except Exception as e:
+        return jsonify({"error": "No se pudieron obtener las partidas", "detalle": str(e)}), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_obtenerpartidaporid/<int:id_partida>", methods=["GET"])
+def api_obtenerpartidaporid(id_partida):
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM PARTIDA WHERE id_partida = %s", (id_partida,))
+            partida = cursor.fetchone()
+        if not partida:
+            return jsonify({"error": "Partida no encontrada"}), 404
+        return jsonify({"data": _serialize_partida_row(partida)})
+    except Exception as e:
+        return jsonify({"error": "No se pudo obtener la partida", "detalle": str(e)}), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_actualizarpartida/<int:id_partida>", methods=["PUT"])
+def api_actualizarpartida(id_partida):
+    data = request.get_json(silent=True) or {}
+    campos_validos = {
+        "pin", "id_cuestionario", "id_usuario_anfitrion", "modalidad",
+        "estado", "fecha_hora_inicio", "fecha_hora_fin", "cant_grupos",
+        "recompensas_otorgadas"
+    }
+    sets = []
+    valores = []
+    for campo in campos_validos:
+        if campo in data:
+            sets.append(f"{campo} = %s")
+            valores.append(data[campo])
+
+    if not sets:
+        return jsonify({"error": "No se enviaron campos a actualizar."}), 400
+
+    valores.append(id_partida)
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                f"UPDATE PARTIDA SET {', '.join(sets)} WHERE id_partida = %s",
+                valores
+            )
+            conexion.commit()
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Partida no encontrada"}), 404
+        return jsonify({"mensaje": "Partida actualizada correctamente"})
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        return jsonify({"error": "No se pudo actualizar la partida", "detalle": str(e)}), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_eliminarpartida/<int:id_partida>", methods=["DELETE"])
+def api_eliminarpartida(id_partida):
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("DELETE FROM PARTIDA WHERE id_partida = %s", (id_partida,))
+            conexion.commit()
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Partida no encontrada"}), 404
+        return jsonify({"mensaje": "Partida eliminada correctamente"})
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        return jsonify({"error": "No se pudo eliminar la partida", "detalle": str(e)}), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+# ---------------------------
+# AJAX GAME (sin sockets)
 # ---------------------------
 # AJAX GAME (sin sockets)
 
