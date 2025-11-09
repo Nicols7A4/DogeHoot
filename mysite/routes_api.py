@@ -1132,6 +1132,356 @@ def api_eliminarpartida(id_partida):
             conexion.close()
 
 
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# SKINS - APIS CRUD
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
+@app.route("/api_registrarskin", methods=["POST"])
+@jwt_required()
+def api_registrarskin():
+    """
+    Crea un registro completo en la tabla SKINS.
+    Campos: ruta (obligatorio), tipo (marco/fondo), precio, vigente
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        data = request.get_json(silent=True) or {}
+        ruta = data.get("ruta")
+        tipo = data.get("tipo", "marco")  # Por defecto 'marco'
+        precio = data.get("precio", 100)
+
+        if not ruta:
+            rpta["message"] = "ruta es obligatorio."
+            return jsonify(rpta), 400
+
+        # Validar tipo
+        if tipo not in ['marco', 'fondo']:
+            rpta["message"] = "tipo debe ser 'marco' o 'fondo'."
+            return jsonify(rpta), 400
+
+        campos = [
+            ("ruta", ruta),
+            ("tipo", tipo),
+            ("precio", precio),
+            ("vigente", data.get("vigente", 1)),
+        ]
+
+        columnas = ", ".join(col for col, val in campos if val is not None)
+        valores = [val for _, val in campos if val is not None]
+        placeholders = ", ".join(["%s"] * len(valores))
+
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                f"INSERT INTO SKINS ({columnas}) VALUES ({placeholders})",
+                valores
+            )
+            conexion.commit()
+            nuevo_id = cursor.lastrowid
+
+        rpta["code"] = 1
+        rpta["data"] = {"id_skin": nuevo_id}
+        rpta["message"] = "Skin creada correctamente"
+        return jsonify(rpta), 201
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo crear la skin: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_obtenerskins", methods=["GET"])
+@jwt_required()
+def api_obtenerskins():
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM SKINS ORDER BY id_skin DESC")
+            skins = cursor.fetchall()
+
+        rpta["code"] = 1
+        rpta["data"] = skins
+        rpta["message"] = "Skins obtenidas correctamente"
+        return jsonify(rpta)
+    except Exception as e:
+        rpta["message"] = f"No se pudieron obtener las skins: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_obtenerskinporid/<int:id_skin>", methods=["GET"])
+@jwt_required()
+def api_obtenerskinporid(id_skin):
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM SKINS WHERE id_skin = %s", (id_skin,))
+            skin = cursor.fetchone()
+
+        if not skin:
+            rpta["message"] = "Skin no encontrada"
+            return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["data"] = skin
+        rpta["message"] = "Skin obtenida correctamente"
+        return jsonify(rpta)
+    except Exception as e:
+        rpta["message"] = f"No se pudo obtener la skin: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_actualizarskin/<int:id_skin>", methods=["PUT"])
+@jwt_required()
+def api_actualizarskin(id_skin):
+    rpta = {"code": 0, "data": {}, "message": ""}
+    data = request.get_json(silent=True) or {}
+    campos_validos = {
+        "ruta", "tipo", "precio", "vigente"
+    }
+    sets = []
+    valores = []
+    for campo in campos_validos:
+        if campo in data:
+            # Validar tipo si se está actualizando
+            if campo == "tipo" and data[campo] not in ['marco', 'fondo']:
+                rpta["message"] = "tipo debe ser 'marco' o 'fondo'."
+                return jsonify(rpta), 400
+            sets.append(f"{campo} = %s")
+            valores.append(data[campo])
+
+    if not sets:
+        rpta["message"] = "No se enviaron campos a actualizar."
+        return jsonify(rpta), 400
+
+    valores.append(id_skin)
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                f"UPDATE SKINS SET {', '.join(sets)} WHERE id_skin = %s",
+                valores
+            )
+            conexion.commit()
+            if cursor.rowcount == 0:
+                rpta["message"] = "Skin no encontrada"
+                return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["message"] = "Skin actualizada correctamente"
+        return jsonify(rpta)
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo actualizar la skin: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_eliminarskin/<int:id_skin>", methods=["DELETE"])
+@jwt_required()
+def api_eliminarskin(id_skin):
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("DELETE FROM SKINS WHERE id_skin = %s", (id_skin,))
+            conexion.commit()
+            if cursor.rowcount == 0:
+                rpta["message"] = "Skin no encontrada"
+                return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["message"] = "Skin eliminada correctamente"
+        return jsonify(rpta)
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo eliminar la skin: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# CATEGORIAS - APIS CRUD
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
+@app.route("/api_registrarcategoria", methods=["POST"])
+@jwt_required()
+def api_registrarcategoria():
+    """
+    Crea un registro completo en la tabla CATEGORIA.
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        data = request.get_json(silent=True) or {}
+        categoria = data.get("categoria")
+
+        if not categoria:
+            rpta["message"] = "categoria es obligatorio."
+            return jsonify(rpta), 400
+
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO CATEGORIA (categoria) VALUES (%s)",
+                (categoria,)
+            )
+            conexion.commit()
+            nuevo_id = cursor.lastrowid
+
+        rpta["code"] = 1
+        rpta["data"] = {"id_categoria": nuevo_id}
+        rpta["message"] = "Categoría creada correctamente"
+        return jsonify(rpta), 201
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo crear la categoría: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_obtenercategorias", methods=["GET"])
+@jwt_required()
+def api_obtenercategorias():
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM CATEGORIA ORDER BY categoria ASC")
+            categorias = cursor.fetchall()
+
+        rpta["code"] = 1
+        rpta["data"] = categorias
+        rpta["message"] = "Categorías obtenidas correctamente"
+        return jsonify(rpta)
+    except Exception as e:
+        rpta["message"] = f"No se pudieron obtener las categorías: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_obtenercategoriaporid/<int:id_categoria>", methods=["GET"])
+@jwt_required()
+def api_obtenercategoriaporid(id_categoria):
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM CATEGORIA WHERE id_categoria = %s", (id_categoria,))
+            categoria = cursor.fetchone()
+
+        if not categoria:
+            rpta["message"] = "Categoría no encontrada"
+            return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["data"] = categoria
+        rpta["message"] = "Categoría obtenida correctamente"
+        return jsonify(rpta)
+    except Exception as e:
+        rpta["message"] = f"No se pudo obtener la categoría: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_actualizarcategoria/<int:id_categoria>", methods=["PUT"])
+@jwt_required()
+def api_actualizarcategoria(id_categoria):
+    rpta = {"code": 0, "data": {}, "message": ""}
+    data = request.get_json(silent=True) or {}
+    categoria = data.get("categoria")
+
+    if not categoria:
+        rpta["message"] = "No se envió el campo categoria a actualizar."
+        return jsonify(rpta), 400
+
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                "UPDATE CATEGORIA SET categoria = %s WHERE id_categoria = %s",
+                (categoria, id_categoria)
+            )
+            conexion.commit()
+            if cursor.rowcount == 0:
+                rpta["message"] = "Categoría no encontrada"
+                return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["message"] = "Categoría actualizada correctamente"
+        return jsonify(rpta)
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo actualizar la categoría: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_eliminarcategoria/<int:id_categoria>", methods=["DELETE"])
+@jwt_required()
+def api_eliminarcategoria(id_categoria):
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("DELETE FROM CATEGORIA WHERE id_categoria = %s", (id_categoria,))
+            conexion.commit()
+            if cursor.rowcount == 0:
+                rpta["message"] = "Categoría no encontrada"
+                return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["message"] = "Categoría eliminada correctamente"
+        return jsonify(rpta)
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo eliminar la categoría: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
 # ---------------------------
 # AJAX GAME (sin sockets)
 # ---------------------------

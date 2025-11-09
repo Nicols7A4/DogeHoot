@@ -98,7 +98,7 @@ def auth_page():
                 return redirect(url_for("dashboard"))
             else:
                 flash("El correo o contraseña son incorrectos o la cuenta no está vigente.", "danger")
-                return redirect(url_for("auth"))
+                return redirect(url_for("auth_page"))
 
         # --- LÓGICA DE REGISTRO (¡AQUÍ ESTÁ LA CORRECCIÓN!) ---
         # ===== CAMBIO AQUÍ: Buscamos "nombre" en lugar de "nombre_completo" =====
