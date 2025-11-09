@@ -251,7 +251,7 @@
         <!-- PANEL LOGIN -->
         <section class="panel login-panel">
           <div class="left-column">
-            <form class="formulario" action="{{ url_for('auth') }}" method="post">
+            <form class="formulario" action="{{ url_for('auth_page') }}" method="post">
               <img
                 class="logo"
                 src="{{ url_for('static', filename='img/logo.png') }}"
@@ -330,7 +330,7 @@
           </div>
 
           <div class="right-column">
-            <form class="formulario" action="{{ url_for('auth') }}" method="post">
+            <form class="formulario" action="{{ url_for('auth_page') }}" method="post">
               <img
                 class="logo"
                 id="logo-registro"
@@ -713,3 +713,4 @@ if (forgotPasswordLink && emailInput) {
     </script>
   </body>
 </html>
+

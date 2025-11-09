@@ -3,7 +3,7 @@ from bd import obtener_conexion
 import random
 from datetime import datetime, timedelta
 from itsdangerous import URLSafeTimedSerializer
-from main import app
+from flask import current_app
 
 
 def crear_usuario_pendiente(nombre_completo, nombre_usuario, correo, contrasena, tipo):
@@ -234,6 +234,41 @@ def obtener_por_correo(correo):
             conexion.close()
     return usuario
 
+def obtener_por_id_auth(id_usuario):
+    conexion = obtener_conexion()
+    usuario = None
+    try:
+        with conexion.cursor() as cursor:
+            sql = """
+               SELECT *
+                FROM USUARIO 
+                WHERE id_usuario = %s
+            """
+            cursor.execute(sql, (id_usuario,))
+            usuario = cursor.fetchone()
+    finally:
+        if conexion:
+            conexion.close()
+    return usuario
+
+
+def obtener_por_correo_auth(correo):
+    conexion = obtener_conexion()
+    usuario = None
+    try:
+        with conexion.cursor() as cursor:
+            sql = """
+                SELECT *
+                FROM USUARIO 
+                WHERE correo = %s
+            """
+            cursor.execute(sql, (correo,))
+            usuario = cursor.fetchone()
+    finally:
+        if conexion:
+            conexion.close()
+    return usuario
+
 
 
 def actualizar(id_usuario, nombre_completo, nombre_usuario, correo, tipo, puntos, monedas, vigente):
@@ -402,7 +437,7 @@ def generar_token_restablecimiento(id_usuario):
     """
     Genera un token seguro y temporal que contiene el ID del usuario.
     """
-    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
     return serializer.dumps(id_usuario, salt='password-reset-salt')
 
 def verificar_token_restablecimiento(token, max_age_secs=900): # 15 minutos
@@ -410,7 +445,7 @@ def verificar_token_restablecimiento(token, max_age_secs=900): # 15 minutos
     Verifica el token. Si es válido y no ha expirado, devuelve el id_usuario.
     Si no, devuelve None.
     """
-    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
     try:
         id_usuario = serializer.loads(
             token,

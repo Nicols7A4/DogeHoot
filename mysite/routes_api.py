@@ -36,6 +36,7 @@ from ajax_game import (
     finalize_game,
 )
 
+from flask_jwt import JWT, jwt_required
 
 # --- Auxiliares --------
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -49,6 +50,7 @@ def allowed_file(filename):
 
 @app.route("/api/test")
 def api_test():
+    
     return jsonify({"mensaje": "La API funciona correctamente"})
 
 
@@ -56,11 +58,14 @@ def api_test():
 # USUARIOS
 
 
-@app.route("/api/usuarios", methods=['GET'])
+@app.route("/api/obtener_usuarios", methods=['GET'])
+@jwt_required()
 def api_get_usuarios():
-    # Lógica para llamar al controlador que obtiene todos los usuarios
-    # usuarios = controladores.usuarios.obtener_todos()
-    return jsonify({"mensaje": "Devuelve lista de usuarios"})
+    try:
+        usuarios = ctrl.obtener_todos()
+        return jsonify({"data":usuarios}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
 
 
 @app.route("/api/usuarios", methods=['POST'])
