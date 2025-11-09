@@ -205,7 +205,7 @@ def verificar_correo(correo):
         return jsonify({"error": "Error interno"}), 500
 
 
-@app.get("/api/correo_activo")
+@app.route("/api/correo_activo", methods=["GET"])
 def api_correo_activo():
     correo = (request.args.get("correo") or "").strip()
     if not correo:
@@ -222,6 +222,13 @@ def api_correo_activo():
 # ------------------------------------------------------------------------------
 # CUESTIONARIOS Y SUS PARTES
 
+@app.route("/api/obtener_cuestionarios", methods=['GET'])
+def api_obtenercuestionarios():
+    try:
+        cuestionarios = cc.obtener_cuestionarios_todos()
+        return jsonify({"data":cuestionarios}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
 
 @app.route("/api/cuestionarios", methods=['GET'])
 def api_get_cuestionarios():
@@ -434,6 +441,13 @@ def api_delete_pregunta_imagen(id_pregunta):
 
 
 # --- PREGUNTAS ---
+@app.route("/api/obtener_preguntas", methods=['GET'])
+def api_obtener_preguntas():
+    try:
+        cuestionarios = cpo.obtener_preguntas_todos()
+        return jsonify({"data":cuestionarios}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
 
 @app.route("/api/cuestionarios/<int:id_cuestionario>/preguntas", methods=['GET'])
 def api_get_preguntas(id_cuestionario):
@@ -479,6 +493,15 @@ def api_delete_pregunta(id_pregunta):
 
 
 # --- OPCIONES ---
+
+@app.route("/api/obtener_opciones", methods=['GET'])
+def api_obtener_opciones():
+    try:
+        cuestionarios = cpo.obtener_opciones_todas()
+        return jsonify({"data":cuestionarios}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
+
 
 @app.route("/api/preguntas/<int:id_pregunta>/opciones", methods=['GET'])
 def api_get_opciones(id_pregunta):
@@ -628,7 +651,7 @@ def api_finalizar_partida(id_partida):
 # ---------------------------
 # AJAX GAME (sin sockets)
 
-@app.post('/api/game/host/init')
+@app.route('/api/game/host/init', methods=["POST"])
 def api_game_host_init():
     data = request.get_json(force=True) or {}
     pin = (data.get('pin') or '').strip().upper()
@@ -638,7 +661,7 @@ def api_game_host_init():
     return jsonify({'ok': True, 'lobby': get_lobby_state(pin), 'estado': partida['estado'], 'fase': partida['fase']})
 
 
-@app.get('/api/lobby/state')
+@app.route('/api/lobby/state', methods=["GET"])
 def api_lobby_state():
     pin = (request.args.get('pin') or '').strip().upper()
     if not pin:
@@ -648,7 +671,7 @@ def api_lobby_state():
     return jsonify(get_lobby_state(pin))
 
 
-@app.post('/api/player/join')
+@app.route('/api/player/join', methods=["POST"])
 def api_player_join():
     data = request.get_json(force=True) or {}
     pin = (data.get('pin') or '').strip().upper()
@@ -663,7 +686,7 @@ def api_player_join():
     return jsonify({'ok': True, 'estado': st.get('estado'), 'fase': st.get('fase'), 'lobby': get_lobby_state(pin)})
 
 
-@app.post('/api/player/select-group')
+@app.route('/api/player/select-group', methods=["POST"])
 def api_player_select_group():
     data = request.get_json(force=True) or {}
     pin = (data.get('pin') or '').strip().upper()
@@ -678,7 +701,7 @@ def api_player_select_group():
     return jsonify({'ok': True, 'lobby': get_lobby_state(pin)})
 
 
-@app.post('/api/player/leave')
+@app.route('/api/player/leave', methods=["POST"])
 def api_player_leave():
     data = request.get_json(force=True) or {}
     pin = (data.get('pin') or '').strip().upper()
@@ -692,7 +715,7 @@ def api_player_leave():
     return jsonify({'ok': True})
 
 
-@app.post('/api/game/start')
+@app.route('/api/game/start', methods=["POST"])
 def api_game_start():
     data = request.get_json(force=True) or {}
     pin = (data.get('pin') or '').strip().upper()
@@ -704,7 +727,7 @@ def api_game_start():
     return jsonify({'started': bool(started)})
 
 
-@app.get('/api/game/status')
+@app.route('/api/game/status', methods=["GET"])
 def api_game_status():
     pin = (request.args.get('pin') or '').strip().upper()
     if not pin:
@@ -718,7 +741,7 @@ def api_game_status():
     return jsonify(resp)
 
 
-@app.get('/api/game/current')
+@app.route('/api/game/current', methods=["GET"])
 def api_game_current():
     pin = (request.args.get('pin') or '').strip().upper()
     if not pin:
@@ -729,7 +752,7 @@ def api_game_current():
     return jsonify(cur)
 
 
-@app.post('/api/game/answer')
+@app.route('/api/game/answer', methods=["POST"])
 def api_game_answer():
     data = request.get_json(force=True) or {}
     pin = (data.get('pin') or '').strip().upper()
@@ -921,7 +944,10 @@ def api_solicitar_restablecimiento():
         # Consulta adicional para diferenciar si es "no verificado" o "no existe"
         usuario_any = ctrl.obtener_por_correo_sin_filtros(correo)
         if usuario_any and usuario_any.get('vigente') and not usuario_any.get('verificado'):
-            return jsonify({"mensaje": "No has verificado el correo que has ingresado."}), 200
+            return jsonify({"error": "Este correo no ha sido verificado. Por favor, verifica tu correo antes de restablecer la contraseña."}), 400
+        else:
+            # El correo no existe en la base de datos
+            return jsonify({"error": "No existe una cuenta registrada con este correo electrónico."}), 404
 
     # Si llegó acá, está vigente y verificado → envía correo
     try:

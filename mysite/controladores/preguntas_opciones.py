@@ -16,6 +16,18 @@ def crear_pregunta(id_cuestionario, pregunta, num_pregunta, puntaje_base, adjunt
         if conexion:
             conexion.close()
 
+def obtener_preguntas_todos():
+    conexion = obtener_conexion()
+    preguntas = []
+    try:
+        with conexion.cursor() as cursor:
+            query = "SELECT * FROM PREGUNTAS;"
+            cursor.execute(query)
+            preguntas = cursor.fetchall()
+    finally:
+        if conexion: conexion.close()
+    return preguntas
+
 
 def obtener_preguntas_por_cuestionario(id_cuestionario):
     """Obtiene todas las preguntas VIGENTES de un cuestionario específico."""
@@ -133,6 +145,19 @@ def crear_opcion(id_pregunta, opcion, es_correcta_bool, descripcion=None, adjunt
     finally:
         if conexion:
             conexion.close()
+
+def obtener_opciones_todas():
+    conexion = obtener_conexion()
+    opciones = []
+    try:
+        with conexion.cursor() as cursor:
+            query = "SELECT * FROM OPCIONES;"
+            cursor.execute(query)
+            opciones = cursor.fetchall()
+    finally:
+        if conexion: conexion.close()
+    return opciones
+
 
 def obtener_opciones_por_pregunta(id_pregunta):
     """Obtiene todas las opciones VIGENTES de una pregunta específica."""

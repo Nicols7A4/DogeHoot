@@ -60,6 +60,18 @@ def crear_solo_cuestionario(titulo, descripcion, es_publico, fecha_hora_creacion
             conexion.close()
     return nuevo_id
 
+def obtener_cuestionarios_todos():
+    conexion = obtener_conexion()
+    cuestionarios = []
+    try:
+        with conexion.cursor() as cursor:
+            query = "SELECT * FROM CUESTIONARIO;"
+            cursor.execute(query)
+            cuestionarios = cursor.fetchall()
+    finally:
+        if conexion: conexion.close()
+    return cuestionarios
+
 def obtener_con_filtros(id_usuario=None, id_categoria=None, es_publico=None):
     """Obtiene una lista de cuestionarios aplicando filtros opcionales."""
     conexion = obtener_conexion()

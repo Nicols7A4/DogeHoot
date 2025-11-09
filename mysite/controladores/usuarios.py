@@ -216,6 +216,25 @@ def obtener_por_id(id_usuario):
             conexion.close()
     return usuario
 
+def obtener_por_correo(correo):
+    conexion = obtener_conexion()
+    usuario = None
+    try:
+        with conexion.cursor() as cursor:
+            sql = """
+                SELECT u.id_usuario, u.nombre_completo, u.nombre_usuario, u.correo, u.contraseña,
+                       u.tipo, u.puntos, u.monedas, u.vigente, u.id_skin_activa, s.ruta AS skin_ruta, u.foto
+                FROM USUARIO u
+                LEFT JOIN SKINS s ON u.id_skin_activa = s.id_skin
+                WHERE u.correo = %s
+            """
+            cursor.execute(sql, (correo,))
+            usuario = cursor.fetchone()
+    finally:
+        if conexion:
+            conexion.close()
+    return usuario
+
 
 
 def actualizar(id_usuario, nombre_completo, nombre_usuario, correo, tipo, puntos, monedas, vigente):

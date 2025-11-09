@@ -70,7 +70,7 @@ def crear_partida(id_cuestionario, modalidad_grupal=False, cant_grupos=None, id_
     # 1. Validar que el cuestionario existe y está publicado
     conexion = obtener_conexion()
     try:
-        with conexion.cursor() as cursor:
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
             cursor.execute("""
                 SELECT id_cuestionario, vigente 
                 FROM CUESTIONARIO 
@@ -83,6 +83,18 @@ def crear_partida(id_cuestionario, modalidad_grupal=False, cant_grupos=None, id_
             
             if cuestionario['vigente'] != 1:  # vigente != 1
                 return False, "El cuestionario no está publicado. Publícalo antes de crear una partida."
+            
+            # 1.5. Validar que el cuestionario tiene preguntas
+            cursor.execute("""
+                SELECT COUNT(*) as total_preguntas
+                FROM PREGUNTAS 
+                WHERE id_cuestionario = %s AND vigente = 1
+            """, (id_cuestionario,))
+            resultado = cursor.fetchone()
+            total_preguntas = resultado['total_preguntas'] if resultado else 0
+            
+            if total_preguntas == 0:
+                return False, "El cuestionario no tiene preguntas publicadas. Agrega al menos una pregunta antes de crear una partida."
     finally:
         conexion.close()
     
