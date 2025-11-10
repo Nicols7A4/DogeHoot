@@ -1,4 +1,5 @@
 from bd import obtener_conexion
+import traceback;
 
 # --- Obtener todas las skins disponibles ---
 def obtener_todas():
