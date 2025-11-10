@@ -521,9 +521,10 @@ def obtener_por_correo(correo):
             conexion.close()
     return usuario
 
-def actualizar_contrasena(id_usuario, nueva_contrasena):
+def actualizar_contrasena_sin_validar(id_usuario, nueva_contrasena):
     """
     Actualiza la contraseña (en texto plano) de un usuario por su ID.
+    NO valida la contraseña anterior. Usar solo para restablecimiento con token.
     """
     conexion = obtener_conexion()
     try:

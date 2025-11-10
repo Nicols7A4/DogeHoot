@@ -899,8 +899,9 @@ def restablecer_con_token(token):
             flash('Las contraseñas no coinciden.', 'danger')
             return render_template('restablecer_contrasena.html')
 
-        # Guardamos la contraseña en texto plano
-        ctrl_usuarios.actualizar_contrasena(id_usuario, password)
+        # Guardamos la contraseña en texto plano (sin validar anterior porque viene de token)
+        # ctrl_usuarios.actualizar_contrasena(id_usuario, password)
+        ctrl_usuarios.actualizar_contrasena_sin_validar(id_usuario, password)
 
         flash('Tu contraseña ha sido actualizada con éxito. Ahora puedes iniciar sesión.', 'success')
         return redirect(url_for('auth_page'))
