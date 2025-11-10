@@ -93,16 +93,16 @@ def fn_api_registrar_usuario():
         return jsonify({"error": "Faltan campos obligatorios"}), 400
 
     modo = (request.args.get("modo") or "pendiente").lower()
-    if modo == "directo":
-        ok, msg = ctrl.crear_usuario(nombre_completo, nombre_usuario, correo, contrasena, tipo)
+    if modo == "directo" or True:
+        ok, msg = ctrl.crear_usuario_t(nombre_completo, nombre_usuario, correo, contrasena, tipo)
         return (jsonify({"ok": True, "mensaje": msg}), 201) if ok else (jsonify({"error": msg}), 409)
 
-    ok, resultado = ctrl.crear_usuario_pendiente(nombre_completo, nombre_usuario, correo, contrasena, tipo)
-    if ok:
-        return jsonify({"ok": True, "codigo_verificacion": resultado}), 201
-    return jsonify({"error": resultado}), 409
+    # ok, resultado = ctrl.crear_usuario_pendiente(nombre_completo, nombre_usuario, correo, contrasena, tipo)
+    # if ok:
+    #     return jsonify({"ok": True, "Mensaje":"Usuario registrado"}), 201
+    # return jsonify({"error": resultado}), 409
 
-@app.route("/api_actualizar_usuario/<int:id_usuario>", methods=['PUT'])
+@app.route("/api_actualizar_usuario", methods=['PUT'])
 def fn_api_actulizar_usuario():
     try:
         data = request.get_json(force=True) or {}
@@ -144,7 +144,7 @@ def fn_api_actulizar_usuario():
     except Exception as e:
         return jsonify({"error": str(e)}), 500 
 
-@app.route("/api_eliminar_usuario/<int:id_usuario>", methods=['DELETE'])
+@app.route("/api_eliminar_usuario", methods=['POST','DELETE'])
 def fn_api_eliminar_usuario():
     try:
         data = request.get_json(force=True) or {}
@@ -382,8 +382,8 @@ def fn_api_actualizar_cuestionario():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/cuestionarios/<int:id_cuestionario>", methods=['DELETE'])
-def fn_api_eliminar_cuestionario(id_cuestionario):
+@app.route("/api_elimiinar_cuestionario", methods=['POST','DELETE'])
+def fn_api_eliminar_cuestionario():
     try:
         data = request.get_json(force=True) or {}
         id_cuestionario = data.get("id_cuestionario")
@@ -596,6 +596,7 @@ def fn_api_registrar_pregunta():
             pregunta=data['pregunta'],
             num_pregunta=data['num_pregunta'],
             puntaje_base=data['puntaje_base'],
+            tiempo=data.get('tiempo'),
             adjunto=data.get('adjunto')
         )
         return jsonify({"mensaje": "Pregunta creada con éxito"}), 201
@@ -604,7 +605,7 @@ def fn_api_registrar_pregunta():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api_actualizar_pregunta>", methods=['PUT'])
+@app.route("/api_actualizar_pregunta", methods=['PUT'])
 def fn_api_actualizar_pregunta():
     try:
         data = request.json
@@ -617,12 +618,13 @@ def fn_api_actualizar_pregunta():
     except Exception as e:
         return jsonify({"error": str(e)}), 500 
 
-@app.route("/api_eliminar_pregunta", methods=['DELETE'])
+@app.route("/api_eliminar_pregunta", methods=['POST','DELETE'])
 def fn_api_eliminar_pregunta():
     try:
         data = request.json
-        cpo.eliminar_pregunta(data['id_pregunta'])
-        return jsonify({"mensaje": "Pregunta eliminada"})
+        # cpo.eliminar_pregunta(data['id_pregunta'])
+        cpo.eliminar_pregunta_logica(data['id_pregunta'])
+        return jsonify({"mensaje": "Pregunta eliminada logicamente"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -755,7 +757,7 @@ def fn_api_registrar_opcion():
     try:
         data = request.json
         cpo.crear_opcion(
-            id_pregunta=['id_pregunta'],
+            id_pregunta=data['id_pregunta'],
             opcion=data['opcion'],
             es_correcta_bool=data['es_correcta_bool']
             # descripcion=data.get('descripcion'),
@@ -767,7 +769,7 @@ def fn_api_registrar_opcion():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api_actualizar_opcion>", methods=['PUT'])
+@app.route("/api_actualizar_opcion", methods=['PUT'])
 def fn_api_actualizar_opcion():
     try:
         data = request.json
@@ -780,7 +782,8 @@ def fn_api_actualizar_opcion():
 def fn_api_delete_opcion():
     try:
         data = request.json
-        cpo.eliminar_opcion(data['id_opcion'])
+        # cpo.eliminar_opcion(data['id_opcion'])
+        cpo.eliminar_opcion_logica(data['id_opcion'])
         return jsonify({"mensaje": "Opción eliminada"})
     except Exception as e:
             return jsonify({"error": str(e)}), 500

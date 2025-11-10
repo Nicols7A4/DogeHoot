@@ -37,6 +37,37 @@ def crear_usuario_pendiente(nombre_completo, nombre_usuario, correo, contrasena,
     finally:
         if conexion:
             conexion.close()
+        
+def crear_usuario_t(nombre_completo, nombre_usuario, correo, contrasena, tipo,foto=None,puntos=0,monedas=0,id_skin_activa=None):
+    """
+    Crea un usuario con verificado=FALSE y le asigna un código de verificación.
+    """
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            # ===== ¡CORRECCIÓN AQUÍ! =====
+            # 1. Verificar si el correo O el nombre de usuario ya existen
+            sql_verificar = "SELECT id_usuario FROM USUARIO WHERE (correo = %s OR nombre_usuario = %s) AND vigente = TRUE"
+            cursor.execute(sql_verificar, (correo, nombre_usuario)) # Ahora pasamos ambos valores
+            if cursor.fetchone():
+                return False, "El correo o nombre de usuario ya está en uso."
+
+            # 2. Generar código y fecha de expiración
+            # codigo = str(random.randint(100000, 999999))
+            # expiracion = datetime.now() + timedelta(minutes=15)
+
+            # 3. Insertar el nuevo usuario como NO verificado
+            sql_insertar = """
+                INSERT INTO USUARIO (nombre_completo, nombre_usuario, correo, contraseña, tipo, vigente, verificado,puntos,monedas)
+                VALUES (%s, %s, %s, %s, %s, TRUE, TRUE,%s,%s)
+            """
+            cursor.execute(sql_insertar, (nombre_completo, nombre_usuario, correo, contrasena, tipo,puntos,monedas))
+
+        conexion.commit()
+        return True, "Usuario registrado"
+    finally:
+        if conexion:
+            conexion.close()
 
 def verificar_y_activar_usuario(correo, codigo):
     print(f"--- INICIANDO VERIFICACIÓN para correo: {correo}, código: {codigo} ---") # DEBUG

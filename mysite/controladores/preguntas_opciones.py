@@ -4,13 +4,13 @@ from main import app
 from bd import obtener_conexion
 
 # --- Lógica de Preguntas ---
-def crear_pregunta(id_cuestionario, pregunta, num_pregunta, puntaje_base, adjunto=None):
+def crear_pregunta(id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo=10, adjunto=None):
     """Crea una nueva pregunta para un cuestionario."""
     conexion = obtener_conexion()
     try:
         with conexion.cursor() as cursor:
-            sql = "INSERT INTO PREGUNTAS (id_cuestionario, pregunta, num_pregunta, puntaje_base, adjunto) VALUES (%s, %s, %s, %s, %s)"
-            cursor.execute(sql, (id_cuestionario, pregunta, num_pregunta, puntaje_base, adjunto))
+            sql = "INSERT INTO PREGUNTAS (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo, adjunto) VALUES (%s, %s, %s, %s, %s, %s)"
+            cursor.execute(sql, (id_cuestionario, pregunta, num_pregunta, puntaje_base, tiempo, adjunto))
         conexion.commit()
     finally:
         if conexion:
@@ -79,6 +79,16 @@ def eliminar_pregunta(id_pregunta):
     finally:
         conexion.close()
 
+
+def eliminar_pregunta_logica(id_pregunta):
+    """Elimina una pregunta (y sus opciones gracias a ON DELETE CASCADE)."""
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            cursor.execute("UPDATE PREGUNTAS SET vigente = 0 WHERE id_pregunta = %s", (id_pregunta,))
+        conexion.commit()
+    finally:
+        conexion.close()
 
 
 
@@ -204,6 +214,16 @@ def eliminar_opcion(id_opcion):
     try:
         with conexion.cursor() as cursor:
             cursor.execute("DELETE FROM OPCIONES WHERE id_opcion = %s", (id_opcion,))
+        conexion.commit()
+    finally:
+        conexion.close()
+
+def eliminar_opcion_logica(id_opcion):
+    """Elimina una opción."""
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            cursor.execute("UPDATE OPCIONES set vigente = 0 WHERE id_opcion = %s", (id_opcion,))
         conexion.commit()
     finally:
         conexion.close()
