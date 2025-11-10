@@ -1328,6 +1328,182 @@ def api_eliminarskin(id_skin):
 
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
+# INVENTARIO SKINS - APIS CRUD
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
+@app.route("/api_registrarinventario", methods=["POST"])
+@jwt_required()
+def api_registrarinventario():
+    rpta = {"code": 0, "data": {}, "message": ""}
+    data = request.get_json(silent=True) or {}
+    id_usuario = data.get("id_usuario")
+    id_skin = data.get("id_skin")
+
+    if not id_usuario or not id_skin:
+        rpta["message"] = "id_usuario e id_skin son obligatorios."
+        return jsonify(rpta), 400
+
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            # Verificar si ya existe
+            cursor.execute("""
+                SELECT 1 FROM INVENTARIO_SKINS WHERE id_usuario = %s AND id_skin = %s
+            """, (id_usuario, id_skin))
+            if cursor.fetchone():
+                rpta["message"] = "El registro ya existe en el inventario."
+                return jsonify(rpta), 400
+
+            cursor.execute("""
+                INSERT INTO INVENTARIO_SKINS (id_usuario, id_skin)
+                VALUES (%s, %s)
+            """, (id_usuario, id_skin))
+            conexion.commit()
+
+        rpta["code"] = 1
+        rpta["message"] = "Inventario registrado correctamente."
+        return jsonify(rpta), 201
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo registrar el inventario: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_actualizarinventario/<int:id_usuario>/<int:id_skin>", methods=["PUT"])
+@jwt_required()
+def api_actualizarinventario(id_usuario, id_skin):
+    rpta = {"code": 0, "data": {}, "message": ""}
+    data = request.get_json(silent=True) or {}
+    nuevo_id_skin = data.get("id_skin")
+
+    if not nuevo_id_skin:
+        rpta["message"] = "Debe enviar el nuevo id_skin para actualizar."
+        return jsonify(rpta), 400
+
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                UPDATE INVENTARIO_SKINS
+                SET id_skin = %s
+                WHERE id_usuario = %s AND id_skin = %s
+            """, (nuevo_id_skin, id_usuario, id_skin))
+            conexion.commit()
+
+            if cursor.rowcount == 0:
+                rpta["message"] = "No se encontró el registro para actualizar."
+                return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["message"] = "Inventario actualizado correctamente."
+        return jsonify(rpta)
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo actualizar el inventario: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_eliminarinventario/<int:id_usuario>/<int:id_skin>", methods=["DELETE"])
+@jwt_required()
+def api_eliminarinventario(id_usuario, id_skin):
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                DELETE FROM INVENTARIO_SKINS
+                WHERE id_usuario = %s AND id_skin = %s
+            """, (id_usuario, id_skin))
+            conexion.commit()
+
+            if cursor.rowcount == 0:
+                rpta["message"] = "No se encontró el registro a eliminar."
+                return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["message"] = "Inventario eliminado correctamente."
+        return jsonify(rpta)
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo eliminar el inventario: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_obtenerinventarios", methods=["GET"])
+@jwt_required()
+def api_obtenerinventarios():
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT i.id_usuario, i.id_skin, u.nombre AS nombre_usuario, s.ruta AS ruta_skin
+                FROM INVENTARIO_SKINS i
+                INNER JOIN USUARIO u ON u.id_usuario = i.id_usuario
+                INNER JOIN SKINS s ON s.id_skin = i.id_skin
+                ORDER BY i.id_usuario
+            """)
+            registros = cursor.fetchall()
+
+        rpta["code"] = 1
+        rpta["data"] = registros
+        rpta["message"] = "Inventarios obtenidos correctamente."
+        return jsonify(rpta)
+    except Exception as e:
+        rpta["message"] = f"No se pudieron obtener los inventarios: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+@app.route("/api_obtenerinventarioporusuario/<int:id_usuario>", methods=["GET"])
+@jwt_required()
+def api_obtenerinventarioporusuario(id_usuario):
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT s.id_skin, s.ruta, s.tipo, s.precio, s.vigente
+                FROM INVENTARIO_SKINS i
+                INNER JOIN SKINS s ON s.id_skin = i.id_skin
+                WHERE i.id_usuario = %s
+            """, (id_usuario,))
+            skins = cursor.fetchall()
+
+        rpta["code"] = 1
+        rpta["data"] = skins
+        rpta["message"] = "Inventario del usuario obtenido correctamente."
+        return jsonify(rpta)
+    except Exception as e:
+        rpta["message"] = f"No se pudo obtener el inventario: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 # CATEGORIAS - APIS CRUD
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
