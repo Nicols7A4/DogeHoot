@@ -3252,3 +3252,537 @@ def onedrive_test_upload():
             'message': f'Error: {str(e)}'
         }), 500
 
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# PARTICIPANTES
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
+def _serialize_time_row(row):
+    """
+    Ayudante para serializar campos de tiempo/fecha en respuestas.
+    Usa el mismo patrón que tu _serialize_partida_row.
+    """
+    if not row:
+        return None
+    serializable = dict(row)
+    
+    tiempo = serializable.get("tiempo_respuesta")
+    if tiempo and not isinstance(tiempo, str):
+        serializable["tiempo_respuesta"] = str(tiempo)
+
+    creado = serializable.get("creado_en")
+    if creado and isinstance(creado, datetime):
+        serializable["creado_en"] = creado.isoformat()
+        
+    return serializable
+
+@app.route("/api_registrar_participante", methods=["POST"])
+@jwt_required()
+def api_registrar_participante():
+    """
+    [CREATE] Registra un nuevo participante en una partida.
+    Inicia el puntaje en 0 por defecto.
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        data = request.get_json(silent=True) or {}
+        id_partida = data.get("id_partida")
+        nombre = data.get("nombre")
+        registrado = data.get("registrado", 0) # 0 = invitado, 1 = usuario
+
+        if not id_partida or not nombre:
+            rpta["message"] = "id_partida y nombre son obligatorios."
+            return jsonify(rpta), 400
+
+        campos = [
+            ("id_partida", id_partida),
+            ("nombre", nombre),
+            ("registrado", registrado),
+            ("puntaje", data.get("puntaje", 0)),
+            ("id_usuario", data.get("id_usuario")), # Opcional
+            ("id_grupo", data.get("id_grupo")),     # Opcional
+            ("grupo", data.get("grupo")),         # Opcional
+        ]
+
+        columnas = ", ".join(col for col, val in campos if val is not None)
+        valores = [val for _, val in campos if val is not None]
+        placeholders = ", ".join(["%s"] * len(valores))
+
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(
+                f"INSERT INTO PARTICIPANTE ({columnas}) VALUES ({placeholders})",
+                valores
+            )
+            nuevo_id = cursor.lastrowid
+            conexion.commit()
+            
+            cursor.execute("SELECT * FROM PARTICIPANTE WHERE id_participante = %s", (nuevo_id,))
+            nuevo_participante = cursor.fetchone()
+
+        rpta["code"] = 1
+        rpta["data"] = nuevo_participante
+        rpta["message"] = "Participante creado correctamente"
+        return jsonify(rpta), 201
+        
+    except pymysql.Error as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo crear el participante: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+@app.route("/api_obtener_participantes", methods=["GET"])
+@jwt_required()
+def api_obtener_participantes():
+    """
+    [READ ALL] Obtiene todos los participantes.
+    Filtro opcional: /api_obtener_participantes?id_partida=123
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        id_partida_filtro = request.args.get("id_partida", type=int)
+
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            if id_partida_filtro:
+                cursor.execute(
+                    "SELECT * FROM PARTICIPANTE WHERE id_partida = %s ORDER BY puntaje DESC",
+                    (id_partida_filtro,)
+                )
+            else:
+                cursor.execute("SELECT * FROM PARTICIPANTE ORDER BY id_partida DESC, puntaje DESC")
+            
+            participantes = cursor.fetchall()
+
+        rpta["code"] = 1
+        rpta["data"] = participantes
+        rpta["message"] = "Participantes obtenidos correctamente"
+        return jsonify(rpta)
+        
+    except Exception as e:
+        rpta["message"] = f"No se pudieron obtener los participantes: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+@app.route("/api_obtener_participante_por_id/<int:id_participante>", methods=["GET"])
+@jwt_required()
+def api_obtener_participante_por_id(id_participante):
+    """
+    [READ BY ID] Obtiene un participante específico por su ID.
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM PARTICIPANTE WHERE id_participante = %s", (id_participante,))
+            participante = cursor.fetchone()
+
+        if not participante:
+            rpta["message"] = "Participante no encontrado"
+            return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["data"] = participante
+        rpta["message"] = "Participante obtenido correctamente"
+        return jsonify(rpta)
+        
+    except Exception as e:
+        rpta["message"] = f"No se pudo obtener el participante: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+@app.route("/api_actualizar_participante/<int:id_participante>", methods=["PUT"])
+@jwt_required()
+def api_actualizar_participante(id_participante):
+    """
+    [UPDATE] Actualiza los campos de un participante.
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    data = request.get_json(silent=True) or {}
+    
+    campos_validos = {"nombre", "registrado", "puntaje", "id_usuario", "id_grupo", "grupo"}
+    sets = []
+    valores = []
+    
+    for campo in campos_validos:
+        if campo in data:
+            sets.append(f"{campo} = %s")
+            valores.append(data[campo])
+
+    if not sets:
+        rpta["message"] = "No se enviaron campos a actualizar."
+        return jsonify(rpta), 400
+
+    valores.append(id_participante)
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(
+                f"UPDATE PARTICIPANTE SET {', '.join(sets)} WHERE id_participante = %s",
+                valores
+            )
+            
+            if cursor.rowcount == 0:
+                rpta["message"] = "Datos a actualizar son iguales o participante no encontrado."
+                return jsonify(rpta), 404
+            
+            conexion.commit()
+            
+            cursor.execute("SELECT * FROM PARTICIPANTE WHERE id_participante = %s", (id_participante,))
+            participante_actualizado = cursor.fetchone()
+
+        rpta["code"] = 1
+        rpta["data"] = participante_actualizado
+        rpta["message"] = "Participante actualizado correctamente"
+        return jsonify(rpta)
+        
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo actualizar el participante: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+@app.route("/api_eliminar_participante/<int:id_participante>", methods=["DELETE"])
+@jwt_required()
+def api_eliminar_participante(id_participante):
+    """
+    [DELETE] Elimina un participante Y TODAS SUS RESPUESTAS ASOCIADAS.
+    Usa una transacción para mantener la integridad.
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("SELECT 1 FROM PARTICIPANTE WHERE id_participante = %s", (id_participante,))
+            if not cursor.fetchone():
+                 rpta["message"] = "Participante no encontrado"
+                 return jsonify(rpta), 404
+
+            cursor.execute("DELETE FROM RESPUESTA_PARTICIPANTE WHERE id_participante = %s", (id_participante,))
+            respuestas_borradas = cursor.rowcount
+
+            cursor.execute("DELETE FROM PARTICIPANTE WHERE id_participante = %s", (id_participante,))
+            participante_borrado = cursor.rowcount
+            
+            conexion.commit()
+
+        rpta["code"] = 1
+        rpta["data"] = {"respuestas_eliminadas": respuestas_borradas, "participantes_eliminados": participante_borrado}
+        rpta["message"] = "Participante y sus respuestas eliminados correctamente"
+        return jsonify(rpta)
+        
+    except pymysql.Error as e:
+        if conexion:
+            conexion.rollback()
+        # Error de FK si está siendo referenciado por GRUPO
+        if e.errno == 1451: 
+             rpta["message"] = f"No se pudo eliminar: El participante es líder de un grupo (id_grupo). Primero elimine el grupo."
+             return jsonify(rpta), 409
+        rpta["message"] = f"No se pudo eliminar el participante: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# RESPUESTA_PARTICIPANTE
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
+@app.route("/api_registrar_respuesta", methods=["POST"])
+@jwt_required()
+def api_registrar_respuesta():
+    """
+    [CREATE] Registra una nueva respuesta Y ACTUALIZA EL PUNTAJE del participante.
+    Esta es una API de admin, asume que los datos son correctos.
+    La lógica del juego debe usar la ruta '/api/game/answer'
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        data = request.get_json(silent=True) or {}
+        
+        id_participante = data.get("id_participante")
+        id_partida = data.get("id_partida")
+        id_pregunta = data.get("id_pregunta")
+        puntaje = data.get("puntaje", 0)
+        
+        if not all([id_participante, id_partida, id_pregunta]):
+            rpta["message"] = "id_participante, id_partida, y id_pregunta son obligatorios."
+            return jsonify(rpta), 400
+        
+        # Campos opcionales/calculados
+        campos = [
+            ("id_participante", id_participante),
+            ("id_opcion", data.get("id_opcion")),
+            ("id_partida", id_partida),
+            ("id_pregunta", id_pregunta),
+            ("pregunta_texto", data.get("pregunta_texto", "")),
+            ("opcion_texto", data.get("opcion_texto", "")),
+            ("es_correcta", data.get("es_correcta", 0)),
+            ("puntaje", puntaje),
+            ("tiempo_respuesta", data.get("tiempo_respuesta", "00:00:00")),
+        ]
+
+        columnas = ", ".join(col for col, _ in campos)
+        valores = [val for _, val in campos]
+        placeholders = ", ".join(["%s"] * len(valores))
+
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(
+                f"INSERT INTO RESPUESTA_PARTICIPANTE ({columnas}) VALUES ({placeholders})",
+                valores
+            )
+            nuevo_id = cursor.lastrowid
+
+            cursor.execute(
+                "UPDATE PARTICIPANTE SET puntaje = puntaje + %s WHERE id_participante = %s",
+                (puntaje, id_participante)
+            )
+            
+            conexion.commit()
+            
+            cursor.execute("SELECT * FROM RESPUESTA_PARTICIPANTE WHERE id_respuesta = %s", (nuevo_id,))
+            nueva_respuesta = _serialize_time_row(cursor.fetchone())
+
+        rpta["code"] = 1
+        rpta["data"] = nueva_respuesta
+        rpta["message"] = "Respuesta registrada y puntaje actualizado"
+        return jsonify(rpta), 201
+        
+    except pymysql.Error as e:
+        if conexion:
+            conexion.rollback()
+        error_code = e.args[0] 
+        
+        if error_code == 1062: # Error de 'uniq_resp' (Llave duplicada)
+            rpta["message"] = f"Error de duplicado: El participante {id_participante} ya respondió la pregunta {id_pregunta}."
+            return jsonify(rpta), 409
+        
+        if error_code == 1452: # Error de 'Foreign Key'
+            rpta["message"] = f"Error de integridad (FK): El 'id_participante' ({id_participante}) o el 'id_opcion' no existen en la base de datos."
+            return jsonify(rpta), 400
+        rpta["message"] = f"No se pudo crear la respuesta: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+@app.route("/api_obtener_respuestas", methods=["GET"])
+@jwt_required()
+def api_obtener_respuestas():
+    """
+    [READ ALL] Obtiene todas las respuestas.
+    Filtros opcionales:
+    /api_obtener_respuestas?id_partida=123
+    /api_obtener_respuestas?id_participante=456
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        id_partida_filtro = request.args.get("id_partida", type=int)
+        id_participante_filtro = request.args.get("id_participante", type=int)
+
+        query = "SELECT * FROM RESPUESTA_PARTICIPANTE"
+        params = []
+        
+        if id_partida_filtro:
+            query += " WHERE id_partida = %s"
+            params.append(id_partida_filtro)
+        elif id_participante_filtro:
+            query += " WHERE id_participante = %s"
+            params.append(id_participante_filtro)
+            
+        query += " ORDER BY creado_en DESC"
+
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(query, params)
+            respuestas = [_serialize_time_row(row) for row in cursor.fetchall()]
+
+        rpta["code"] = 1
+        rpta["data"] = respuestas
+        rpta["message"] = "Respuestas obtenidas correctamente"
+        return jsonify(rpta)
+        
+    except Exception as e:
+        rpta["message"] = f"No se pudieron obtener las respuestas: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+@app.route("/api_obtener_respuesta_por_id/<int:id_respuesta>", methods=["GET"])
+@jwt_required()
+def api_obtener_respuesta_por_id(id_respuesta):
+    """
+    [READ BY ID] Obtiene una respuesta específica por su ID.
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM RESPUESTA_PARTICIPANTE WHERE id_respuesta = %s", (id_respuesta,))
+            respuesta = _serialize_time_row(cursor.fetchone())
+
+        if not respuesta:
+            rpta["message"] = "Respuesta no encontrada"
+            return jsonify(rpta), 404
+
+        rpta["code"] = 1
+        rpta["data"] = respuesta
+        rpta["message"] = "Respuesta obtenida correctamente"
+        return jsonify(rpta)
+        
+    except Exception as e:
+        rpta["message"] = f"No se pudo obtener la respuesta: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+@app.route("/api_actualizar_respuesta/<int:id_respuesta>", methods=["PUT"])
+@jwt_required()
+def api_actualizar_respuesta(id_respuesta):
+    """
+    [UPDATE] Actualiza una respuesta.
+    ¡CUIDADO! Esto recalcula el puntaje del participante.
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    data = request.get_json(silent=True) or {}
+    
+    campos_validos = {
+        "id_opcion", "pregunta_texto", "opcion_texto", 
+        "es_correcta", "puntaje", "tiempo_respuesta"
+    }
+    sets = []
+    valores = []
+    
+    for campo in campos_validos:
+        if campo in data:
+            sets.append(f"{campo} = %s")
+            valores.append(data[campo])
+
+    if not sets:
+        rpta["message"] = "No se enviaron campos a actualizar."
+        return jsonify(rpta), 400
+
+    valores.append(id_respuesta)
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(
+                "SELECT id_participante, puntaje FROM RESPUESTA_PARTICIPANTE WHERE id_respuesta = %s",
+                (id_respuesta,)
+            )
+            respuesta_antigua = cursor.fetchone()
+            if not respuesta_antigua:
+                rpta["message"] = "Respuesta no encontrada"
+                return jsonify(rpta), 404
+            
+            puntaje_antiguo = respuesta_antigua.get("puntaje", 0)
+            id_participante = respuesta_antigua.get("id_participante")
+            
+            cursor.execute(
+                "UPDATE PARTICIPANTE SET puntaje = puntaje - %s WHERE id_participante = %s",
+                (puntaje_antiguo, id_participante)
+            )
+            
+            cursor.execute(
+                f"UPDATE RESPUESTA_PARTICIPANTE SET {', '.join(sets)} WHERE id_respuesta = %s",
+                valores
+            )
+            
+            puntaje_nuevo = data.get("puntaje", puntaje_antiguo)
+            cursor.execute(
+                "UPDATE PARTICIPANTE SET puntaje = puntaje + %s WHERE id_participante = %s",
+                (puntaje_nuevo, id_participante)
+            )
+
+            conexion.commit()
+
+            cursor.execute("SELECT * FROM RESPUESTA_PARTICIPANTE WHERE id_respuesta = %s", (id_respuesta,))
+            respuesta_actualizada = _serialize_time_row(cursor.fetchone())
+
+        rpta["code"] = 1
+        rpta["data"] = respuesta_actualizada
+        rpta["message"] = "Respuesta actualizada y puntaje recalculado"
+        return jsonify(rpta)
+        
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo actualizar la respuesta: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
+
+@app.route("/api_eliminar_respuesta/<int:id_respuesta>", methods=["DELETE"])
+@jwt_required()
+def api_eliminar_respuesta(id_respuesta):
+    """
+    [DELETE] Elimina una respuesta Y RESTA EL PUNTAJE del participante.
+    Usa una transacción para mantener la integridad.
+    """
+    rpta = {"code": 0, "data": {}, "message": ""}
+    conexion = None
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(
+                "SELECT id_participante, puntaje FROM RESPUESTA_PARTICIPANTE WHERE id_respuesta = %s",
+                (id_respuesta,)
+            )
+            respuesta = cursor.fetchone()
+            if not respuesta:
+                 rpta["message"] = "Respuesta no encontrada"
+                 return jsonify(rpta), 404
+
+            puntaje_a_restar = respuesta.get("puntaje", 0)
+            id_participante = respuesta.get("id_participante")
+
+            cursor.execute("DELETE FROM RESPUESTA_PARTICIPANTE WHERE id_respuesta = %s", (id_respuesta,))
+
+            if id_participante and puntaje_a_restar > 0:
+                cursor.execute(
+                    "UPDATE PARTICIPANTE SET puntaje = puntaje - %s WHERE id_participante = %s",
+                    (puntaje_a_restar, id_participante)
+                )
+
+            conexion.commit()
+
+        rpta["code"] = 1
+        rpta["data"] = {"puntaje_restado": puntaje_a_restar, "id_participante_afectado": id_participante}
+        rpta["message"] = "Respuesta eliminada y puntaje de participante actualizado"
+        return jsonify(rpta)
+        
+    except pymysql.Error as e:
+        if conexion:
+            conexion.rollback()
+        rpta["message"] = f"No se pudo eliminar la respuesta: {e}"
+        return jsonify(rpta), 500
+    finally:
+        if conexion:
+            conexion.close()
