@@ -56,13 +56,15 @@ def api_test():
 
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 # USUARIOS
+# -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 
 
 @app.route("/api_obtener_usuarios", methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def fn_api_obtener_usuarios():
     try:
         usuarios = ctrl.obtener_todos()
@@ -71,7 +73,7 @@ def fn_api_obtener_usuarios():
         return jsonify({"error": str(e)}), 500 
 
 @app.route("/api_obtener_usuario_por_id/<int:id_usuario>", methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def fn_api_obtener_usuario_por_id(id_usuario):
     try:
         # id_usuario = request.args.get('id_usuario', type=int)
@@ -81,6 +83,7 @@ def fn_api_obtener_usuario_por_id(id_usuario):
         return jsonify({"error": str(e)}), 500 
 
 @app.route("/api_registrar_usuario", methods=['POST'])
+@jwt_required()
 def fn_api_registrar_usuario():
     data = request.get_json(force=True) or {}
     nombre_completo = (data.get("nombre_completo") or "").strip()
@@ -103,6 +106,7 @@ def fn_api_registrar_usuario():
     # return jsonify({"error": resultado}), 409
 
 @app.route("/api_actualizar_usuario", methods=['PUT'])
+@jwt_required()
 def fn_api_actulizar_usuario():
     try:
         data = request.get_json(force=True) or {}
@@ -145,6 +149,7 @@ def fn_api_actulizar_usuario():
         return jsonify({"error": str(e)}), 500 
 
 @app.route("/api_eliminar_usuario", methods=['POST','DELETE'])
+@jwt_required()
 def fn_api_eliminar_usuario():
     try:
         data = request.get_json(force=True) or {}
@@ -325,11 +330,14 @@ def api_correo_activo():
 
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 # CUESTIONARIOS Y SUS PARTES
+# -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 
 @app.route("/api_obtener_cuestionarios", methods=['GET'])
+@jwt_required()
 def fn_api_obtener_cuestionarios():
     try:
         cuestionarios = cc.obtener_cuestionarios_todos()
@@ -338,6 +346,7 @@ def fn_api_obtener_cuestionarios():
         return jsonify({"error": str(e)}), 500 
 
 @app.route("/api_obtener_cuestionario_por_id/<int:id_cuestionario>", methods=['GET'])
+@jwt_required()
 def fn_api_obtener_cuestionario_por_id(id_cuestionario):
     try:
         cuestionario = cc.obtener_cuestionario_por_id(id_cuestionario)
@@ -346,6 +355,7 @@ def fn_api_obtener_cuestionario_por_id(id_cuestionario):
         return jsonify({"error": str(e)}), 500 
 
 @app.route("/api_registar_cuestionario", methods=['POST'])
+@jwt_required()
 def fn_api_registrar_cuestionario():
     try:
         data = request.json
@@ -364,6 +374,7 @@ def fn_api_registrar_cuestionario():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api_actualizar_cuestionario", methods=['PUT'])
+@jwt_required()
 def fn_api_actualizar_cuestionario():
     try:
         data = request.json
@@ -383,6 +394,7 @@ def fn_api_actualizar_cuestionario():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api_elimiinar_cuestionario", methods=['POST','DELETE'])
+@jwt_required()
 def fn_api_eliminar_cuestionario():
     try:
         data = request.get_json(force=True) or {}
@@ -568,10 +580,14 @@ def api_guardar_cuestionario_basico():
 
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 # PREGUNTAS
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
 @app.route("/api_obtener_preguntas", methods=['GET'])
+@jwt_required()
 def fn_api_obtener_preguntas():
     try:
         cuestionarios = cpo.obtener_preguntas_todos()
@@ -580,6 +596,7 @@ def fn_api_obtener_preguntas():
         return jsonify({"error": str(e)}), 500 
 
 @app.route("/api_obtener_pregunta_por_id/<int:id_pregunta>", methods=['GET'])
+@jwt_required()
 def fn_api_obtener_pregunta_por_id(id_pregunta):
     try:
         pregunta = cpo.obtener_pregunta_por_id(id_pregunta)
@@ -588,6 +605,7 @@ def fn_api_obtener_pregunta_por_id(id_pregunta):
         return jsonify({"error": str(e)}), 500 
 
 @app.route("/api_registrar_pregunta", methods=['POST'])
+@jwt_required()
 def fn_api_registrar_pregunta():
     try:
         data = request.json
@@ -606,6 +624,7 @@ def fn_api_registrar_pregunta():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api_actualizar_pregunta", methods=['PUT'])
+@jwt_required()
 def fn_api_actualizar_pregunta():
     try:
         data = request.json
@@ -619,6 +638,7 @@ def fn_api_actualizar_pregunta():
         return jsonify({"error": str(e)}), 500 
 
 @app.route("/api_eliminar_pregunta", methods=['POST','DELETE'])
+@jwt_required()
 def fn_api_eliminar_pregunta():
     try:
         data = request.json
@@ -732,11 +752,14 @@ def api_delete_pregunta(id_pregunta):
 
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 # OPCIONES
+# -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 
 @app.route("/api_obtener_opciones", methods=['GET'])
+@jwt_required()
 def fn_api_obtener_opciones():
     try:
         cuestionarios = cpo.obtener_opciones_todas()
@@ -745,6 +768,7 @@ def fn_api_obtener_opciones():
         return jsonify({"error": str(e)}), 500 
 
 @app.route("/api_obtener_opcion_por_id/<int:id_opcion>", methods=['GET'])
+@jwt_required()
 def fn_api_get_opcion_por_id(id_opcion):
     try:
         opcion = cpo.obtener_opcion_por_id(id_opcion)
@@ -753,6 +777,7 @@ def fn_api_get_opcion_por_id(id_opcion):
             return jsonify({"error": str(e)}), 500 
 
 @app.route("/api_registar_opcion", methods=['POST'])
+@jwt_required()
 def fn_api_registrar_opcion():
     try:
         data = request.json
@@ -770,6 +795,7 @@ def fn_api_registrar_opcion():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api_actualizar_opcion", methods=['PUT'])
+@jwt_required()
 def fn_api_actualizar_opcion():
     try:
         data = request.json
@@ -779,6 +805,7 @@ def fn_api_actualizar_opcion():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api_eliminar_opcion", methods=['DELETE'])
+@jwt_required()
 def fn_api_delete_opcion():
     try:
         data = request.json
@@ -789,15 +816,11 @@ def fn_api_delete_opcion():
             return jsonify({"error": str(e)}), 500
 
 
-# ---------------------------------------------------------------
-
-
-
+# ------------------------------------------------------------------------------
 @app.route("/api/preguntas/<int:id_pregunta>/opciones", methods=['GET'])
 def api_get_opciones(id_pregunta):
     opciones = cpo.obtener_opciones_por_pregunta(id_pregunta)
     return jsonify({"data": opciones}), 200
-
 
 @app.route("/api/preguntas/<int:id_pregunta>/opciones", methods=['POST'])
 def api_create_opcion(id_pregunta):
@@ -816,7 +839,6 @@ def api_create_opcion(id_pregunta):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/opciones/<int:id_opcion>", methods=['GET'])
 def api_get_opcion_por_id(id_opcion):
     opcion = cpo.obtener_opcion_por_id(id_opcion)
@@ -828,16 +850,13 @@ def api_update_opcion(id_opcion):
     cpo.actualizar_opcion(id_opcion, data['opcion'])
     return jsonify({"mensaje": "Opción actualizada"})
 
-
 @app.route("/api/opciones/<int:id_opcion>", methods=['DELETE'])
 def api_delete_opcion(id_opcion):
     cpo.eliminar_opcion(id_opcion)
     return jsonify({"mensaje": "Opción eliminada"})
 
-
 # ------------------------------------------------------------------------------
 # PARTIDAS (SESIONES DE JUEGO)
-
 
 @app.route("/api/partidas", methods=['POST'])
 def api_create_partida():
@@ -845,18 +864,15 @@ def api_create_partida():
     # Debería generar un PIN y devolverlo
     return jsonify({"mensaje": "Inicia una nueva partida y devuelve el PIN"}), 201
 
-
 @app.route("/api/partidas/pin/<string:pin>", methods=['GET'])
 def api_get_partida_by_pin(pin):
     # Lógica para que un jugador obtenga datos de la partida antes de unirse
     return jsonify({"mensaje": f"Devuelve info de la partida con PIN {pin}"})
 
-
 @app.route("/api/partidas/<int:id_partida>/participantes", methods=['POST'])
 def api_join_partida(id_partida):
     # Lógica para que un participante se una a una partida
     return jsonify({"mensaje": f"Un jugador se une a la partida {id_partida}"}), 201
-
 
 @app.route("/api/partidas/<int:id_partida>/respuestas", methods=['POST'])
 def api_submit_respuesta(id_partida):
@@ -865,7 +881,6 @@ def api_submit_respuesta(id_partida):
     return jsonify({"mensaje": "Un jugador envía una respuesta"})
 
     #-------------------RECOMPENSAS----------------------------------
-
 
 @app.route("/api/partidas/<int:id_partida>/finalizar", methods=['POST'])
 def api_finalizar_partida(id_partida):
@@ -937,8 +952,13 @@ def api_finalizar_partida(id_partida):
             "traza": traceback.format_exc()
         }), 500
 
-
-#----APIS CRUD PARTIDA_JWS hecho por Pame u.u ---
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# CRUD PARTIDA_JWS 
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 
 def _serialize_partida_row(row): # Función para convertir los datetime a strings
     if not row:
@@ -949,7 +969,6 @@ def _serialize_partida_row(row): # Función para convertir los datetime a string
         if isinstance(valor, datetime):
             serializable[campo] = valor.isoformat()
     return serializable
-
 
 @app.route("/api_registrarpartida", methods=["POST"])
 @jwt_required()
@@ -1009,7 +1028,6 @@ def api_registrarpartida():
         if conexion:
             conexion.close()
 
-
 @app.route("/api_obtenerpartidas", methods=["GET"])
 @jwt_required()
 def api_obtenerpartidas():
@@ -1031,7 +1049,6 @@ def api_obtenerpartidas():
     finally:
         if conexion:
             conexion.close()
-
 
 @app.route("/api_obtenerpartidaporid/<int:id_partida>", methods=["GET"])
 @jwt_required()
@@ -1058,7 +1075,6 @@ def api_obtenerpartidaporid(id_partida):
     finally:
         if conexion:
             conexion.close()
-
 
 @app.route("/api_actualizarpartida/<int:id_partida>", methods=["PUT"])
 @jwt_required()
@@ -1107,7 +1123,6 @@ def api_actualizarpartida(id_partida):
         if conexion:
             conexion.close()
 
-
 @app.route("/api_eliminarpartida/<int:id_partida>", methods=["DELETE"])
 @jwt_required()
 def api_eliminarpartida(id_partida):
@@ -1137,7 +1152,9 @@ def api_eliminarpartida(id_partida):
 
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 # SKINS - APIS CRUD
+# -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 
@@ -1198,7 +1215,6 @@ def api_registrarskin():
         if conexion:
             conexion.close()
 
-
 @app.route("/api_obtenerskins", methods=["GET"])
 @jwt_required()
 def api_obtenerskins():
@@ -1220,7 +1236,6 @@ def api_obtenerskins():
     finally:
         if conexion:
             conexion.close()
-
 
 @app.route("/api_obtenerskinporid/<int:id_skin>", methods=["GET"])
 @jwt_required()
@@ -1247,7 +1262,6 @@ def api_obtenerskinporid(id_skin):
     finally:
         if conexion:
             conexion.close()
-
 
 @app.route("/api_actualizarskin/<int:id_skin>", methods=["PUT"])
 @jwt_required()
@@ -1298,7 +1312,6 @@ def api_actualizarskin(id_skin):
         if conexion:
             conexion.close()
 
-
 @app.route("/api_eliminarskin/<int:id_skin>", methods=["DELETE"])
 @jwt_required()
 def api_eliminarskin(id_skin):
@@ -1328,7 +1341,9 @@ def api_eliminarskin(id_skin):
 
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 # INVENTARIO SKINS - APIS CRUD
+# -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 
@@ -1374,7 +1389,6 @@ def api_registrarinventario():
         if conexion:
             conexion.close()
 
-
 @app.route("/api_actualizarinventario/<int:id_usuario>/<int:id_skin>", methods=["PUT"])
 @jwt_required()
 def api_actualizarinventario(id_usuario, id_skin):
@@ -1413,7 +1427,6 @@ def api_actualizarinventario(id_usuario, id_skin):
         if conexion:
             conexion.close()
 
-
 @app.route("/api_eliminarinventario/<int:id_usuario>/<int:id_skin>", methods=["DELETE"])
 @jwt_required()
 def api_eliminarinventario(id_usuario, id_skin):
@@ -1444,7 +1457,6 @@ def api_eliminarinventario(id_usuario, id_skin):
         if conexion:
             conexion.close()
 
-
 @app.route("/api_obtenerinventarios", methods=["GET"])
 @jwt_required()
 def api_obtenerinventarios():
@@ -1472,7 +1484,6 @@ def api_obtenerinventarios():
     finally:
         if conexion:
             conexion.close()
-
 
 @app.route("/api_obtenerinventarioporusuario/<int:id_usuario>", methods=["GET"])
 @jwt_required()
@@ -1504,7 +1515,9 @@ def api_obtenerinventarioporusuario(id_usuario):
 
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
 # CATEGORIAS - APIS CRUD
+# -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 
@@ -1661,6 +1674,7 @@ def api_eliminarcategoria(id_categoria):
             conexion.close()
 
 
+# ---------------------------------------------------------------------------------
 # ---------------------------
 # AJAX GAME (sin sockets)
 # ---------------------------
