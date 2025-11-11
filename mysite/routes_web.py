@@ -1,4 +1,4 @@
-from flask import g, render_template, request, redirect, url_for, flash, session, jsonify, abort
+from flask import g, render_template, request, redirect, url_for, flash, session, jsonify, abort, make_response
 from main import app, mail
 from flask_mail import Message
 from flask_login import login_required, current_user
@@ -70,6 +70,10 @@ def inicio():
 
 @app.route("/auth_page", methods=["GET", "POST"])
 def auth_page():
+    # Si ya hay sesión activa, redirigir al dashboard
+    if 'user_id' in session:
+        return redirect(url_for("dashboard"))
+    
     if request.method == 'POST':
 
         # --- LÓGICA DE LOGIN (Esta parte está bien) ---
@@ -91,11 +95,17 @@ def auth_page():
             usuario = ctrl_usuarios.validar_credenciales(correo, contrasena)
 
             if usuario:
+                # Guardar datos en sesión
                 session["user_id"] = usuario["id_usuario"]
                 session["nombre_usuario"] = usuario["nombre_usuario"]
                 session["tipo_usuario"] = usuario["tipo"]
+                
+                # Crear cookie con el correo del usuario
+                resp = make_response(redirect(url_for("dashboard")))
+                resp.set_cookie('user_email', correo, max_age=60*60*24*30)  # 30 días
+                
                 #flash("¡Has iniciado sesión correctamente!", "success")
-                return redirect(url_for("dashboard"))
+                return resp
             else:
                 flash("El correo o contraseña son incorrectos o la cuenta no está vigente.", "danger")
                 return redirect(url_for("auth_page"))
@@ -277,9 +287,15 @@ def reenviar_codigo():
 
 @app.route('/logout')
 def logout():
+    # Limpiar sesión
     session.clear()
+    
+    # Crear respuesta de redirección y eliminar la cookie
+    resp = make_response(redirect(url_for('auth_page')))
+    resp.set_cookie('user_email', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
+    
     #flash('Has cerrado sesión.', 'info')
-    return redirect(url_for('auth_page'))
+    return resp
 
 
 # ------------------------------------------------------------------------------
