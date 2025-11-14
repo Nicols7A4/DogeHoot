@@ -135,6 +135,31 @@ def validar_credenciales(correo, contrasena):
             conexion.close()
     return usuario
 
+def obtener_usuario_pass_por_correo(correo):
+    conexion = obtener_conexion()
+    usuario = None
+    try:
+        with conexion.cursor() as cursor:
+            sql = "SELECT contraseña FROM USUARIO WHERE correo = %s AND vigente = TRUE AND verificado = TRUE"
+            cursor.execute(sql, (correo))
+            usuario = cursor.fetchone()
+    finally:
+        if conexion:
+            conexion.close()
+    return usuario
+
+def obtener_usuario_por_correo(correo):
+    conexion = obtener_conexion()
+    usuario = None
+    try:
+        with conexion.cursor() as cursor:
+            sql = "SELECT * FROM USUARIO WHERE correo = %s AND vigente = TRUE AND verificado = TRUE"
+            cursor.execute(sql, (correo))
+            usuario = cursor.fetchone()
+    finally:
+        if conexion:
+            conexion.close()
+    return usuario
 
 def regenerar_codigo(correo):
     """
