@@ -102,13 +102,10 @@ def auth_page():
             if err:
                 return render_template("index.html")
 
-            usuario = ctrl_usuarios.validar_credenciales(correo, contrasena)
-            
-            #usuarioo = usuarios.obtener_por_correo(correo) # agregado P
-            id_usuarioo = usuario["id_usuario"]      # agregado P
-            nombre_usuarioo = usuario["nombre_usuario"]  # agregado P
+            #usuario = ctrl_usuarios.validar_credenciales(correo, contrasena)
+            usuario = ctrl_usuarios.obtener_usuario_por_correo(correo)
 
-            if usuario:
+            if usuario["contraseña"] == encriptar_sha256(contrasena):
                 # Guardar datos en sesión
                 session["user_id"] = usuario["id_usuario"]
                 session["nombre_usuario"] = usuario["nombre_usuario"]
