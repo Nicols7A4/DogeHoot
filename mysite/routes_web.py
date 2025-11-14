@@ -2,6 +2,8 @@ from flask import g, render_template, request, redirect, url_for, flash, session
 from main import app, mail
 from flask_mail import Message
 from flask_login import login_required, current_user
+import hashlib
+
 
 from controladores import usuarios as ctrl_usuarios
 from controladores import cuestionarios as cc
@@ -12,6 +14,13 @@ from controladores import controlador_skins as ctrl_skins
 from controladores import controlador_partidas as ctrl_partidas
 # ------------------------------------------------------------------------------
 # PAGINAS PUBLICAS Y DE AUTENTICACIÓN
+
+
+def encriptar_sha256(texto):
+    texto = texto.encode('utf-8')
+    objHash = hashlib.sha256(texto)
+    textenc = objHash.hexdigest()
+    return textenc
 
 
 @app.route("/")

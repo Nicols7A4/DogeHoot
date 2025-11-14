@@ -8,6 +8,7 @@ import csv          #usado para los reportes
 import io           #usado para los reportes
 import pymysql
 from datetime import datetime
+import hashlib
 
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, Border, Side
@@ -46,6 +47,13 @@ def allowed_file(filename):
 
 
 # ----------------------------
+
+
+def encriptar_sha256(texto):
+    texto = texto.encode('utf-8')
+    objHash = hashlib.sha256(texto)
+    textenc = objHash.hexdigest()
+    return textenc
 
 
 @app.route("/api/test")
