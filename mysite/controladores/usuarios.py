@@ -5,6 +5,14 @@ import re
 from datetime import datetime, timedelta
 from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
+import hashlib
+
+
+def encriptar_sha256(texto):
+    texto = texto.encode('utf-8')
+    objHash = hashlib.sha256(texto)
+    textenc = objHash.hexdigest()
+    return textenc
 
 
 def crear_usuario_pendiente(nombre_completo, nombre_usuario, correo, contrasena, tipo):
@@ -399,33 +407,84 @@ def actualizar_perfil(id_usuario, nombre_completo, nombre_usuario):
             conexion.close()
 
 
+# def actualizar_contrasena(id_usuario: int, antigua: str, nueva: str):
+#     """
+#     Cambia solo la contraseña de un usuario.
+#     Valida que la contraseña actual coincida y luego actualiza.
+#     Devuelve (ok: bool, msg: str).
+#     """
+#     conexion = obtener_conexion()
+#     try:
+#         with conexion.cursor() as c:
+#             # Verificar existencia y contraseña actual
+#             c.execute("SELECT 1 FROM USUARIO WHERE id_usuario=%s AND vigente=TRUE", (id_usuario,))
+#             if not c.fetchone():
+#                 return False, "Usuario no encontrado."
+
+#             c.execute("SELECT 1 FROM USUARIO WHERE id_usuario=%s AND contraseña=%s LIMIT 1", (id_usuario, antigua))
+#             if not c.fetchone():
+#                 return False, "La contraseña actual es incorrecta."
+
+#             # Actualizar a la nueva
+#             c.execute("UPDATE USUARIO SET contraseña=%s WHERE id_usuario=%s", (nueva, id_usuario))
+
+#         conexion.commit()
+#         return True, "OK"
+#     except Exception as e:
+#         try: conexion.rollback()
+#         except: pass
+#         return False, str(e)
+#     finally:
+#         if conexion:
+#             conexion.close()
+
 def actualizar_contrasena(id_usuario: int, antigua: str, nueva: str):
     """
-    Cambia solo la contraseña de un usuario.
-    Valida que la contraseña actual coincida y luego actualiza.
-    Devuelve (ok: bool, msg: str).
+    Cambia contraseña usando SHA-256.
+    1. Hash de la contraseña actual.
+    2. Comparar con el hash de BD.
+    3. Guardar nueva contraseña hasheada.
     """
+    antigua_hash = encriptar_sha256(antigua)
+    nueva_hash   = encriptar_sha256(nueva)
+
     conexion = obtener_conexion()
     try:
         with conexion.cursor() as c:
-            # Verificar existencia y contraseña actual
+
+            # Verificar existencia del usuario
             c.execute("SELECT 1 FROM USUARIO WHERE id_usuario=%s AND vigente=TRUE", (id_usuario,))
             if not c.fetchone():
                 return False, "Usuario no encontrado."
 
-            c.execute("SELECT 1 FROM USUARIO WHERE id_usuario=%s AND contraseña=%s LIMIT 1", (id_usuario, antigua))
+            # Verificar contraseña actual (HASH)
+            c.execute("""
+                SELECT 1 
+                FROM USUARIO 
+                WHERE id_usuario=%s AND contraseña=%s 
+                LIMIT 1
+            """, (id_usuario, antigua_hash))
+
             if not c.fetchone():
                 return False, "La contraseña actual es incorrecta."
 
-            # Actualizar a la nueva
-            c.execute("UPDATE USUARIO SET contraseña=%s WHERE id_usuario=%s", (nueva, id_usuario))
+            # Actualizar con nueva contraseña HASH
+            c.execute("""
+                UPDATE USUARIO 
+                SET contraseña=%s 
+                WHERE id_usuario=%s
+            """, (nueva_hash, id_usuario))
 
         conexion.commit()
         return True, "OK"
+
     except Exception as e:
-        try: conexion.rollback()
-        except: pass
+        try:
+            conexion.rollback()
+        except:
+            pass
         return False, str(e)
+
     finally:
         if conexion:
             conexion.close()
