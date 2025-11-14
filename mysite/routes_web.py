@@ -12,12 +12,13 @@ from controladores import categorias as ctrl_cat
 from controladores import outlook_email_sender as email_sender
 from controladores import controlador_skins as ctrl_skins
 from controladores import controlador_partidas as ctrl_partidas
+from controladores import usuarios
 # ------------------------------------------------------------------------------
 # PAGINAS PUBLICAS Y DE AUTENTICACIÓN
 
 
 def encriptar_sha256(texto):
-    texto = texto.encode('utf-8')
+    texto = str(texto).encode('utf-8')  
     objHash = hashlib.sha256(texto)
     textenc = objHash.hexdigest()
     return textenc
@@ -102,6 +103,10 @@ def auth_page():
                 return render_template("index.html")
 
             usuario = ctrl_usuarios.validar_credenciales(correo, contrasena)
+            
+            #usuarioo = usuarios.obtener_por_correo(correo) # agregado P
+            id_usuarioo = usuario["id_usuario"]      # agregado P
+            nombre_usuarioo = usuario["nombre_usuario"]  # agregado P
 
             if usuario:
                 # Guardar datos en sesión
@@ -113,6 +118,9 @@ def auth_page():
                 resp = make_response(redirect(url_for("dashboard")))
                 resp.set_cookie('user_email', correo, max_age=60*60*24*30)  # 30 días
                 
+                resp.set_cookie('user_id', encriptar_sha256(id_usuarioo), max_age=60*60*24*30)  #agregados P
+                resp.set_cookie('nombre_usuario', encriptar_sha256(nombre_usuarioo), max_age=60*60*24*30)  #agregados P
+
                 #flash("¡Has iniciado sesión correctamente!", "success")
                 return resp
             else:
@@ -302,7 +310,9 @@ def logout():
     # Crear respuesta de redirección y eliminar la cookie
     resp = make_response(redirect(url_for('auth_page')))
     resp.set_cookie('user_email', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
-    
+    resp.set_cookie('user_id', '', expires=0)
+    resp.set_cookie('nombre_usuario', '', expires=0)
+
     #flash('Has cerrado sesión.', 'info')
     return resp
 
