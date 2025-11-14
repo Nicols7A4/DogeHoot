@@ -150,7 +150,7 @@ def auth_page():
             try:
                 # 1. Intentamos crear el usuario como "pendiente"
                 exito, resultado = ctrl_usuarios.crear_usuario_pendiente(
-                    nombre_completo, nombre_usuario, correo, contrasena, tipo_cuenta_db
+                    nombre_completo, nombre_usuario, correo, encriptar_sha256(contrasena), tipo_cuenta_db
                 )
 
                 if exito:
