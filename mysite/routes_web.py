@@ -12,7 +12,6 @@ from controladores import categorias as ctrl_cat
 from controladores import outlook_email_sender as email_sender
 from controladores import controlador_skins as ctrl_skins
 from controladores import controlador_partidas as ctrl_partidas
-from controladores import usuarios
 # ------------------------------------------------------------------------------
 # PAGINAS PUBLICAS Y DE AUTENTICACIÓN
 
@@ -306,6 +305,8 @@ def logout():
     # Crear respuesta de redirección y eliminar la cookie
     resp = make_response(redirect(url_for('auth_page')))
     resp.set_cookie('user_email', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
+    resp.set_cookie('user_id', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
+    resp.set_cookie('user_email', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
     
     #flash('Has cerrado sesión.', 'info')
     return resp
@@ -430,7 +431,6 @@ def cuestionarios_explorar():
     )
 
 
-@app.route("/reportes")
 
 
 @app.route('/cuestionarios/clonar/<int:id_cuestionario>', methods=['POST'])
@@ -631,6 +631,11 @@ def jugar():
 
 @app.route('/partida/<int:id_cuestionario>')
 def generar_partida(id_cuestionario):
+    
+    if 'user_id' not in session:
+        flash('Debes iniciar sesión para ver partidas.', 'warning')
+        return redirect(url_for('auth_page'))
+    
     exito, resultado = ctrl_partidas.crear_partida(id_cuestionario)
 
     if exito:
@@ -880,6 +885,10 @@ def quitar_skin():
 
 @app.route('/cuestionarios/<int:id_cuestionario>/visualizar')
 def cuestionarios_visualizar(id_cuestionario):
+    if 'user_id' not in session:
+        flash('Debes iniciar sesión para ver esta página.', 'warning')
+        return redirect(url_for('auth_page'))
+    
     """Muestra el cuestionario en modo solo lectura para alumnos"""
 
     # Obtener el PIN de la URL para validación adicional (opcional)
@@ -940,6 +949,9 @@ def restablecer_con_token(token):
 # ---------------------------------- AGREGADO POR PAME - Reportes
 @app.route('/reportes/partida/<int:id_partida>')
 def reporte_partida_page(id_partida):
+    if 'user_id' not in session:
+        flash('Debes iniciar sesión para ver esta página.', 'warning')
+        return redirect(url_for('auth_page'))
     # Página HTML que consumirá el endpoint JSON /api/report/partida
     return render_template('reportes_partida.html', id_partida=id_partida)
 
