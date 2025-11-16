@@ -104,7 +104,7 @@ def auth_page():
             #usuario = ctrl_usuarios.validar_credenciales(correo, contrasena)
             usuario = ctrl_usuarios.obtener_usuario_por_correo(correo)
 
-            if usuario["contraseña"] == encriptar_sha256(contrasena):
+            if usuario and usuario["contraseña"] == encriptar_sha256(contrasena):
                 # Guardar datos en sesión
                 session["user_id"] = usuario["id_usuario"]
                 session["nombre_usuario"] = usuario["nombre_usuario"]
@@ -112,7 +112,9 @@ def auth_page():
                 
                 # Crear cookie con el correo del usuario
                 resp = make_response(redirect(url_for("dashboard")))
-                resp.set_cookie('user_email', correo, max_age=60*60*24*30)  # 30 días
+                resp.set_cookie('user_email', encriptar_sha256(correo), max_age=60*60*24*30)  # 30 días
+                resp.set_cookie('user_id', encriptar_sha256(f'{usuario["id_usuario"]}'), max_age=60*60*24*30)  # 30 días
+                resp.set_cookie('user_name', encriptar_sha256(usuario["nombre_usuario"]), max_age=60*60*24*30)  # 30 días
                 
                 #flash("¡Has iniciado sesión correctamente!", "success")
                 return resp
@@ -303,6 +305,8 @@ def logout():
     # Crear respuesta de redirección y eliminar la cookie
     resp = make_response(redirect(url_for('auth_page')))
     resp.set_cookie('user_email', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
+    resp.set_cookie('user_id', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
+    resp.set_cookie('user_name', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
     
     #flash('Has cerrado sesión.', 'info')
     return resp
@@ -927,7 +931,7 @@ def restablecer_con_token(token):
 
         # Guardamos la contraseña en texto plano (sin validar anterior porque viene de token)
         # ctrl_usuarios.actualizar_contrasena(id_usuario, password)
-        ctrl_usuarios.actualizar_contrasena_sin_validar(id_usuario, password)
+        ctrl_usuarios.actualizar_contrasena_sin_validar(id_usuario, encriptar_sha256(password))
 
         flash('Tu contraseña ha sido actualizada con éxito. Ahora puedes iniciar sesión.', 'success')
         return redirect(url_for('auth_page'))
