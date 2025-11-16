@@ -306,7 +306,7 @@ def logout():
     resp = make_response(redirect(url_for('auth_page')))
     resp.set_cookie('user_email', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
     resp.set_cookie('user_id', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
-    resp.set_cookie('user_email', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
+    resp.set_cookie('user_name', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
     
     #flash('Has cerrado sesión.', 'info')
     return resp
