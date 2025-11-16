@@ -6,4 +6,4 @@ def encriptar_sha256(texto):
     textenc = objHash.hexdigest()
     return textenc
 
-print(encriptar_sha256('abcDEF$123'))
+print(encriptar_sha256('$$$ABCabc123'))

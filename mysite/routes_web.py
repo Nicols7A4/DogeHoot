@@ -12,6 +12,10 @@ from controladores import categorias as ctrl_cat
 from controladores import outlook_email_sender as email_sender
 from controladores import controlador_skins as ctrl_skins
 from controladores import controlador_partidas as ctrl_partidas
+
+from functools import wraps
+from flask import session, redirect, url_for, flash
+
 # ------------------------------------------------------------------------------
 # PAGINAS PUBLICAS Y DE AUTENTICACIÓN
 
@@ -22,6 +26,64 @@ def encriptar_sha256(texto):
     textenc = objHash.hexdigest()
     return textenc
 
+# =========================================================================
+
+def login_required(f):
+    """
+    Decorador que requiere que el usuario esté autenticado.
+    Redirige a /auth_page si no hay sesión activa.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Debes iniciar sesión para acceder a esta página.', 'warning')
+            return redirect(url_for('auth_page'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def profesor_required(f):
+    """
+    Decorador que requiere que el usuario sea PROFESOR.
+    Redirige al dashboard si no es profesor o no está autenticado.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Primero verificar si hay sesión
+        if 'user_id' not in session:
+            flash('Debes iniciar sesión para acceder a esta página.', 'warning')
+            return redirect(url_for('auth_page'))
+        
+        # Luego verificar si es profesor
+        if session.get('tipo_usuario') != 'P':
+            flash('No tienes permisos para acceder a esta página.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def estudiante_required(f):
+    """
+    Decorador que requiere que el usuario sea ESTUDIANTE.
+    Redirige al dashboard si no es estudiante o no está autenticado.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Primero verificar si hay sesión
+        if 'user_id' not in session:
+            flash('Debes iniciar sesión para acceder a esta página.', 'warning')
+            return redirect(url_for('auth_page'))
+        
+        # Luego verificar si es estudiante
+        if session.get('tipo_usuario') != 'E':
+            flash('No tienes permisos para acceder a esta página.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+# =========================================================================
 
 @app.route("/")
 def inicio():
@@ -109,6 +171,7 @@ def auth_page():
                 session["user_id"] = usuario["id_usuario"]
                 session["nombre_usuario"] = usuario["nombre_usuario"]
                 session["tipo_usuario"] = usuario["tipo"]
+                session['correo'] = usuario['correo']
                 
                 # Crear cookie con el correo del usuario
                 resp = make_response(redirect(url_for("dashboard")))
@@ -322,6 +385,7 @@ def home():
 
 
 @app.route('/dashboard')
+@login_required 
 def dashboard():
     # 1. Verifica si el usuario ha iniciado sesión
     if 'user_id' not in session:
@@ -348,6 +412,7 @@ def dashboard():
 
 
 @app.route("/cuestionarios")
+@profesor_required
 def cuestionarios():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver esta página.', 'warning')
@@ -367,6 +432,7 @@ def cuestionarios():
 
 
 @app.route("/cuestionarios/nuevo")
+@profesor_required
 def cuestionarios_nuevo():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para crear un cuestionario.', 'warning')
@@ -386,6 +452,7 @@ def cuestionarios_nuevo():
 
 
 @app.route('/cuestionarios/<int:id_cuestionario>/editar')
+@profesor_required
 def cuestionarios_editar(id_cuestionario):
     if 'user_id' not in session:
         flash('Debes iniciar sesión para editar.', 'warning')
@@ -410,6 +477,7 @@ def cuestionarios_editar(id_cuestionario):
 
 
 @app.route("/cuestionarios/explorar")
+@profesor_required
 def cuestionarios_explorar():
     if 'user_id' not in session:
         return redirect(url_for('auth_page'))
@@ -434,6 +502,7 @@ def cuestionarios_explorar():
 
 
 @app.route('/cuestionarios/clonar/<int:id_cuestionario>', methods=['POST'])
+@profesor_required
 def clonar_cuestionario(id_cuestionario):
     """Clona un cuestionario público para el usuario actual"""
     print(f"[DEBUG CLONAR] Ruta llamada con id_cuestionario={id_cuestionario}")
@@ -471,6 +540,7 @@ def reportes_detalle(id_partida):
 
 
 @app.route('/mis-partidas')
+@profesor_required
 def mis_partidas():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver tus partidas.', 'warning')
@@ -493,6 +563,7 @@ def mis_partidas():
 
 
 @app.route("/usuario/perfil")
+@login_required
 def usuario_perfil():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver tu perfil.', 'warning')
@@ -542,6 +613,7 @@ def inject_user():
     }
 
 @app.route("/usuario/perfil/actualizar", methods=["POST"])
+@login_required
 def perfil_update():
     if 'user_id' not in session:
         return jsonify({"error": "No autorizado"}), 401
@@ -596,6 +668,7 @@ def perfil_update():
    # return jsonify({"ok": True}), 200
 
 @app.route("/usuario/perfil/cambiar-contrasena", methods=["GET"])
+@login_required
 def pagina_cambiar_contrasena():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver esta página.', 'warning')
@@ -603,6 +676,7 @@ def pagina_cambiar_contrasena():
     return render_template('cambio_contrasenia.html')
 
 @app.route("/perfil/eliminar_cuenta")
+@login_required
 def eliminar_cuenta():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver tu perfil.', 'warning')
@@ -672,6 +746,7 @@ def configurar_partida(id_cuestionario):
 
 
 @app.route('/partida/lanzar', methods=['POST'])
+@profesor_required
 def lanzar_partida():
     if 'user_id' not in session:
         return redirect(url_for('auth_page'))
@@ -703,6 +778,7 @@ def lanzar_partida():
 
 
 @app.route("/partida/<string:pin>/panel_anfitrion")
+@profesor_required
 def partida_panel(pin):
     if 'user_id' not in session:
         return redirect(url_for('auth_page'))
@@ -719,6 +795,7 @@ def partida_panel(pin):
 # -----------
 
 @app.route('/lobby/<string:pin>')
+@login_required
 def lobby(pin):
     if 'user_id' not in session:
         # Podrías permitir invitados, pero por ahora requerimos sesión
@@ -742,6 +819,7 @@ def lobby(pin):
 
 # routes_web.py
 @app.route('/juego/<string:pin>')
+@login_required
 def pagina_juego(pin):
     if 'user_id' not in session:
         return redirect(url_for('auth_page'))
@@ -786,6 +864,7 @@ def admin_skins():
 # ------------------------------------------------------------------------------
 
 @app.route("/tienda/skins")
+@login_required
 def tienda_skins():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para acceder a la tienda.', 'warning')
@@ -816,6 +895,7 @@ def tienda_skins():
 
 # --- API para comprar skin ---
 @app.route("/api/skins/comprar/<int:id_skin>", methods=["POST"])
+@login_required
 def api_comprar_skin(id_skin):
     if 'user_id' not in session:
         return jsonify({"error": "Debes iniciar sesión."}), 401
@@ -834,6 +914,7 @@ def api_comprar_skin(id_skin):
 
 # --- MIS SKINS (las que el usuario ya posee) ---
 @app.route("/usuario/skins")
+@login_required
 def mis_skins():
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver tus skins.', 'warning')
@@ -851,6 +932,7 @@ def mis_skins():
     )
 
 @app.route("/api/skins/cambiar/<int:id_skin>", methods=["POST"])
+@login_required
 def cambiar_skin(id_skin):
     id_usuario = session.get('user_id')
     if not id_usuario:
@@ -868,6 +950,7 @@ def cambiar_skin(id_skin):
         return jsonify({"error": mensaje}), 400
     
 @app.route("/api/skins/quitar", methods=["POST"])
+@login_required
 def quitar_skin():
     id_usuario = session.get('user_id')
     if not id_usuario:
@@ -948,6 +1031,7 @@ def restablecer_con_token(token):
 
 # ---------------------------------- AGREGADO POR PAME - Reportes
 @app.route('/reportes/partida/<int:id_partida>')
+@profesor_required
 def reporte_partida_page(id_partida):
     if 'user_id' not in session:
         flash('Debes iniciar sesión para ver esta página.', 'warning')

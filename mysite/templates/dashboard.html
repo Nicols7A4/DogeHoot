@@ -41,6 +41,7 @@
 </div>
 
 <!-- Sección: Filtros por Categorías -->
+{% if tipo_usuario == 'P' %}
 <div class="div-categorias">
     <h1>Categorías</h1>
     <div class="categorias-container">
@@ -59,7 +60,6 @@
         </div>
     </div>
 </div>
-
 <!-- Sección: Cuestionarios Populares -->
 <div class="div-populares">
     <div class="populares-header">
@@ -171,7 +171,7 @@
         {% endfor %}
     </div>
 </div>
-
+{% endif %}
 <!-- Modal de Confirmación para Clonar -->
 <div id="modalClonar" class="modal-overlay">
     <div class="modal-contenido">
