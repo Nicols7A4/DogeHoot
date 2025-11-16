@@ -12,12 +12,13 @@ from controladores import categorias as ctrl_cat
 from controladores import outlook_email_sender as email_sender
 from controladores import controlador_skins as ctrl_skins
 from controladores import controlador_partidas as ctrl_partidas
+from controladores import usuarios
 # ------------------------------------------------------------------------------
 # PAGINAS PUBLICAS Y DE AUTENTICACIÓN
 
 
 def encriptar_sha256(texto):
-    texto = texto.encode('utf-8')
+    texto = str(texto).encode('utf-8')  
     objHash = hashlib.sha256(texto)
     textenc = objHash.hexdigest()
     return textenc
@@ -305,8 +306,6 @@ def logout():
     # Crear respuesta de redirección y eliminar la cookie
     resp = make_response(redirect(url_for('auth_page')))
     resp.set_cookie('user_email', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
-    resp.set_cookie('user_id', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
-    resp.set_cookie('user_name', '', expires=0)  # Eliminar cookie estableciendo expiración a 0
     
     #flash('Has cerrado sesión.', 'info')
     return resp
