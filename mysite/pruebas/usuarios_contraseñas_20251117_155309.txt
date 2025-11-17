@@ -1,0 +1,102 @@
+============================================================
+📋 USUARIOS Y CONTRASEÑAS
+============================================================
+
+🆔 Id USUARIO: 1
+👤 Usuario: Yaco177
+   📧 Correo: adolfopongo1705@gmail.com
+   🔑 Contraseña: 59317b20fc49d9705e829e40a5e79e4e0595d4cccc352325424acee7c2811303
+------------------------------------------------------------
+🆔 Id USUARIO: 3
+👤 Usuario: PepeXYZ
+   📧 Correo: a@a.com
+   🔑 Contraseña: 123
+------------------------------------------------------------
+🆔 Id USUARIO: 4
+👤 Usuario: Pamewi
+   📧 Correo: paguinagar.07@gmail.cp-om
+   🔑 Contraseña: 123
+------------------------------------------------------------
+🆔 Id USUARIO: 5
+👤 Usuario: peew
+   📧 Correo: paguinagar.07@gmail.com
+   🔑 Contraseña: Pame1234$
+------------------------------------------------------------
+🆔 Id USUARIO: 6
+👤 Usuario: A1
+   📧 Correo: A1@ABC.COM
+   🔑 Contraseña: 123
+------------------------------------------------------------
+🆔 Id USUARIO: 11
+👤 Usuario: miguelv
+   📧 Correo: miguel@test.com
+   🔑 Contraseña: 123456
+------------------------------------------------------------
+🆔 Id USUARIO: 16
+👤 Usuario: P1
+   📧 Correo: prueba1@chatstream.click
+   🔑 Contraseña: 123
+------------------------------------------------------------
+🆔 Id USUARIO: 24
+👤 Usuario: P2
+   📧 Correo: prueba2@chatstream.click
+   🔑 Contraseña: abc
+------------------------------------------------------------
+🆔 Id USUARIO: 33
+👤 Usuario: AAAAAAAAAAA
+   📧 Correo: AAAAAAAAAAAAAAAA@a.com
+   🔑 Contraseña: 123
+------------------------------------------------------------
+🆔 Id USUARIO: 36
+👤 Usuario: zzz
+   📧 Correo: zamorayj20@gmail.com
+   🔑 Contraseña: 123456
+------------------------------------------------------------
+🆔 Id USUARIO: 41
+👤 Usuario: Carlos3
+   📧 Correo: carlosotoya903@gmail.com
+   🔑 Contraseña: dacf48298
+------------------------------------------------------------
+🆔 Id USUARIO: 69
+👤 Usuario: darkazzza
+   📧 Correo: marcochaconchavez@gmail.com
+   🔑 Contraseña: aM.9KJajsda
+------------------------------------------------------------
+🆔 Id USUARIO: 70
+👤 Usuario: darkazzz
+   📧 Correo: marcochaconchavez09@gmail.com
+   🔑 Contraseña: Marcoantonio5690.
+------------------------------------------------------------
+🆔 Id USUARIO: 82
+👤 Usuario: P3
+   📧 Correo: prueba3@chatstream.click
+   🔑 Contraseña: $$$Ab123
+------------------------------------------------------------
+🆔 Id USUARIO: 85
+👤 Usuario: jcachay
+   📧 Correo: jcachay@usat.edu.pe
+   🔑 Contraseña: mnpXYZ$123
+------------------------------------------------------------
+🆔 Id USUARIO: 90
+👤 Usuario: Valee
+   📧 Correo: pamelaguinaga076@gmail.com
+   🔑 Contraseña: Vale1234$
+------------------------------------------------------------
+🆔 Id USUARIO: 30092
+👤 Usuario: UsaPongo
+   📧 Correo: 73073168@usat.pe
+   🔑 Contraseña: 432b56e3dcc41d53ba1e270927822bb5b89b2d7e9bee4f465a13ec3c3f196a9b
+------------------------------------------------------------
+🆔 Id USUARIO: 30093
+👤 Usuario: Yaco103
+   📧 Correo: yacojuega103@gmail.com
+   🔑 Contraseña: $$$ABCabc123
+------------------------------------------------------------
+🆔 Id USUARIO: 30096
+👤 Usuario: P888
+   📧 Correo: prueba888@chatstream.cfd
+   🔑 Contraseña: 59317b20fc49d9705e829e40a5e79e4e0595d4cccc352325424acee7c2811303
+------------------------------------------------------------
+
+Total de usuarios: 19
+Fecha de generación: 2025-11-17 15:53:09

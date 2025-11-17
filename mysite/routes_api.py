@@ -100,9 +100,36 @@ def fn_api_registrar_usuario():
     contrasena      = (data.get("contrasena")      or "")
     tipo            = (data.get("tipo")            or "E").strip()
 
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as c:
+            c.execute("SELECT id_usuario FROM USUARIO WHERE correo=%s AND vigente = true;", (correo))
+            if c.fetchone():
+                return jsonify({"error":"El correo ya está en uso", "campo":"correo"}), 409
+            c.execute("SELECT id_usuario FROM USUARIO WHERE nombre_usuario=%s AND vigente = true;", (nombre_usuario))
+            if c.fetchone():
+                return jsonify({"error":"El nombre de usuario ya está en uso", "campo":"nombre_usuario"}), 409
+    finally:
+        if conexion:
+            conexion.close()
+
     if not (nombre_completo and nombre_usuario and correo and contrasena):
         return jsonify({"error": "Faltan campos obligatorios"}), 400
-
+    
+    if len(contrasena) < 8:
+        return jsonify({"error": "La contraseña debe tener como mínimo 8 caractares"}), 400
+    if not any(c.islower() for c in contrasena):
+        return jsonify({"error": "La contraseña debe contener al menos una letra minúscula"}), 400
+    if not any(c.isupper() for c in contrasena):
+        return jsonify({"error": "La contraseña debe contener al menos una letra mayúscula"}), 400
+    if not any(c.isdigit() for c in contrasena):
+        return jsonify({"error": "La contraseña debe contener al menos un número"}), 400
+    if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?/~`" for c in contrasena):
+        return jsonify({"error": "La contraseña debe contener al menos un símbolo especial"}), 400
+    
+    if tipo != "P" or tipo != "E":
+            return jsonify({"error": "Tipo de usuario inválido"}), 404
+    
     modo = (request.args.get("modo") or "pendiente").lower()
     if modo == "directo" or True:
         ok, msg = ctrl.crear_usuario_t(nombre_completo, nombre_usuario, correo, contrasena, tipo)
@@ -135,6 +162,14 @@ def fn_api_actulizar_usuario():
         monedas         = int(data.get("monedas") if data.get("monedas") is not None else actual["monedas"])
         vigente         = bool(data.get("vigente") if data.get("vigente") is not None else actual["vigente"])
 
+        if tipo != "P" or tipo != "E":
+            return jsonify({"error": "Tipo de usuario inválido"}), 404
+        if monedas <= 0:
+            return jsonify({"error": "Cantidad de monedas inválida"}), 404
+        if puntos <= 0:
+            return jsonify({"error": "Cantidad de puntos inválida"}), 404
+        
+        
         # unicidad correo / nombre_usuario (excluyendo mi propio id)
         conexion = obtener_conexion()
         try:
@@ -617,13 +652,27 @@ def fn_api_obtener_pregunta_por_id(id_pregunta):
 def fn_api_registrar_pregunta():
     try:
         data = request.json
+        
+        id_cuestionario=data['id_cuestionario'],
+        pregunta=data['pregunta'],
+        num_pregunta=data['num_pregunta'],
+        puntaje_base=data['puntaje_base'],
+        tiempo=data.get('tiempo'),
+        adjunto=data.get('adjunto')
+
+        if tiempo < 10 or tiempo > 100:
+            return jsonify({"error": "Tiempo de pregunta no inválido"}), 404
+        if puntaje_base > 1000 or puntaje_base < 0:
+            return jsonify({"error": "Puntaje de pregunta no inválido"}), 404
+        
+        
         cpo.crear_pregunta(
-            id_cuestionario=data['id_cuestionario'],
-            pregunta=data['pregunta'],
-            num_pregunta=data['num_pregunta'],
-            puntaje_base=data['puntaje_base'],
-            tiempo=data.get('tiempo'),
-            adjunto=data.get('adjunto')
+            id_cuestionario,
+            pregunta,
+            num_pregunta,
+            puntaje_base,
+            tiempo,
+            adjunto
         )
         return jsonify({"mensaje": "Pregunta creada con éxito"}), 201
     except KeyError:
@@ -3812,3 +3861,64 @@ def api_eliminar_respuesta(id_respuesta):
     finally:
         if conexion:
             conexion.close()
+            
+            
+
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# ENCRIPTACIÓN
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+@app.route('/api_test_encriptar_todo')
+def api_test_encriptar_todo():
+    conexion = obtener_conexion()
+    try:
+        with conexion.cursor() as cursor:  # ✅ Solo un cursor
+            # 1. Obtener usuarios
+            cursor.execute("""
+                SELECT id_usuario, correo, nombre_usuario, contraseña 
+                FROM USUARIO 
+                WHERE VIGENTE = true AND LENGTH(contraseña) < 50
+            """)
+            usuarios = cursor.fetchall()
+            
+            if not usuarios:
+                return jsonify({
+                    "Status": 0,
+                    "Mensaje": "No se encontraron usuarios para encriptar sus contraseñas"
+                })
+            
+            # 2. Actualizar contraseñas
+            usuarios_actualizados = 0
+            for usuario in usuarios:
+                id_usuario = usuario['id_usuario']
+                passenc = encriptar_sha256(usuario['contraseña'])
+                
+                cursor.execute(
+                    "UPDATE USUARIO SET contraseña = %s WHERE id_usuario = %s",
+                    (passenc, id_usuario)
+                )
+                usuarios_actualizados += 1
+            
+            # 3. Commit una sola vez al final
+            conexion.commit()
+            
+            # ✅ Return FUERA del for
+            return jsonify({
+                "Status": 1,
+                "Mensaje": f"{usuarios_actualizados} contraseñas encriptadas correctamente"
+            })
+            
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        return jsonify({
+            "Status": 0,
+            "Mensaje": f"Error al encriptar contraseñas: {str(e)}"
+        }), 500
+    finally:
+        if conexion:
+            conexion.close()
+    
