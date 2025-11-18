@@ -33,6 +33,11 @@ tags:
       url: https://swagger.io
   - name: partidas
     description: Sesiones de juego y gestión de partidas
+  - name: inventario_skins
+    description: Documentacion sobre las apis de inventario_skins
+    externalDocs:
+      description: Mas info
+      url: https://dmailproject.pythonanywhere.com/
 paths:
   /api_obtener_usuarios:
     get:
@@ -364,6 +369,114 @@ paths:
                 $ref: "#/components/schemas/Error"
       security:
         - jwt_auth: []
+    
+  /api_registrarinventario:
+    post:
+      tags:
+        - inventario_skins
+      summary: Registrar una skin al inventario del usuario
+      description: Inserta un registro en la tabla INVENTARIO_SKINS.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventarioInsert'
+      responses:
+        '201':
+          description: Inventario registrado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaStandar'
+
+  /api_actualizarinventario/{id_usuario}/{id_skin}:
+    put:
+      tags:
+        - inventario_skins
+      summary: Actualiza una skin del inventario
+      description: Cambia el id_skin de un registro existente.
+      parameters:
+        - in: path
+          name: id_usuario
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id_skin
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventarioUpdate'
+      responses:
+        '200':
+          description: Registro actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaStandar'
+
+  /api_eliminarinventario/{id_usuario}/{id_skin}:
+    delete:
+      tags:
+        - inventario_skins
+      summary: Elimina una skin del inventario de un usuario
+      parameters:
+        - in: path
+          name: id_usuario
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id_skin
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Registro eliminado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaStandar'
+
+  /api_obtenerinventarios:
+    get:
+      tags:
+        - inventario_skins
+      summary: Lista de todos los inventarios de skins
+      description: Retorna todos los registros de INVENTARIO_SKINS junto con información del usuario y la skin.
+      responses:
+        '200':
+          description: Inventarios obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaListaInventario'
+
+  /api_obtenerinventarioporusuario/{id_usuario}:
+    get:
+      tags:
+        - inventario_skins
+      summary: Lista de skins que posee un usuario
+      parameters:
+        - in: path
+          name: id_usuario
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Inventario del usuario obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaListaSkinsUsuario'
 components:
   schemas:
     Usuario:
@@ -499,3 +612,95 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Autenticación mediante JSON Web Token (JWT). Incluir el token en el header Authorization con el formato "Bearer {token}"
+  RptaStandar:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1
+        data:
+          type: object
+          example: {}
+        message:
+          type: string
+          example: Operación realizada correctamente
+
+  RptaListaInventario:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventarioFull'
+        message:
+          type: string
+          example: Inventarios obtenidos correctamente
+
+  RptaListaSkinsUsuario:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skin'
+        message:
+          type: string
+          example: Inventario del usuario obtenido correctamente
+
+  InventarioFull:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+          example: 5
+        nombre_usuario:
+          type: string
+          example: "Juan Perez"
+        id_skin:
+          type: integer
+          example: 3
+        ruta_skin:
+          type: string
+          example: "skins/marco1.png"
+
+  Skin:
+      type: object
+      properties:
+        id_skin:
+          type: integer
+          example: 3
+        ruta:
+          type: string
+          example: "skins/marco1.png"
+        tipo:
+          type: string
+          example: "marco"
+        precio:
+          type: number
+          example: 150
+        vigente:
+          type: integer
+          example: 1
+
+  InventarioInsert:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+          example: 2
+        id_skin:
+          type: integer
+          example: 5
+
+  InventarioUpdate:
+      type: object
+      properties:
+        id_skin:
+          type: integer
+          example: 8
