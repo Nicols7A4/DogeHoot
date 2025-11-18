@@ -1,0 +1,377 @@
+openapi: 3.0.3
+info:
+  title: DogeHoot API (No Filters)
+  description: >
+    APIs.
+    
+  version: 2.4.0
+  contact:
+    name: DogeHoot
+
+servers:
+  - url: https://dmailproject.pythonanywhere.com
+    description: Servidor Producción
+  - url: http://127.0.0.1:5001
+    description: Servidor Local
+
+components:
+  securitySchemes:
+    jwtAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: "Token JWT. Ejemplo: `JWT eyJ0eXAiOiJKV1...`"
+
+  schemas:
+    RespuestaEstandar:
+      type: object
+      properties:
+        code: { type: integer }
+        message: { type: string }
+        data: { type: object, nullable: true }
+
+    Participante:
+      type: object
+      properties:
+        id_participante: { type: integer }
+        nombre: { type: string }
+        registrado: { type: integer }
+        puntaje: { type: integer }
+        id_partida: { type: integer }
+        id_usuario: { type: integer, nullable: true }
+        id_grupo: { type: integer, nullable: true }
+        grupo: { type: integer, nullable: true }
+
+    RespuestaJuego:
+      type: object
+      properties:
+        id_respuesta: { type: integer }
+        id_participante: { type: integer }
+        id_partida: { type: integer }
+        id_pregunta: { type: integer }
+        opcion_texto: { type: string }
+        es_correcta: { type: integer }
+        puntaje: { type: integer }
+        tiempo_respuesta: { type: string }
+        creado_en: { type: string, format: date-time }
+
+    AuthLogin:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string, example: "carlos@auth.com" }
+        password: { type: string, example: "123456" }
+
+    ParticipanteCreate:
+      type: object
+      required: [id_partida, nombre]
+      properties:
+        id_partida: { type: integer, example: 480072 }
+        nombre: { type: string, example: "NuevoJugador" }
+        registrado: { type: integer, default: 0 }
+        id_usuario: { type: integer, nullable: true }
+
+    ParticipanteUpdate:
+      type: object
+      properties:
+        nombre: { type: string }
+        puntaje: { type: integer }
+        grupo: { type: integer }
+
+    RespuestaCreate:
+      type: object
+      required: [id_participante, id_partida, id_pregunta]
+      properties:
+        id_participante: { type: integer, example: 10 }
+        id_opcion: { type: integer, example: 55 }
+        id_partida: { type: integer, example: 480072 }
+        id_pregunta: { type: integer, example: 33 }
+        opcion_texto: { type: string, example: "48" }
+        es_correcta: { type: integer, example: 1 }
+        puntaje: { type: integer, example: 1000 }
+        tiempo_respuesta: { type: string, example: "00:00:02" }
+
+    RespuestaUpdate:
+      type: object
+      properties:
+        es_correcta: { type: integer, enum: [0, 1] }
+        puntaje: { type: integer }
+        opcion_texto: { type: string }
+
+  examples:
+    # Exitos
+    ExitoAuth:
+      summary: Token OK
+      value: { access_token: "eyJ0eXAiOiJKV1..." }
+    ExitoParticipanteCreado:
+      summary: Creado OK
+      value: { code: 1, message: "Participante creado", data: { id_participante: 105, nombre: "Jugador1", puntaje: 0 } }
+    ExitoListaParticipantes:
+      summary: Lista OK
+      value: { code: 1, message: "Participantes obtenidos", data: [ { id_participante: 1, nombre: "A" }, { id_participante: 2, nombre: "B" } ] }
+    ExitoParticipanteDetalle:
+      summary: Detalle OK
+      value: { code: 1, message: "Encontrado", data: { id_participante: 1, nombre: "A" } }
+    ExitoActualizacion:
+      summary: Actualizado OK
+      value: { code: 1, message: "Actualizado correctamente", data: {} }
+    ExitoEliminacion:
+      summary: Eliminado OK
+      value: { code: 1, message: "Eliminado correctamente", data: { afectados: 1 } }
+    ExitoRespuestaGuardada:
+      summary: Guardado OK
+      value: { code: 1, message: "Respuesta registrada", data: { id_respuesta: 501, puntaje: 1000 } }
+    ExitoListaRespuestas:
+      summary: Lista OK
+      value: { code: 1, message: "Respuestas obtenidas", data: [ { id_respuesta: 1, puntaje: 1000 }, { id_respuesta: 2, puntaje: 0 } ] }
+    ExitoRespuestaDetalle:
+      summary: Detalle OK
+      value: { code: 1, message: "Encontrado", data: { id_respuesta: 1, puntaje: 1000 } }
+
+    # Errores
+    Error400:
+      summary: Datos Inválidos
+      value: { code: 0, message: "Faltan datos obligatorios", data: {} }
+    Error404:
+      summary: No Encontrado
+      value: { code: 0, message: "Recurso no encontrado", data: {} }
+    Error409:
+      summary: Conflicto/Duplicado
+      value: { code: 0, message: "Registro duplicado o conflicto de integridad", data: {} }
+    Error500:
+      summary: Fallo Servidor
+      value: { code: 0, message: "Error interno de base de datos", data: {} }
+
+security:
+  - jwtAuth: []
+
+paths:
+  /auth:
+    post:
+      tags: [Autenticación]
+      summary: Login
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthLogin' }
+      responses:
+        '200':
+          description: Token
+          content:
+            application/json:
+              examples: { Ok: { $ref: '#/components/examples/ExitoAuth' } }
+
+  /api_registrar_participante:
+    post:
+      tags: [Participantes]
+      summary: 1. Crear Participante
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ParticipanteCreate' }
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              examples: { Ok: { $ref: '#/components/examples/ExitoParticipanteCreado' } }
+        '400':
+          description: Error Datos
+          content:
+            application/json:
+              examples: { Error: { $ref: '#/components/examples/Error400' } }
+        '500':
+          description: Error Server
+          content:
+            application/json:
+              examples: { Error: { $ref: '#/components/examples/Error500' } }
+
+  /api_obtener_participantes:
+    get:
+      tags: [Participantes]
+      summary: 2. Listar Todos los Participantes
+      description: Retorna la lista completa de participantes sin filtros.
+      # SE ELIMINÓ LA SECCIÓN DE PARAMETERS AQUÍ
+      responses:
+        '200':
+          description: Lista completa
+          content:
+            application/json:
+              examples: { Ok: { $ref: '#/components/examples/ExitoListaParticipantes' } }
+        '500':
+          description: Error
+          content:
+            application/json:
+              examples: { Error: { $ref: '#/components/examples/Error500' } }
+
+  /api_obtener_participante_por_id/{id_participante}:
+    get:
+      tags: [Participantes]
+      summary: 3. Obtener por ID
+      parameters:
+        - in: path
+          name: id_participante
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Encontrado
+          content:
+            application/json:
+              examples: { Ok: { $ref: '#/components/examples/ExitoParticipanteDetalle' } }
+        '404':
+          description: No encontrado
+          content:
+            application/json:
+              examples: { Error: { $ref: '#/components/examples/Error404' } }
+
+  /api_actualizar_participante/{id_participante}:
+    put:
+      tags: [Participantes]
+      summary: 4. Actualizar
+      parameters:
+        - in: path
+          name: id_participante
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ParticipanteUpdate' }
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              examples: { Ok: { $ref: '#/components/examples/ExitoActualizacion' } }
+        '404':
+          description: No encontrado
+          content:
+            application/json:
+              examples: { Error: { $ref: '#/components/examples/Error404' } }
+
+  /api_eliminar_participante/{id_participante}:
+    delete:
+      tags: [Participantes]
+      summary: 5. Eliminar
+      parameters:
+        - in: path
+          name: id_participante
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Eliminado
+          content:
+            application/json:
+              examples: { Ok: { $ref: '#/components/examples/ExitoEliminacion' } }
+        '409':
+          description: Conflicto
+          content:
+            application/json:
+              examples: { Error: { $ref: '#/components/examples/Error409' } }
+
+  /api_registrar_respuesta:
+    post:
+      tags: [Respuestas]
+      summary: 1. Registrar Respuesta
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RespuestaCreate' }
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              examples: { Ok: { $ref: '#/components/examples/ExitoRespuestaGuardada' } }
+        '409':
+          description: Duplicada
+          content:
+            application/json:
+              examples: { Error: { $ref: '#/components/examples/Error409' } }
+        '400':
+          description: Error FK
+          content:
+            application/json:
+              examples: { Error: { $ref: '#/components/examples/Error400' } }
+
+  /api_obtener_respuestas:
+    get:
+      tags: [Respuestas]
+      summary: 2. Listar Todas las Respuestas
+      description: Retorna todas las respuestas registradas sin filtros.
+      responses:
+        '200':
+          description: Lista completa
+          content:
+            application/json:
+              examples: { Ok: { $ref: '#/components/examples/ExitoListaRespuestas' } }
+        '500':
+          description: Error
+          content:
+            application/json:
+              examples: { Error: { $ref: '#/components/examples/Error500' } }
+
+  /api_obtener_respuesta_por_id/{id_respuesta}:
+    get:
+      tags: [Respuestas]
+      summary: 3. Obtener por ID
+      parameters:
+        - in: path
+          name: id_respuesta
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Encontrada
+          content:
+            application/json:
+              examples: { Ok: { $ref: '#/components/examples/ExitoRespuestaDetalle' } }
+        '404':
+          description: No encontrada
+          content:
+            application/json:
+              examples: { Error: { $ref: '#/components/examples/Error404' } }
+
+  /api_actualizar_respuesta/{id_respuesta}:
+    put:
+      tags: [Respuestas]
+      summary: 4. Actualizar
+      parameters:
+        - in: path
+          name: id_respuesta
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RespuestaUpdate' }
+      responses:
+        '200':
+          description: Actualizada
+          content:
+            application/json:
+              examples: { Ok: { $ref: '#/components/examples/ExitoActualizacion' } }
+
+  /api_eliminar_respuesta/{id_respuesta}:
+    delete:
+      tags: [Respuestas]
+      summary: 5. Eliminar
+      parameters:
+        - in: path
+          name: id_respuesta
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Eliminada
+          content:
+            application/json:
+              examples: { Ok: { $ref: '#/components/examples/ExitoEliminacion' } }
+        '404':
+          description: No existe
+          content:
+            application/json:
+              examples: { Error: { $ref: '#/components/examples/Error404' } }
