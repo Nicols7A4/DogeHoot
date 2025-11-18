@@ -661,10 +661,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Cuestionario'
                   code:
                     type: integer
                     example: 200
@@ -977,21 +973,6 @@ paths:
       summary: Registrar nueva pregunta
       description: Crea una nueva pregunta en un cuestionario
       operationId: registrarPregunta
-  /api_actualizarcategoria/{id}:
-    put:
-      tags:
-        - categoria
-      summary: Actualizar Categoría
-      description: Actualiza una categoría existente.
-      operationId: actualizarCategoria
-      parameters:
-        - name: id
-          in: path
-          description: ID de la categoría a actualizar
-          required: true
-          schema:
-            type: integer
-            format: int64
       requestBody:
         required: true
         content:
@@ -1010,24 +991,13 @@ paths:
                     type: string
                     example: Pregunta creada con éxito
         '400':
-          description: Faltan datos requeridos o datos inválidos
-              $ref: '#/components/schemas/CategoriaUpdate'
-      responses:
-        '200':
-          description: Categoría actualizada correctamente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '400':
-          description: Datos inválidos
+          description: Faltan datos requeridos
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
           description: Validación fallida (tiempo o puntaje inválido)
-          description: Categoría no encontrada
           content:
             application/json:
               schema:
@@ -1906,13 +1876,7 @@ components:
       required:
         - code
         - message
-  securitySchemes:
-    jwt_auth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: Autenticación mediante JSON Web Token (JWT). Incluir el token en el header Authorization con el formato "Bearer {token}"
-  RptaStandar:
+    RptaStandar:
       type: object
       properties:
         code:
@@ -1924,8 +1888,7 @@ components:
         message:
           type: string
           example: Operación realizada correctamente
-
-  RptaListaInventario:
+    RptaListaInventario:
       type: object
       properties:
         code:
@@ -1938,8 +1901,7 @@ components:
         message:
           type: string
           example: Inventarios obtenidos correctamente
-
-  RptaListaSkinsUsuario:
+    RptaListaSkinsUsuario:
       type: object
       properties:
         code:
@@ -1948,12 +1910,11 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Skin'
+            $ref: '#/components/schemas/SkinInventario'
         message:
           type: string
           example: Inventario del usuario obtenido correctamente
-
-  InventarioFull:
+    InventarioFull:
       type: object
       properties:
         id_usuario:
@@ -1968,8 +1929,7 @@ components:
         ruta_skin:
           type: string
           example: "skins/marco1.png"
-
-  Skin:
+    SkinInventario:
       type: object
       properties:
         id_skin:
@@ -1987,8 +1947,7 @@ components:
         vigente:
           type: integer
           example: 1
-
-  InventarioInsert:
+    InventarioInsert:
       type: object
       properties:
         id_usuario:
@@ -1997,10 +1956,15 @@ components:
         id_skin:
           type: integer
           example: 5
-
-  InventarioUpdate:
+    InventarioUpdate:
       type: object
       properties:
         id_skin:
           type: integer
           example: 8
+  securitySchemes:
+    jwt_auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Autenticación mediante JSON Web Token (JWT). Incluir el token en el header Authorization con el formato "Bearer {token}"
