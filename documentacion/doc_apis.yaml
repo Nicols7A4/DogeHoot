@@ -1,12 +1,13 @@
 openapi: 3.0.4
 info:
-  title: Tienda virtual de Disco 1.0
+  title: DogeHoot API 1.0
   description: |-
-    Esta es una tienda virtual de discos y la puedes encontrar en [tienda de discos Pongo](https://adolfopongo1705.pythonanywhere.com/). En esta aplicación web podrás registrar tus discos, así como lo géneros, artistas y precios a utilizar en la tienda online.
+    API de DogeHoot - Plataforma educativa de cuestionarios interactivos. Puedes encontrar la aplicación en [DogeHoot](https://dmailproject.pythonanywhere.com/).
+    
+    Esta API permite gestionar usuarios, cuestionarios, preguntas, partidas y más funcionalidades de la plataforma educativa.
 
-    Some useful links:
-    - [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
-    - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
+    Links útiles:
+    - [Repositorio del proyecto](https://github.com/Nicols7A4/DogeHoot)
   termsOfService: https://swagger.io/terms/
   contact:
     email: 73073168@usat.pe
@@ -15,910 +16,473 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   version: 1.0.12
 externalDocs:
-  description: Find out more about Swagger
+  description: Más información sobre Swagger
   url: https://swagger.io
 servers:
-  - url: https://adolfopongo1705.pythonanywhere.com/
+  - url: https://dmailproject.pythonanywhere.com/
 tags:
-  - name: disco
-    description: Todo sobre tus discos
+  - name: usuarios
+    description: Operaciones sobre usuarios de la plataforma DogeHoot
     externalDocs:
-      description: Encuentra más
+      description: Más información
       url: https://swagger.io
-  - name: store
-    description: Access to Petstore orders
+  - name: cuestionarios
+    description: Gestión de cuestionarios educativos
     externalDocs:
-      description: Find out more about our store
+      description: Más información
       url: https://swagger.io
-  - name: user
-    description: Operations about user
+  - name: partidas
+    description: Sesiones de juego y gestión de partidas
 paths:
-  /api_obtenerdiscos:
+  /api_obtener_usuarios:
     get:
       tags:
-        - disco
-      summary: Listado de todos los discos
-      description: Retorna la lista de discos en la BD
+        - usuarios
+      summary: Obtener todos los usuarios
+      description: Retorna la lista completa de usuarios registrados en la plataforma
+      operationId: obtenerUsuarios
       responses:
         '200':
           description: Operación exitosa
           content:
-            applicaction/json:
+            application/json:
               schema:
-                $ref: '#/components/schemas/RptaGeneral'
-  /pet:
-    put:
-      tags:
-        - pet
-      summary: Update an existing pet.
-      description: Update an existing pet by Id.
-      operationId: updatePet
-      requestBody:
-        description: Update an existent pet in the store
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
-        required: true
-      responses:
-        '200':
-          description: Successful operation
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  usuarios:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Usuario'
+        '500':
+          description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Pet not found
-        '422':
-          description: Validation exception
+                $ref: '#/components/schemas/Error'
         default:
-          description: Unexpected error
+          description: Error inesperado
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
       security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-    post:
-      tags:
-        - pet
-      summary: Add a new pet to the store.
-      description: Add a new pet to the store.
-      operationId: addPet
-      requestBody:
-        description: Create a new pet in the store
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
-        required: true
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid input
-        '422':
-          description: Validation exception
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/findByStatus:
+        - jwt_auth: []
+  /api_obtener_usuario_por_id/{id_usuario}:
     get:
       tags:
-        - pet
-      summary: Finds Pets by status.
-      description: Multiple status values can be provided with comma separated strings.
-      operationId: findPetsByStatus
+        - usuarios
+      summary: Obtener usuario por ID
+      description: Retorna la información de un usuario específico según su ID
+      operationId: obtenerUsuarioPorId
       parameters:
-        - name: status
-          in: query
-          description: Status values that need to be considered for filter
-          required: false
-          explode: true
-          schema:
-            type: string
-            default: available
-            enum:
-              - available
-              - pending
-              - sold
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid status value
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/findByTags:
-    get:
-      tags:
-        - pet
-      summary: Finds Pets by tags.
-      description: Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.
-      operationId: findPetsByTags
-      parameters:
-        - name: tags
-          in: query
-          description: Tags to filter by
-          required: false
-          explode: true
-          schema:
-            type: array
-            items:
-              type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid tag value
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/{petId}:
-    get:
-      tags:
-        - pet
-      summary: Find pet by ID.
-      description: Returns a single pet.
-      operationId: getPetById
-      parameters:
-        - name: petId
+        - name: id_usuario
           in: path
-          description: ID of pet to return
+          description: ID del usuario a obtener
           required: true
           schema:
             type: integer
-            format: int64
+            format: int32
       responses:
         '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Pet not found
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - api_key: []
-        - petstore_auth:
-            - write:pets
-            - read:pets
-    post:
-      tags:
-        - pet
-      summary: Updates a pet in the store with form data.
-      description: Updates a pet resource based on the form data.
-      operationId: updatePetWithForm
-      parameters:
-        - name: petId
-          in: path
-          description: ID of pet that needs to be updated
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: name
-          in: query
-          description: Name of pet that needs to be updated
-          schema:
-            type: string
-        - name: status
-          in: query
-          description: Status of pet that needs to be updated
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Pet'
-        '400':
-          description: Invalid input
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-    delete:
-      tags:
-        - pet
-      summary: Deletes a pet.
-      description: Delete a pet.
-      operationId: deletePet
-      parameters:
-        - name: api_key
-          in: header
-          description: ''
-          required: false
-          schema:
-            type: string
-        - name: petId
-          in: path
-          description: Pet id to delete
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: Pet deleted
-        '400':
-          description: Invalid pet value
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /pet/{petId}/uploadImage:
-    post:
-      tags:
-        - pet
-      summary: Uploads an image.
-      description: Upload image of the pet.
-      operationId: uploadFile
-      parameters:
-        - name: petId
-          in: path
-          description: ID of pet to update
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: additionalMetadata
-          in: query
-          description: Additional Metadata
-          required: false
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/octet-stream:
-            schema:
-              type: string
-              format: binary
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '400':
-          description: No file uploaded
-        '404':
-          description: Pet not found
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-  /store/inventory:
-    get:
-      tags:
-        - store
-      summary: Returns pet inventories by status.
-      description: Returns a map of status codes to quantities.
-      operationId: getInventory
-      responses:
-        '200':
-          description: successful operation
+          description: Operación exitosa
           content:
             application/json:
               schema:
                 type: object
-                additionalProperties:
-                  type: integer
-                  format: int32
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  usuario:
+                    $ref: '#/components/schemas/Usuario'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         default:
-          description: Unexpected error
+          description: Error inesperado
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
       security:
-        - api_key: []
-  /store/order:
+        - jwt_auth: []
+  /api_registrar_usuario:
     post:
       tags:
-        - store
-      summary: Place an order for a pet.
-      description: Place a new order in the store.
-      operationId: placeOrder
+        - usuarios
+      summary: Registrar un nuevo usuario
+      description: Crea un nuevo usuario en la plataforma con los datos proporcionados
+      operationId: registrarUsuario
       requestBody:
+        description: Datos del usuario a registrar
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Order'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Order'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Order'
+              $ref: '#/components/schemas/UsuarioRegistro'
       responses:
-        '200':
-          description: successful operation
+        '201':
+          description: Usuario creado exitosamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Order'
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  mensaje:
+                    type: string
+                    example: Usuario registrado exitosamente
         '400':
-          description: Invalid input
-        '422':
-          description: Validation exception
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Faltan datos requeridos
+        '409':
+          description: Conflicto - Usuario ya existe
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: El correo ya está registrado
         default:
-          description: Unexpected error
+          description: Error inesperado
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /store/order/{orderId}:
-    get:
-      tags:
-        - store
-      summary: Find purchase order by ID.
-      description: For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.
-      operationId: getOrderById
-      parameters:
-        - name: orderId
-          in: path
-          description: ID of order that needs to be fetched
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Order'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Order'
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Order not found
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-    delete:
-      tags:
-        - store
-      summary: Delete purchase order by identifier.
-      description: For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors.
-      operationId: deleteOrder
-      parameters:
-        - name: orderId
-          in: path
-          description: ID of the order that needs to be deleted
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: order deleted
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Order not found
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-  /user:
-    post:
-      tags:
-        - user
-      summary: Create user.
-      description: This can only be done by the logged in user.
-      operationId: createUser
-      requestBody:
-        description: Created user object
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/User'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/User'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/User'
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-  /user/createWithList:
-    post:
-      tags:
-        - user
-      summary: Creates list of users with given input array.
-      description: Creates list of users with given input array.
-      operationId: createUsersWithListInput
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/User'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/User'
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-  /user/login:
-    get:
-      tags:
-        - user
-      summary: Logs user into the system.
-      description: Log into the system.
-      operationId: loginUser
-      parameters:
-        - name: username
-          in: query
-          description: The user name for login
-          required: false
-          schema:
-            type: string
-        - name: password
-          in: query
-          description: The password for login in clear text
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          headers:
-            X-Rate-Limit:
-              description: calls per hour allowed by the user
-              schema:
-                type: integer
-                format: int32
-            X-Expires-After:
-              description: date in UTC when token expires
-              schema:
-                type: string
-                format: date-time
-          content:
-            application/xml:
-              schema:
-                type: string
-            application/json:
-              schema:
-                type: string
-        '400':
-          description: Invalid username/password supplied
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-  /user/logout:
-    get:
-      tags:
-        - user
-      summary: Logs out current logged in user session.
-      description: Log user out of the system.
-      operationId: logoutUser
-      parameters: []
-      responses:
-        '200':
-          description: successful operation
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-  /user/{username}:
-    get:
-      tags:
-        - user
-      summary: Get user by user name.
-      description: Get user detail based on username.
-      operationId: getUserByName
-      parameters:
-        - name: username
-          in: path
-          description: The name that needs to be fetched. Use user1 for testing
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/User'
-        '400':
-          description: Invalid username supplied
-        '404':
-          description: User not found
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+      security:
+        - jwt_auth: []
+  /api_actualizar_usuario:
     put:
       tags:
-        - user
-      summary: Update user resource.
-      description: This can only be done by the logged in user.
-      operationId: updateUser
-      parameters:
-        - name: username
-          in: path
-          description: name that need to be deleted
-          required: true
-          schema:
-            type: string
+        - usuarios
+      summary: Actualizar información de usuario
+      description: Actualiza los datos de un usuario existente
+      operationId: actualizarUsuario
       requestBody:
-        description: Update an existent user in the store
+        description: Datos del usuario a actualizar
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/User'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UsuarioActualizacion'
       responses:
         '200':
-          description: successful operation
+          description: Usuario actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  usuario:
+                    $ref: '#/components/schemas/Usuario'
         '400':
-          description: bad request
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
-          description: user not found
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflicto - Correo o nombre de usuario ya existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         default:
-          description: Unexpected error
+          description: Error inesperado
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+      security:
+        - jwt_auth: []
+  /api_eliminar_usuario:
+    post:
+      tags:
+        - usuarios
+      summary: Eliminar (desactivar) usuario
+      description: Desactiva un usuario de la plataforma (no se elimina físicamente)
+      operationId: eliminarUsuario
+      requestBody:
+        description: ID del usuario a eliminar
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_usuario
+              properties:
+                id_usuario:
+                  type: integer
+                  format: int32
+                  example: 5
+      responses:
+        '200':
+          description: Usuario desactivado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  id_usuario:
+                    type: integer
+                    example: 5
+                  vigente:
+                    type: boolean
+                    example: false
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Usuario no encontrado
+        '500':
+          description: Error al desactivar usuario
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: No se pudo desactivar el usuario
+        default:
+          description: Error inesperado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - jwt_auth: []
     delete:
       tags:
-        - user
-      summary: Delete user resource.
-      description: This can only be done by the logged in user.
-      operationId: deleteUser
-      parameters:
-        - name: username
-          in: path
-          description: The name that needs to be deleted
-          required: true
-          schema:
-            type: string
+        - usuarios
+      summary: Eliminar (desactivar) usuario
+      description: Desactiva un usuario de la plataforma (no se elimina físicamente)
+      operationId: eliminarUsuarioDelete
+      requestBody:
+        description: ID del usuario a eliminar
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_usuario
+              properties:
+                id_usuario:
+                  type: integer
+                  format: int32
+                  example: 5
       responses:
         '200':
-          description: User deleted
-        '400':
-          description: Invalid username supplied
+          description: Usuario desactivado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  id_usuario:
+                    type: integer
+                    example: 5
+                  vigente:
+                    type: boolean
+                    example: false
         '404':
-          description: User not found
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Usuario no encontrado
+        '500':
+          description: Error al desactivar usuario
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: No se pudo desactivar el usuario
         default:
-          description: Unexpected error
+          description: Error inesperado
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+      security:
+        - jwt_auth: []
 components:
   schemas:
-    RptaGeneral:
+    Usuario:
       type: object
       properties:
-        code:
-          type: integer
-          format: int64
-          example: 1
-        data:
-          type: array
-          items:
-            type: array
-            items:
-              $ref: '#/components/schemas/Disco'
-        message:
-          type: string
-          example: Discos obtenidos correctamente
-    Disco:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 16
-        codigo:
-          type: string
-          example: DS-001-HDNI
-        nombre:
-          type: string
-          example: Ok Computer
-        artista:
-          type: string
-          example: Ok Computer
-        precio:
-          type: number
-          example: 189.67
-        genero:
-          type: string
-          example: Rock Prog
-          
-    Order:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
-        petId:
-          type: integer
-          format: int64
-          example: 198772
-        quantity:
+        id_usuario:
           type: integer
           format: int32
-          example: 7
-        shipDate:
+          example: 1
+        nombre_completo:
           type: string
-          format: date-time
-        status:
+          example: Juan Pérez García
+        correo:
           type: string
-          description: Order Status
-          example: approved
-          enum:
-            - placed
-            - approved
-            - delivered
-        complete:
+          format: email
+          example: juan.perez@usat.edu.pe
+        nombre_usuario:
+          type: string
+          example: juanperez
+        foto:
+          type: string
+          nullable: true
+          example: /static/img/usuario/user123.jpg
+        tipo:
+          type: string
+          enum: [E, P, A]
+          description: Tipo de usuario - E (Estudiante), P (Profesor), A (Administrador)
+          example: E
+        puntos:
+          type: integer
+          format: int32
+          nullable: true
+          example: 1500
+        monedas:
+          type: integer
+          format: int32
+          nullable: true
+          example: 250
+        vigente:
           type: boolean
-      xml:
-        name: order
-    Category:
-      type: object
-      properties:
-        id:
+          example: true
+        verificado:
+          type: boolean
+          example: true
+        id_skin_activa:
           type: integer
-          format: int64
-          example: 1
-        name:
-          type: string
-          example: Dogs
-      xml:
-        name: category
-    User:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
-        username:
-          type: string
-          example: theUser
-        firstName:
-          type: string
-          example: John
-        lastName:
-          type: string
-          example: James
-        email:
-          type: string
-          example: john@email.com
-        password:
-          type: string
-          example: '12345'
-        phone:
-          type: string
-          example: '12345'
-        userStatus:
-          type: integer
-          description: User Status
           format: int32
-          example: 1
-      xml:
-        name: user
-    Tag:
+          nullable: true
+          example: 3
+    UsuarioRegistro:
       type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        name:
-          type: string
-      xml:
-        name: tag
-    Pet:
       required:
-        - name
-        - photoUrls
-      type: object
+        - nombre_completo
+        - nombre_usuario
+        - correo
+        - contrasena
       properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
-        name:
+        nombre_completo:
           type: string
-          example: doggie
-        category:
-          $ref: '#/components/schemas/Category'
-        photoUrls:
-          type: array
-          xml:
-            wrapped: true
-          items:
-            type: string
-            xml:
-              name: photoUrl
-        tags:
-          type: array
-          xml:
-            wrapped: true
-          items:
-            $ref: '#/components/schemas/Tag'
-        status:
+          example: María López Torres
+          minLength: 1
+        nombre_usuario:
           type: string
-          description: pet status in the store
-          enum:
-            - available
-            - pending
-            - sold
-      xml:
-        name: pet
-    ApiResponse:
+          example: marialopez
+          minLength: 1
+          maxLength: 18
+        correo:
+          type: string
+          format: email
+          example: maria.lopez@usat.edu.pe
+          description: Debe ser un correo @usat.edu.pe o @usat.pe
+        contrasena:
+          type: string
+          format: password
+          example: Password123!
+          minLength: 8
+          description: Debe contener al menos 8 caracteres, mayúsculas, minúsculas, números y símbolos especiales
+        tipo:
+          type: string
+          enum: [E, P]
+          example: E
+          description: Tipo de usuario - E (Estudiante), P (Profesor). Se determina automáticamente por el dominio del correo
+    UsuarioActualizacion:
       type: object
+      required:
+        - id_usuario
       properties:
-        code:
+        id_usuario:
           type: integer
           format: int32
-        type:
+          example: 5
+        nombre_completo:
           type: string
-        message:
+          example: Juan Pérez García
+        nombre_usuario:
           type: string
-      xml:
-        name: '##default'
+          example: juanperez
+          maxLength: 18
+        correo:
+          type: string
+          format: email
+          example: juan.perez@usat.edu.pe
+        tipo:
+          type: string
+          enum: [E, P, A]
+          example: E
+        puntos:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 2000
+        monedas:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 300
+        vigente:
+          type: boolean
+          example: true
     Error:
       type: object
       properties:
@@ -929,34 +493,9 @@ components:
       required:
         - code
         - message
-  requestBodies:
-    Pet:
-      description: Pet object that needs to be added to the store
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: List of user object
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/User'
   securitySchemes:
-    petstore_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
-          scopes:
-            "write:pets": modify pets in your account
-            "read:pets": read your pets
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    jwt_auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Autenticación mediante JSON Web Token (JWT). Incluir el token en el header Authorization con el formato "Bearer {token}"

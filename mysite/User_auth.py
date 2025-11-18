@@ -1,4 +1,11 @@
 from controladores import usuarios as cu
+import hashlib
+
+def encriptar_sha256(texto):
+    texto = str(texto).encode('utf-8')  
+    objHash = hashlib.sha256(texto)
+    textenc = objHash.hexdigest()
+    return textenc
 
 class User(object):
     def __init__(self, id, correo, password):
@@ -18,7 +25,7 @@ def authenticate(correo, password):
     user = User(usuario['id_usuario'], usuario['correo'], usuario['contraseña'])
     
     # Comparar contraseñas
-    if user.password == password:
+    if user.password.encode('utf-8') == encriptar_sha256(password).encode('utf-8'):
         return user
     
     return None
