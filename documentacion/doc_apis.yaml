@@ -41,6 +41,11 @@ tags:
     description: Operaciones sobre skins
   - name: categoria
     description: Operaciones sobre categorías de cuestionarios
+  - name: inventario_skins
+    description: Gestión de inventario de skins de usuarios
+    externalDocs:
+      description: Más información
+      url: https://dmailproject.pythonanywhere.com/
 paths:
   /api_obtener_usuarios:
     get:
@@ -1324,6 +1329,364 @@ paths:
                 $ref: "#/components/schemas/Error"
       security:
         - jwt_auth: []
+  /api_registrarpartida:
+    post:
+      tags:
+        - partidas
+      summary: Crea una nueva partida
+      description: Crea un registro completo en la tabla PARTIDA.
+      security:
+        - jwt_auth: []
+      requestBody:
+        required: true
+        description: Datos necesarios para crear una partida.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartidaCreate'
+      responses:
+        '201':
+          description: Partida creada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaCrearPartida'
+        '400':
+          description: Datos incompletos o inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Error interno al crear la partida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /api_obtenerpartidas:
+    get:
+      tags:
+        - partidas
+      summary: Listado de todas las partidas
+      description: Retorna la lista de partidas en la BD, ordenadas por id_partida DESC.
+      security:
+        - jwt_auth: []
+      responses:
+        '200':
+          description: Partidas obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaListaPartida'
+        '500':
+          description: Error interno al obtener las partidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /api_obtenerpartidaporid/{id_partida}:
+    get:
+      tags:
+        - partidas
+      summary: Obtener una partida por ID
+      description: Retorna una partida específica según su id_partida.
+      security:
+        - jwt_auth: []
+      parameters:
+        - name: id_partida
+          in: path
+          required: true
+          description: ID de la partida a buscar.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Partida obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaPartida'
+        '404':
+          description: Partida no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Error interno al obtener la partida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /api_actualizarpartida/{id_partida}:
+    put:
+      tags:
+        - partidas
+      summary: Actualizar una partida
+      description: Actualiza uno o varios campos de una partida existente.
+      security:
+        - jwt_auth: []
+      parameters:
+        - name: id_partida
+          in: path
+          required: true
+          description: ID de la partida a actualizar.
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        description: Campos a actualizar (solo se actualizan los campos enviados).
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartidaUpdate'
+      responses:
+        '200':
+          description: Partida actualizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: No se enviaron campos a actualizar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Partida no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Error interno al actualizar la partida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /api_eliminarpartida/{id_partida}:
+    delete:
+      tags:
+        - partidas
+      summary: Eliminar una partida
+      description: Elimina una partida por su ID.
+      security:
+        - jwt_auth: []
+      parameters:
+        - name: id_partida
+          in: path
+          required: true
+          description: ID de la partida a eliminar.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Partida eliminada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Partida no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Error interno al eliminar la partida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /api_registrarinventario:
+    post:
+      tags:
+        - inventario_skins
+      summary: Registrar una skin al inventario del usuario
+      description: Inserta un registro en la tabla INVENTARIO_SKINS.
+      security:
+        - jwt_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventarioInsert'
+      responses:
+        '201':
+          description: Inventario registrado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaStandar'
+        '400':
+          description: Datos incompletos o inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Error interno al registrar el inventario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /api_actualizarinventario/{id_usuario}/{id_skin}:
+    put:
+      tags:
+        - inventario_skins
+      summary: Actualiza una skin del inventario
+      description: Cambia el id_skin de un registro existente.
+      security:
+        - jwt_auth: []
+      parameters:
+        - in: path
+          name: id_usuario
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+            format: int64
+        - in: path
+          name: id_skin
+          required: true
+          description: ID de la skin actual
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventarioUpdate'
+      responses:
+        '200':
+          description: Registro actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaStandar'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Registro no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Error interno al actualizar el inventario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /api_eliminarinventario/{id_usuario}/{id_skin}:
+    delete:
+      tags:
+        - inventario_skins
+      summary: Elimina una skin del inventario de un usuario
+      description: Elimina un registro específico de INVENTARIO_SKINS.
+      security:
+        - jwt_auth: []
+      parameters:
+        - in: path
+          name: id_usuario
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+            format: int64
+        - in: path
+          name: id_skin
+          required: true
+          description: ID de la skin a eliminar
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Registro eliminado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaStandar'
+        '404':
+          description: Registro no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Error interno al eliminar el inventario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /api_obtenerinventarios:
+    get:
+      tags:
+        - inventario_skins
+      summary: Lista de todos los inventarios de skins
+      description: Retorna todos los registros de INVENTARIO_SKINS junto con información del usuario y la skin.
+      security:
+        - jwt_auth: []
+      responses:
+        '200':
+          description: Inventarios obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaListaInventario'
+        '500':
+          description: Error interno al obtener los inventarios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /api_obtenerinventarioporusuario/{id_usuario}:
+    get:
+      tags:
+        - inventario_skins
+      summary: Lista de skins que posee un usuario
+      description: Retorna todas las skins del inventario de un usuario específico.
+      security:
+        - jwt_auth: []
+      parameters:
+        - in: path
+          name: id_usuario
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Inventario del usuario obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RptaListaSkinsUsuario'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Error interno al obtener el inventario del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
 components:
   schemas:
     Usuario:
@@ -1962,6 +2325,166 @@ components:
         id_skin:
           type: integer
           example: 8
+    Partida:
+      type: object
+      properties:
+        id_partida:
+          type: integer
+          format: int64
+          example: 42
+        pin:
+          type: string
+          example: "123456"
+        id_cuestionario:
+          type: integer
+          example: 5
+        id_usuario_anfitrion:
+          type: integer
+          nullable: true
+          example: 10
+        modalidad:
+          type: string
+          example: "CLASICO"
+        estado:
+          type: string
+          example: "ACTIVO"
+        fecha_hora_inicio:
+          type: string
+          format: date-time
+          example: "2025-11-18T15:30:00"
+        fecha_hora_fin:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-11-18T16:00:00"
+        cant_grupos:
+          type: integer
+          nullable: true
+          example: 4
+        recompensas_otorgadas:
+          type: integer
+          nullable: true
+          example: 0
+    PartidaCreate:
+      type: object
+      description: Datos necesarios para crear una partida.
+      required:
+        - pin
+        - id_cuestionario
+        - modalidad
+        - estado
+        - fecha_hora_inicio
+      properties:
+        pin:
+          type: string
+          example: "123456"
+        id_cuestionario:
+          type: integer
+          example: 5
+        id_usuario_anfitrion:
+          type: integer
+          nullable: true
+          example: 10
+        modalidad:
+          type: string
+          example: "CLASICO"
+        estado:
+          type: string
+          example: "ACTIVO"
+        fecha_hora_inicio:
+          type: string
+          format: date-time
+          example: "2025-11-18T15:30:00"
+        fecha_hora_fin:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-11-18T16:00:00"
+        cant_grupos:
+          type: integer
+          nullable: true
+          example: 4
+        recompensas_otorgadas:
+          type: integer
+          nullable: true
+          example: 0
+    PartidaUpdate:
+      type: object
+      description: Campos opcionales para actualizar una partida.
+      properties:
+        pin:
+          type: string
+          example: "123456"
+        id_cuestionario:
+          type: integer
+          example: 5
+        id_usuario_anfitrion:
+          type: integer
+          nullable: true
+          example: 10
+        modalidad:
+          type: string
+          example: "CLASICO"
+        estado:
+          type: string
+          example: "ACTIVO"
+        fecha_hora_inicio:
+          type: string
+          format: date-time
+          example: "2025-11-18T15:30:00"
+        fecha_hora_fin:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-11-18T16:00:00"
+        cant_grupos:
+          type: integer
+          nullable: true
+          example: 4
+        recompensas_otorgadas:
+          type: integer
+          nullable: true
+          example: 0
+    RptaListaPartida:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Partida'
+        message:
+          type: string
+          example: Partidas obtenidas correctamente
+    RptaPartida:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1
+        data:
+          $ref: '#/components/schemas/Partida'
+        message:
+          type: string
+          example: Partida obtenida correctamente
+    RptaCrearPartida:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1
+        data:
+          type: object
+          properties:
+            id_partida:
+              type: integer
+              format: int64
+              example: 42
+        message:
+          type: string
+          example: Partida creada correctamente
   securitySchemes:
     jwt_auth:
       type: http
