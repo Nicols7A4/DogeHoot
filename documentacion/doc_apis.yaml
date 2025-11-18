@@ -1073,3 +1073,95 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Autenticación mediante JSON Web Token (JWT). Incluir el token en el header Authorization con el formato "Bearer {token}"
+  RptaStandar:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1
+        data:
+          type: object
+          example: {}
+        message:
+          type: string
+          example: Operación realizada correctamente
+
+  RptaListaInventario:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventarioFull'
+        message:
+          type: string
+          example: Inventarios obtenidos correctamente
+
+  RptaListaSkinsUsuario:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skin'
+        message:
+          type: string
+          example: Inventario del usuario obtenido correctamente
+
+  InventarioFull:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+          example: 5
+        nombre_usuario:
+          type: string
+          example: "Juan Perez"
+        id_skin:
+          type: integer
+          example: 3
+        ruta_skin:
+          type: string
+          example: "skins/marco1.png"
+
+  Skin:
+      type: object
+      properties:
+        id_skin:
+          type: integer
+          example: 3
+        ruta:
+          type: string
+          example: "skins/marco1.png"
+        tipo:
+          type: string
+          example: "marco"
+        precio:
+          type: number
+          example: 150
+        vigente:
+          type: integer
+          example: 1
+
+  InventarioInsert:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+          example: 2
+        id_skin:
+          type: integer
+          example: 5
+
+  InventarioUpdate:
+      type: object
+      properties:
+        id_skin:
+          type: integer
+          example: 8
