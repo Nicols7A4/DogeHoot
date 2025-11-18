@@ -240,7 +240,7 @@ paths:
       tags:
         - usuarios
       summary: Eliminar (desactivar) usuario
-      description: Desactiva un usuario de la plataforma (no se elimina físicamente). Envía el id_usuario en el body JSON.
+      description: Desactiva un usuario de la plataforma (no se elimina físicamente)
       operationId: eliminarUsuario
       requestBody:
         description: ID del usuario a eliminar
@@ -304,18 +304,23 @@ paths:
     delete:
       tags:
         - usuarios
-      summary: Eliminar (desactivar) usuario (método DELETE)
-      description: Desactiva un usuario de la plataforma (no se elimina físicamente). Nota - OpenAPI no permite requestBody en DELETE, pero tu API lo acepta.
+      summary: Eliminar (desactivar) usuario
+      description: Desactiva un usuario de la plataforma (no se elimina físicamente)
       operationId: eliminarUsuarioDelete
-      parameters:
-        - name: id_usuario
-          in: query
-          description: ID del usuario a eliminar (o enviar en body según implementación)
-          required: false
-          schema:
-            type: integer
-            format: int32
-            example: 5
+      requestBody:
+        description: ID del usuario a eliminar
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_usuario
+              properties:
+                id_usuario:
+                  type: integer
+                  format: int32
+                  example: 5
       responses:
         '200':
           description: Usuario desactivado exitosamente
