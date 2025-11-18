@@ -441,7 +441,6 @@ def fn_api_actualizar_cuestionario():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api_elimiinar_cuestionario", methods=['POST','DELETE'])
 @jwt_required()
 def fn_api_eliminar_cuestionario():
     try:
