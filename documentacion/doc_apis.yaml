@@ -33,6 +33,8 @@ tags:
       url: https://swagger.io
   - name: partidas
     description: Sesiones de juego y gestión de partidas
+  - name: skin
+    description: Operaciones sobre skins
 paths:
   /api_obtener_usuarios:
     get:
@@ -364,6 +366,235 @@ paths:
                 $ref: "#/components/schemas/Error"
       security:
         - jwt_auth: []
+  /api_registrarskin:
+    post:
+      tags:
+        - skin
+      summary: Insertar Skin
+      description: Registra una nueva skin en la base de datos.
+      operationId: registrarSkin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkinCreate'
+      responses:
+        '200':
+          description: Skin registrada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Error inesperado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - jwt_auth: []
+  /api_obtenerskins:
+    get:
+      tags:
+        - skin
+      summary: Obtener Skins
+      description: Retorna la lista de skins disponibles.
+      operationId: obtenerSkins
+      responses:
+        '200':
+          description: Skins obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Skin'
+                  message:
+                    type: string
+                    example: Skins obtenidas exitosamente
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Error inesperado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - jwt_auth: []
+  /api_obtenerskinporid/{id}:
+    get:
+      tags:
+        - skin
+      summary: Obtener Skin por ID
+      description: Retorna una skin por su identificador.
+      operationId: obtenerSkinPorId
+      parameters:
+        - name: id
+          in: path
+          description: ID de la skin a obtener
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Skin obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skin'
+        '400':
+          description: ID inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Skin no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Error inesperado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - jwt_auth: []
+  /api_actualizarskin/{id}:
+    put:
+      tags:
+        - skin
+      summary: Actualizar Skin
+      description: Actualiza una skin existente.
+      operationId: actualizarSkin
+      parameters:
+        - name: id
+          in: path
+          description: ID de la skin a actualizar
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkinUpdate'
+      responses:
+        '200':
+          description: Skin actualizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Skin no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Error inesperado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - jwt_auth: []
+  /api_eliminarskin/{id}:
+    delete:
+      tags:
+        - skin
+      summary: Eliminar Skin
+      description: Elimina una skin por su id.
+      operationId: eliminarSkin
+      parameters:
+        - name: id
+          in: path
+          description: ID de la skin a eliminar
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Skin eliminada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: ID inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Skin no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Error inesperado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - jwt_auth: []
 components:
   schemas:
     Usuario:
@@ -483,6 +714,86 @@ components:
         vigente:
           type: boolean
           example: true
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+        type:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Operación realizada con éxito
+    Skin:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 60004
+        ruta:
+          type: string
+          example: img/skins/skin_prueba.png
+        tipo:
+          type: string
+          example: marco
+          description: Tipo de skin (marco, avatar, fondo, etc.)
+        precio:
+          type: number
+          example: 150
+          description: Precio en monedas de la plataforma
+        vigente:
+          type: integer
+          example: 1
+          description: 1 si está activa, 0 si está desactivada
+    SkinCreate:
+      type: object
+      required:
+        - ruta
+        - tipo
+        - precio
+      properties:
+        ruta:
+          type: string
+          example: img/skins/skin_prueba.png
+          description: Ruta de la imagen de la skin
+        tipo:
+          type: string
+          example: marco
+          description: Tipo de skin
+        precio:
+          type: number
+          example: 150
+          minimum: 0
+          description: Precio en monedas
+        vigente:
+          type: integer
+          example: 1
+          default: 1
+          description: Estado de la skin (1 activa, 0 inactiva)
+    SkinUpdate:
+      type: object
+      properties:
+        ruta:
+          type: string
+          example: img/skins/skin_actualizada.png
+          description: Nueva ruta de la imagen
+        tipo:
+          type: string
+          example: avatar
+          description: Nuevo tipo de skin
+        precio:
+          type: number
+          example: 200
+          minimum: 0
+          description: Nuevo precio
+        vigente:
+          type: integer
+          example: 1
+          description: Nuevo estado (1 activa, 0 inactiva)
     Error:
       type: object
       properties:
