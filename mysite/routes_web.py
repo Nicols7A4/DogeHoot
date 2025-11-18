@@ -191,12 +191,16 @@ def auth_page():
             # Ahora usamos los 'name' exactos de tu index.html
             nombre_completo = request.form.get("nombre", "").strip()
             nombre_usuario = request.form.get("usuario", "").strip()
-            correo = request.form.get("correo", "").strip()
+            correo = request.form.get("correo", "").strip().lower()
             contrasena = request.form.get("contrasena", "").strip()
             tipo_cuenta_form = request.form.get("tipoCuenta", "Estudiante").strip()
             tipo_cuenta_db = "P" if tipo_cuenta_form == "Profesor" else "E"
+            tipo_cuenta_db = "P" if correo.endswith("@usat.edu.pe") else "E"
 
             err = False
+            if not (correo.endswith("@usat.edu.pe") or correo.endswith("@usat.pe")):
+                flash("Solo son válidas correos de la USAT", "danger")
+                err = True
             if len(nombre_completo) > 150:
                 flash("Longitud de nombre no válida [Max 150]", "danger")
                 err = True

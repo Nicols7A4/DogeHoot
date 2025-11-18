@@ -116,6 +116,10 @@ def fn_api_registrar_usuario():
     if not (nombre_completo and nombre_usuario and correo and contrasena):
         return jsonify({"error": "Faltan campos obligatorios"}), 400
     
+
+    if not (correo.endswith("@usat.edu.pe") or correo.endswith("@usat.pe")):
+        return jsonify({"error": "Solo son válidas correos de la USAT"}), 400
+    
     if len(contrasena) < 8:
         return jsonify({"error": "La contraseña debe tener como mínimo 8 caractares"}), 400
     if not any(c.islower() for c in contrasena):
@@ -129,7 +133,8 @@ def fn_api_registrar_usuario():
     
     if tipo != "P" or tipo != "E":
             return jsonify({"error": "Tipo de usuario inválido"}), 404
-    
+    tipo = "P" if correo.endswith("@usat.edu.pe") else "E"
+
     modo = (request.args.get("modo") or "pendiente").lower()
     if modo == "directo" or True:
         ok, msg = ctrl.crear_usuario_t(nombre_completo, nombre_usuario, correo, contrasena, tipo)

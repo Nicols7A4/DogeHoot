@@ -1,427 +1,376 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DogeHoot!</title>
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{ url_for('static', filename='img/ico.png') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/auth.css') }}"
-    />
-    <style>
-      /* ================================================================= */
-      /* VALIDACIÓN DE CONTRASEÑA: VISUALMENTE MUY INDICATIVO Y COMPACTO   */
-      /* ================================================================= */
-      /* Píldoras compactas en fila */
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DogeHoot!</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/ico.png') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}" />
+  <style>
+    /* ================================================================= */
+    /* VALIDACIÓN DE CONTRASEÑA: VISUALMENTE MUY INDICATIVO Y COMPACTO   */
+    /* ================================================================= */
+    /* Píldoras compactas en fila */
+    #password-criteria {
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    /* Estado base (pendiente/no cumplido): atenuado */
+    #password-criteria li {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      line-height: 1;
+      font-weight: 600;
+      background: var(--btn-expired-bg);
+      color: var(--btn-expired-text);
+      opacity: 0.7;
+      filter: saturate(0.75);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        opacity 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        filter 0.18s ease;
+    }
+
+    /* Cumplido: color éxito + brillo + 100% de opacidad */
+    #password-criteria li.valid {
+      background: var(--btn-success-bg);
+      color: var(--btn-success-text);
+      opacity: 1;
+      filter: none;
+      box-shadow:
+        0 0 0 2px rgba(43, 182, 115, 0.18),
+        0 6px 18px rgba(43, 182, 115, 0.12);
+      border-color: rgba(43, 182, 115, 0.35);
+    }
+
+    /* Check visible y responsivo al color del texto */
+    #password-criteria li svg {
+      width: 13px;
+      height: 13px;
+      stroke-width: 3;
+      flex-shrink: 0;
+      transform: scale(0.9);
+      opacity: 0.85;
+      transition:
+        transform 0.18s ease,
+        opacity 0.18s ease;
+    }
+
+    #password-criteria li.valid svg {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+
+    /* Micro-animación cuando pasa a válido */
+    @keyframes pill-pop {
+      0% {
+        transform: scale(0.95);
+      }
+
+      60% {
+        transform: scale(1.06);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    #password-criteria li.just-validated {
+      animation: pill-pop 0.25s ease;
+    }
+
+    /* Borde del input según estado */
+    #contrasenaRegistro.invalid-password {
+      border-color: var(--btn-failed-text);
+      box-shadow: 0 6px 18px rgba(229, 57, 53, 0.1);
+    }
+
+    #contrasenaRegistro.valid-password {
+      border-color: var(--btn-success-text);
+      box-shadow: 0 6px 18px rgba(43, 182, 115, 0.12);
+    }
+
+    /* Botón deshabilitado visible (cuando no cumple) */
+    .register-panel .formulario .btn[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+      filter: grayscale(0.2);
+    }
+
+    /* Más compacto aún en móviles */
+    @media (max-width: 480px) {
       #password-criteria {
-        list-style: none;
-        margin: 8px 0 0;
-        padding: 0;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
+        gap: 4px;
       }
 
-      /* Estado base (pendiente/no cumplido): atenuado */
       #password-criteria li {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        line-height: 1;
-        font-weight: 600;
-        background: var(--btn-expired-bg);
-        color: var(--btn-expired-text);
-        opacity: 0.7;
-        filter: saturate(0.75);
-        border: 1px solid rgba(0, 0, 0, 0.06);
-        transition:
-          background 0.18s ease,
-          color 0.18s ease,
-          opacity 0.18s ease,
-          transform 0.18s ease,
-          box-shadow 0.18s ease,
-          filter 0.18s ease;
+        padding: 3px 8px;
+        font-size: 0.7rem;
+      }
+    }
+
+    /* ================================================================= */
+    /* VALIDACIÓN DE CORREO: ESTILO COMPACTO Y ELEGANTE TIPO PÍLDORA     */
+    /* ================================================================= */
+    #email-criteria {
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    #email-criteria li {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      line-height: 1;
+      font-weight: 600;
+      background: var(--btn-expired-bg);
+      color: var(--btn-expired-text);
+      opacity: 0.7;
+      filter: saturate(0.75);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        opacity 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        filter 0.18s ease;
+    }
+
+    #email-criteria li.valid {
+      background: var(--btn-success-bg);
+      color: var(--btn-success-text);
+      opacity: 1;
+      filter: none;
+      box-shadow:
+        0 0 0 2px rgba(43, 182, 115, 0.18),
+        0 6px 18px rgba(43, 182, 115, 0.12);
+      border-color: rgba(43, 182, 115, 0.35);
+    }
+
+    /* Ícono SVG alineado y responsivo */
+    #email-criteria li svg {
+      width: 13px;
+      height: 13px;
+      stroke-width: 3;
+      flex-shrink: 0;
+      transform: scale(0.9);
+      opacity: 0.85;
+      transition:
+        transform 0.18s ease,
+        opacity 0.18s ease;
+    }
+
+    #email-criteria li.valid svg {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+
+    /* Animación tipo “pop” al activarse */
+    @keyframes pill-pop {
+      0% {
+        transform: scale(0.95);
       }
 
-      /* Cumplido: color éxito + brillo + 100% de opacidad */
-      #password-criteria li.valid {
-        background: var(--btn-success-bg);
-        color: var(--btn-success-text);
-        opacity: 1;
-        filter: none;
-        box-shadow:
-          0 0 0 2px rgba(43, 182, 115, 0.18),
-          0 6px 18px rgba(43, 182, 115, 0.12);
-        border-color: rgba(43, 182, 115, 0.35);
+      60% {
+        transform: scale(1.06);
       }
 
-      /* Check visible y responsivo al color del texto */
-      #password-criteria li svg {
-        width: 13px;
-        height: 13px;
-        stroke-width: 3;
-        flex-shrink: 0;
-        transform: scale(0.9);
-        opacity: 0.85;
-        transition:
-          transform 0.18s ease,
-          opacity 0.18s ease;
+      100% {
+        transform: scale(1);
       }
-      #password-criteria li.valid svg {
-        transform: scale(1.1);
-        opacity: 1;
-      }
+    }
 
-      /* Micro-animación cuando pasa a válido */
-      @keyframes pill-pop {
-        0% {
-          transform: scale(0.95);
-        }
-        60% {
-          transform: scale(1.06);
-        }
-        100% {
-          transform: scale(1);
-        }
-      }
-      #password-criteria li.just-validated {
-        animation: pill-pop 0.25s ease;
-      }
+    #email-criteria li.just-validated {
+      animation: pill-pop 0.25s ease;
+    }
 
-      /* Borde del input según estado */
-      #contrasenaRegistro.invalid-password {
-        border-color: var(--btn-failed-text);
-        box-shadow: 0 6px 18px rgba(229, 57, 53, 0.1);
-      }
-      #contrasenaRegistro.valid-password {
-        border-color: var(--btn-success-text);
-        box-shadow: 0 6px 18px rgba(43, 182, 115, 0.12);
-      }
+    /* Input resaltado en caso de error */
+    #correoRegistro.invalid-email {
+      border-color: var(--btn-failed-text);
+      box-shadow: 0 6px 18px rgba(229, 57, 53, 0.1);
+    }
 
-      /* Botón deshabilitado visible (cuando no cumple) */
-      .register-panel .formulario .btn[disabled] {
-        opacity: 0.6;
-        cursor: not-allowed;
-        filter: grayscale(0.2);
-      }
-
-      /* Más compacto aún en móviles */
-      @media (max-width: 480px) {
-        #password-criteria {
-          gap: 4px;
-        }
-        #password-criteria li {
-          padding: 3px 8px;
-          font-size: 0.7rem;
-        }
-      }
-
-      /* ================================================================= */
-      /* VALIDACIÓN DE CORREO: ESTILO COMPACTO Y ELEGANTE TIPO PÍLDORA     */
-      /* ================================================================= */
+    /* Más compacto en móviles */
+    @media (max-width: 480px) {
       #email-criteria {
-        list-style: none;
-        margin: 8px 0 0;
-        padding: 0;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
+        gap: 4px;
       }
+
       #email-criteria li {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        line-height: 1;
-        font-weight: 600;
-        background: var(--btn-expired-bg);
-        color: var(--btn-expired-text);
-        opacity: 0.7;
-        filter: saturate(0.75);
-        border: 1px solid rgba(0, 0, 0, 0.06);
-        transition:
-          background 0.18s ease,
-          color 0.18s ease,
-          opacity 0.18s ease,
-          transform 0.18s ease,
-          box-shadow 0.18s ease,
-          filter 0.18s ease;
+        padding: 3px 8px;
+        font-size: 0.7rem;
       }
-      #email-criteria li.valid {
-        background: var(--btn-success-bg);
-        color: var(--btn-success-text);
-        opacity: 1;
-        filter: none;
-        box-shadow:
-          0 0 0 2px rgba(43, 182, 115, 0.18),
-          0 6px 18px rgba(43, 182, 115, 0.12);
-        border-color: rgba(43, 182, 115, 0.35);
-      }
+    }
 
-      /* Ícono SVG alineado y responsivo */
-      #email-criteria li svg {
-        width: 13px;
-        height: 13px;
-        stroke-width: 3;
-        flex-shrink: 0;
-        transform: scale(0.9);
-        opacity: 0.85;
-        transition:
-          transform 0.18s ease,
-          opacity 0.18s ease;
-      }
-      #email-criteria li.valid svg {
-        transform: scale(1.1);
-        opacity: 1;
-      }
+    /* ================================================================= */
+    /* FIN ESTILOS                                                       */
+    /* ================================================================= */
+  </style>
+</head>
 
-      /* Animación tipo “pop” al activarse */
-      @keyframes pill-pop {
-        0% {
-          transform: scale(0.95);
-        }
-        60% {
-          transform: scale(1.06);
-        }
-        100% {
-          transform: scale(1);
-        }
-      }
-      #email-criteria li.just-validated {
-        animation: pill-pop 0.25s ease;
-      }
+<body>
+  <div id="flash-modal" class="modal-overlay" data-has-messages="{{ 'true' if get_flashed_messages() else 'false' }}">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
 
-      /* Input resaltado en caso de error */
-      #correoRegistro.invalid-email {
-        border-color: var(--btn-failed-text);
-        box-shadow: 0 6px 18px rgba(229, 57, 53, 0.1);
-      }
+      <div id="modal-messages-container" class="contenedor-flash"></div>
 
-      /* Más compacto en móviles */
-      @media (max-width: 480px) {
-        #email-criteria {
-          gap: 4px;
-        }
-        #email-criteria li {
-          padding: 3px 8px;
-          font-size: 0.7rem;
-        }
-      }
-
-      /* ================================================================= */
-      /* FIN ESTILOS                                                       */
-      /* ================================================================= */
-    </style>
-  </head>
-  <body>
-    <div
-      id="flash-modal"
-      class="modal-overlay"
-      data-has-messages="{{ 'true' if get_flashed_messages() else 'false' }}"
-    >
-      <div class="modal-content">
-        <span class="close-button">&times;</span>
-
-        <div id="modal-messages-container" class="contenedor-flash"></div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="contenedor-flash">
-              {% for category, message in messages %}
-                <div class="alerta alerta-{{ category }}">{{ message }}</div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="contenedor-flash">
+        {% for category, message in messages %}
+        <div class="alerta alerta-{{ category }}">{{ message }}</div>
+        {% endfor %}
       </div>
+      {% endif %}
+      {% endwith %}
     </div>
+  </div>
 
-    <div class="general-container" id="authContainer" data-view="login">
-      <div class="slider">
-        <!-- PANEL LOGIN -->
-        <section class="panel login-panel">
-          <div class="left-column">
-            <form class="formulario" action="{{ url_for('auth_page') }}" method="post">
-              <img
-                class="logo"
-                src="{{ url_for('static', filename='img/logo.png') }}"
-                alt="Logo"
-              />
-              <div class="body-form">
-                <div class="input-group">
-                  <label for="correoLogin">Correo electrónico:</label>
-                  <input
-                    id="correoLogin"
-                    type="email"
-                    name="correologin"
-                    placeholder="Ingresa tu correo electrónico"
-                    maxlength="100"
-                    required
-                  />
+  <div class="general-container" id="authContainer" data-view="login">
+    <div class="slider">
+      <!-- PANEL LOGIN -->
+      <section class="panel login-panel">
+        <div class="left-column">
+          <form class="formulario" action="{{ url_for('auth_page') }}" method="post">
+            <img class="logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" />
+            <div class="body-form">
+              <div class="input-group">
+                <label for="correoLogin">Correo electrónico:</label>
+                <input id="correoLogin" type="email" name="correologin" placeholder="Ingresa tu correo electrónico"
+                  maxlength="100" required />
 
-                  <!--<ul id="email-criteria" aria-live="polite">-->
-                  <!--  <li id="crit-filled">-->
-                  <!--    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">-->
-                  <!--      <polyline points="20 6 9 17 4 12" />-->
-                  <!--    </svg>-->
-                  <!--    Ingresar correo-->
-                  <!--  </li>-->
-                  <!--  <li id="crit-valid">-->
-                  <!--    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">-->
-                  <!--      <polyline points="20 6 9 17 4 12" />-->
-                  <!--    </svg>-->
-                  <!--    Formato válido (@ y dominio)-->
-                  <!--  </li>-->
-                  <!--</ul>-->
+                <!--<ul id="email-criteria" aria-live="polite">-->
+                <!--  <li id="crit-filled">-->
+                <!--    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">-->
+                <!--      <polyline points="20 6 9 17 4 12" />-->
+                <!--    </svg>-->
+                <!--    Ingresar correo-->
+                <!--  </li>-->
+                <!--  <li id="crit-valid">-->
+                <!--    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">-->
+                <!--      <polyline points="20 6 9 17 4 12" />-->
+                <!--    </svg>-->
+                <!--    Formato válido (@ y dominio)-->
+                <!--  </li>-->
+                <!--</ul>-->
 
-                </div>
-
-                <div class="input-group">
-                  <label for="contrasenaLogin">Contraseña:</label>
-                  <input
-                    id="contrasenaLogin"
-                    type="password"
-                    name="contrasenaLogin"
-                    placeholder="Ingresa tu contraseña"
-                    maxlength="50"
-                    required
-                  />
-                </div>
               </div>
 
-              <a
-                href="#"
-                class="btn restablecer-contrasenia"
-                id="forgot-password-link"
-              >¿Olvidaste tu contraseña?</a>
+              <div class="input-group">
+                <label for="contrasenaLogin">Contraseña:</label>
+                <input id="contrasenaLogin" type="password" name="contrasenaLogin" placeholder="Ingresa tu contraseña"
+                  maxlength="50" required />
+              </div>
+            </div>
 
-              <button class="btn" type="submit">Iniciar Sesión</button>
+            <a href="#" class="btn restablecer-contrasenia" id="forgot-password-link">¿Olvidaste tu contraseña?</a>
 
-              <span>¿Aún no tienes una cuenta?</span>
-              <a href="#" class="btn btn-link" id="go-to-register">Registrarse</a>
-            </form>
-          </div>
+            <button class="btn" type="submit">Iniciar Sesión</button>
 
-          <div class="right-column">
-            <img
-              src="{{ url_for('static', filename='img/login-aside.png') }}"
-              alt="Imagen login"
-            />
-          </div>
-        </section>
+            <span>¿Aún no tienes una cuenta?</span>
+            <a href="#" class="btn btn-link" id="go-to-register">Registrarse</a>
+          </form>
+        </div>
 
-        <!-- PANEL REGISTRO -->
-        <section class="panel register-panel">
-          <div class="left-column">
-            <img
-              src="{{ url_for('static', filename='img/registro-aside.png') }}"
-              alt="Imagen registro"
-            />
-          </div>
+        <div class="right-column">
+          <img src="{{ url_for('static', filename='img/login-aside.png') }}" alt="Imagen login" />
+        </div>
+      </section>
 
-          <div class="right-column">
-            <form class="formulario" action="{{ url_for('auth_page') }}" method="post">
-              <img
-                class="logo"
-                id="logo-registro"
-                src="{{ url_for('static', filename='img/logo.png') }}"
-                alt="Logo"
-              />
+      <!-- PANEL REGISTRO -->
+      <section class="panel register-panel">
+        <div class="left-column">
+          <img src="{{ url_for('static', filename='img/registro-aside.png') }}" alt="Imagen registro" />
+        </div>
 
-              <div class="body-form">
-                <div class="input-group">
-                  <label for="nombre">Nombre Completo:</label>
-                  <input
-                    id="nombre"
-                    type="text"
-                    name="nombre"
-                    placeholder="Ingresa tu nombre y apellido"
-                    maxlength="150"
-                    required
-                  />
-                </div>
+        <div class="right-column">
+          <form class="formulario" action="{{ url_for('auth_page') }}" method="post">
+            <img class="logo" id="logo-registro" src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" />
 
-                <div class="input-group">
-                  <label for="usuario">Nombre de Usuario:</label>
-                  <input
-                    id="usuario"
-                    type="text"
-                    name="usuario"
-                    maxlength="18"
-                    placeholder="Crea un nombre de usuario único"
-                    required
-                  />
-                </div>
+            <div class="body-form">
+              <div class="input-group">
+                <label for="nombre">Nombre Completo:</label>
+                <input id="nombre" type="text" name="nombre" placeholder="Ingresa tu nombre y apellido" maxlength="150"
+                  required />
+              </div>
 
-                <div class="input-group">
-                  <label for="correoRegistro">Correo Electrónico:</label>
-                  <input
-                    id="correoRegistro"
-                    type="email"
-                    name="correo"
-                    placeholder="ejemplo@correo.com"
-                    maxlength="100"
-                    required
-                  />
-                </div>
+              <div class="input-group">
+                <label for="usuario">Nombre de Usuario:</label>
+                <input id="usuario" type="text" name="usuario" maxlength="18"
+                  placeholder="Crea un nombre de usuario único" required />
+              </div>
 
-                <div class="input-group">
-                  <label for="contrasenaRegistro">Contraseña:</label>
-                  <input
-                    id="contrasenaRegistro"
-                    type="password"
-                    name="contrasena"
-                    maxlength="50"
-                    placeholder="Crea una contraseña segura"
-                    required
-                  />
+              <div class="input-group">
+                <label for="correoRegistro">Correo Electrónico:</label>
+                <input id="correoRegistro" type="email" name="correo" placeholder="ejemplo@correo.com" maxlength="100"
+                  required />
+              </div>
 
-                  <!-- Criterios compactos e indicativos -->
-                  <ul id="password-criteria" aria-live="polite">
-                    <li id="crit-length">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      8+ carac.
-                    </li>
-                    <li id="crit-lower">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      minúscula
-                    </li>
-                    <li id="crit-upper">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      mayúscula
-                    </li>
-                    <li id="crit-number">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      número
-                    </li>
-                    <li id="crit-special">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      símbolo
-                    </li>
-                  </ul>
-                </div>
+              <div class="input-group">
+                <label for="contrasenaRegistro">Contraseña:</label>
+                <input id="contrasenaRegistro" type="password" name="contrasena" maxlength="50"
+                  placeholder="Crea una contraseña segura" required />
 
-                <div class="radio-group">
+                <!-- Criterios compactos e indicativos -->
+                <ul id="password-criteria" aria-live="polite">
+                  <li id="crit-length">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    8+ carac.
+                  </li>
+                  <li id="crit-lower">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    minúscula
+                  </li>
+                  <li id="crit-upper">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    mayúscula
+                  </li>
+                  <li id="crit-number">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    número
+                  </li>
+                  <li id="crit-special">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    símbolo
+                  </li>
+                </ul>
+              </div>
+
+              <!-- <div class="radio-group">
                   <span class="label-titulo">Elige tu tipo de cuenta:</span>
                   <div class="radio-options">
                     <label class="radio-linea">
@@ -433,284 +382,284 @@
                       Profesor
                     </label>
                   </div>
-                </div>
-              </div>
+                </div> -->
+            </div>
 
-              <button class="btn" type="submit">Registrarse</button>
-              <span>¿Ya tienes una cuenta?</span>
-              <a href="#" class="btn btn-link" id="go-to-login">Iniciar Sesión</a>
-            </form>
-          </div>
-        </section>
-      </div>
+            <button class="btn" type="submit">Registrarse</button>
+            <span>¿Ya tienes una cuenta?</span>
+            <a href="#" class="btn btn-link" id="go-to-login">Iniciar Sesión</a>
+          </form>
+        </div>
+      </section>
     </div>
+  </div>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function () {
-        // --- GRUPO 1: ELEMENTOS DEL DOM ---
-        const flashModal = document.getElementById('flash-modal');
-        //const messagesContainer = document.getElementById('modal-messages-container'); // Necesario para la nueva función
-        const closeButton = flashModal.querySelector('.close-button');
-        const container = document.getElementById('authContainer');
-        const goToRegister = document.getElementById('go-to-register');
-        const goToLogin = document.getElementById('go-to-login');
-        const formLogin = document.querySelector('.login-panel form');
-        const formRegistro = document.querySelector('.register-panel form');
-        const passwordInput = document.getElementById('contrasenaRegistro');
-        const forgotPasswordLink = document.getElementById('forgot-password-link'); // El nuevo enlace
-        const emailInput = document.getElementById('correoLogin');
-        const emailInputRegistro = document.getElementById('correoRegistro');
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // --- GRUPO 1: ELEMENTOS DEL DOM ---
+      const flashModal = document.getElementById('flash-modal');
+      //const messagesContainer = document.getElementById('modal-messages-container'); // Necesario para la nueva función
+      const closeButton = flashModal.querySelector('.close-button');
+      const container = document.getElementById('authContainer');
+      const goToRegister = document.getElementById('go-to-register');
+      const goToLogin = document.getElementById('go-to-login');
+      const formLogin = document.querySelector('.login-panel form');
+      const formRegistro = document.querySelector('.register-panel form');
+      const passwordInput = document.getElementById('contrasenaRegistro');
+      const forgotPasswordLink = document.getElementById('forgot-password-link'); // El nuevo enlace
+      const emailInput = document.getElementById('correoLogin');
+      const emailInputRegistro = document.getElementById('correoRegistro');
 
-        const criteriaEls = {
-          length: document.getElementById('crit-length'),
-          lower: document.getElementById('crit-lower'),
-          upper: document.getElementById('crit-upper'),
-          number: document.getElementById('crit-number'),
-          special: document.getElementById('crit-special'),
-        };
-        const btnSubmitReg = formRegistro?.querySelector('button[type="submit"]');
+      const criteriaEls = {
+        length: document.getElementById('crit-length'),
+        lower: document.getElementById('crit-lower'),
+        upper: document.getElementById('crit-upper'),
+        number: document.getElementById('crit-number'),
+        special: document.getElementById('crit-special'),
+      };
+      const btnSubmitReg = formRegistro?.querySelector('button[type="submit"]');
 
-        // --- GRUPO 2: FUNCIONES AUXILIARES ---
-        function closeModal() {
-          if (flashModal) flashModal.style.display = 'none';
+      // --- GRUPO 2: FUNCIONES AUXILIARES ---
+      function closeModal() {
+        if (flashModal) flashModal.style.display = 'none';
+      }
+
+      function mostrarMensajeModal(mensaje, categoria = 'info') {
+        if (!flashModal) return;
+        // Resuelve SIEMPRE el contenedor por ID (por si se creó después)
+        const containerEl = document.getElementById('modal-messages-container');
+        if (!containerEl) return;
+        containerEl.innerHTML = `<div class="alerta alerta-${categoria}">${mensaje}</div>`;
+        flashModal.style.display = 'flex';
+      }
+
+      function ensureMessagesContainer() {
+        let el = document.getElementById('modal-messages-container');
+        if (!el && flashModal) {
+          const content = flashModal.querySelector('.modal-content');
+          el = document.createElement('div');
+          el.id = 'modal-messages-container';
+          el.className = 'contenedor-flash';
+          content.appendChild(el);
         }
-
-        function mostrarMensajeModal(mensaje, categoria = 'info') {
-  if (!flashModal) return;
-  // Resuelve SIEMPRE el contenedor por ID (por si se creó después)
-  const containerEl = document.getElementById('modal-messages-container');
-  if (!containerEl) return;
-  containerEl.innerHTML = `<div class="alerta alerta-${categoria}">${mensaje}</div>`;
-  flashModal.style.display = 'flex';
-}
-
-function ensureMessagesContainer() {
-  let el = document.getElementById('modal-messages-container');
-  if (!el && flashModal) {
-    const content = flashModal.querySelector('.modal-content');
-    el = document.createElement('div');
-    el.id = 'modal-messages-container';
-    el.className = 'contenedor-flash';
-    content.appendChild(el);
-  }
-  return el;
-}
+        return el;
+      }
 
 
-        function showView(view) {
-          container.setAttribute('data-view', view);
-          if (view === 'login') {
-            if (formRegistro) formRegistro.reset();
-            if (passwordInput) evaluatePassword();
-          } else if (view === 'register') {
-            if (formLogin) formLogin.reset();
+      function showView(view) {
+        container.setAttribute('data-view', view);
+        if (view === 'login') {
+          if (formRegistro) formRegistro.reset();
+          if (passwordInput) evaluatePassword();
+        } else if (view === 'register') {
+          if (formLogin) formLogin.reset();
+        }
+      }
+
+      // --- GRUPO 3: LÓGICA DE VALIDACIÓN DE CONTRASEÑA ---
+      const rules = {
+        length: (v) => v.length >= 8,
+        lower: (v) => /[a-z]/.test(v),
+        upper: (v) => /[A-Z]/.test(v),
+        number: (v) => /\d/.test(v),
+        special: (v) => /[^A-Za-z0-9\s]/.test(v),
+      };
+
+      const lastStates = {
+        length: false,
+        lower: false,
+        upper: false,
+        number: false,
+        special: false,
+      };
+
+      function applyState(allValid, hasInput) {
+        if (!hasInput) {
+          passwordInput.classList.remove('valid-password', 'invalid-password');
+          if (btnSubmitReg) btnSubmitReg.disabled = true;
+          return;
+        }
+        passwordInput.classList.toggle('valid-password', allValid);
+        passwordInput.classList.toggle('invalid-password', !allValid);
+        if (btnSubmitReg) btnSubmitReg.disabled = !allValid;
+      }
+
+      function evaluatePassword() {
+        if (!passwordInput) return;
+        const v = passwordInput.value ?? '';
+        let allValid = true;
+
+        for (const k in rules) {
+          const ok = rules[k](v);
+          const el = criteriaEls[k];
+          if (!el) continue;
+
+          el.classList.toggle('valid', ok);
+
+          if (ok && !lastStates[k]) {
+            el.classList.remove('just-validated');
+            void el.offsetWidth;
+            el.classList.add('just-validated');
           }
+
+          lastStates[k] = ok;
+          if (!ok) allValid = false;
         }
 
-        // --- GRUPO 3: LÓGICA DE VALIDACIÓN DE CONTRASEÑA ---
-        const rules = {
-          length: (v) => v.length >= 8,
-          lower: (v) => /[a-z]/.test(v),
-          upper: (v) => /[A-Z]/.test(v),
-          number: (v) => /\d/.test(v),
-          special: (v) => /[^A-Za-z0-9\s]/.test(v),
-        };
+        applyState(allValid, v.length > 0);
+        return allValid;
+      }
 
-        const lastStates = {
-          length: false,
-          lower: false,
-          upper: false,
-          number: false,
-          special: false,
-        };
+      // --- GRUPO 3B: VALIDACIÓN DE CORREO ELECTRÓNICO ---
+      const emailRegistro = document.getElementById('emailInputRegistro');
+      const emailCriteria = {
+        filled: document.getElementById('crit-filled'),
+        valid: document.getElementById('crit-valid'),
+      };
+      const emailBtn = btnSubmitReg; // (Reservado si luego se usa)
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 
-        function applyState(allValid, hasInput) {
-          if (!hasInput) {
-            passwordInput.classList.remove('valid-password', 'invalid-password');
-            if (btnSubmitReg) btnSubmitReg.disabled = true;
-            return;
-          }
-          passwordInput.classList.toggle('valid-password', allValid);
-          passwordInput.classList.toggle('invalid-password', !allValid);
-          if (btnSubmitReg) btnSubmitReg.disabled = !allValid;
+      function evaluateEmail() {
+        if (!emailRegistro) return;
+        const value = emailRegistro.value.trim();
+        const isFilled = value.length > 0;
+        const isValid = emailRegex.test(value);
+
+        emailCriteria.filled.classList.toggle('valid', isFilled);
+        emailCriteria.valid.classList.toggle('valid', isValid);
+
+        if (isFilled) emailCriteria.filled.classList.add('just-validated');
+        if (isValid) emailCriteria.valid.classList.add('just-validated');
+
+        if (!isFilled) {
+          emailRegistro.classList.add('invalid-email');
+          mostrarMensajeModal('Por favor, ingresa tu correo electrónico.', 'danger');
+          return false;
+        }
+        if (!isValid) {
+          emailRegistro.classList.add('invalid-email');
+          mostrarMensajeModal(
+            'El formato del correo no es válido. Asegúrate de incluir "@" y un dominio (ejemplo: usuario@gmail.com).',
+            'danger'
+          );
+          return false;
         }
 
-        function evaluatePassword() {
-          if (!passwordInput) return;
-          const v = passwordInput.value ?? '';
-          let allValid = true;
+        emailRegistro.classList.remove('invalid-email');
+        return true;
+      }
 
-          for (const k in rules) {
-            const ok = rules[k](v);
-            const el = criteriaEls[k];
-            if (!el) continue;
 
-            el.classList.toggle('valid', ok);
 
-            if (ok && !lastStates[k]) {
-              el.classList.remove('just-validated');
-              void el.offsetWidth;
-              el.classList.add('just-validated');
+      // Listener en tiempo real
+      if (emailRegistro) {
+        emailRegistro.addEventListener('input', evaluateEmail);
+        if (formRegistro) {
+          formRegistro.addEventListener('submit', (e) => {
+            if (!evaluateEmail() || !evaluatePassword()) {
+              e.preventDefault();
+              emailRegistro.focus();
             }
-
-            lastStates[k] = ok;
-            if (!ok) allValid = false;
-          }
-
-          applyState(allValid, v.length > 0);
-          return allValid;
+          });
         }
+      }
 
-        // --- GRUPO 3B: VALIDACIÓN DE CORREO ELECTRÓNICO ---
-        const emailRegistro = document.getElementById('emailInputRegistro');
-        const emailCriteria = {
-          filled: document.getElementById('crit-filled'),
-          valid: document.getElementById('crit-valid'),
-        };
-        const emailBtn = btnSubmitReg; // (Reservado si luego se usa)
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+      // --- GRUPO 4: ASIGNACIÓN DE EVENT LISTENERS ---
+      if (flashModal && flashModal.dataset.hasMessages === 'true') {
+        flashModal.style.display = 'flex';
+      }
 
-        function evaluateEmail() {
-          if (!emailRegistro) return;
-          const value = emailRegistro.value.trim();
-          const isFilled = value.length > 0;
-          const isValid = emailRegex.test(value);
+      if (closeButton) closeButton.addEventListener('click', closeModal);
 
-          emailCriteria.filled.classList.toggle('valid', isFilled);
-          emailCriteria.valid.classList.toggle('valid', isValid);
+      if (flashModal) {
+        flashModal.addEventListener('click', (e) => {
+          if (e.target === flashModal) closeModal();
+        });
+      }
 
-          if (isFilled) emailCriteria.filled.classList.add('just-validated');
-          if (isValid) emailCriteria.valid.classList.add('just-validated');
+      if (goToRegister) {
+        goToRegister.addEventListener('click', (e) => {
+          e.preventDefault();
+          showView('register');
+        });
+      }
 
-          if (!isFilled) {
-            emailRegistro.classList.add('invalid-email');
-            mostrarMensajeModal('Por favor, ingresa tu correo electrónico.', 'danger');
-            return false;
-          }
-          if (!isValid) {
-            emailRegistro.classList.add('invalid-email');
+      if (goToLogin) {
+        goToLogin.addEventListener('click', (e) => {
+          e.preventDefault();
+          showView('login');
+        });
+      }
+
+      if (passwordInput) {
+        passwordInput.addEventListener('input', evaluatePassword);
+        if (formRegistro) {
+          formRegistro.addEventListener('submit', (e) => {
+            if (!evaluatePassword()) {
+              e.preventDefault();
+              passwordInput.focus();
+            }
+          });
+        }
+      }
+
+
+      // LÓGICA AÑADIDA PARA "OLVIDÉ MI CONTRASEÑA"
+      if (forgotPasswordLink && emailInput) {
+        forgotPasswordLink.addEventListener('click', async (e) => {
+          e.preventDefault();
+          const correo = emailInput.value.trim();
+
+          // Asegura contenedor y abre modal con el mensaje correspondiente
+          ensureMessagesContainer();
+
+          if (!correo) {
             mostrarMensajeModal(
-              'El formato del correo no es válido. Asegúrate de incluir "@" y un dominio (ejemplo: usuario@gmail.com).',
+              'Por favor, ingresa tu correo electrónico en el campo correspondiente.',
               'danger'
             );
-            return false;
+            return;
           }
 
-          emailRegistro.classList.remove('invalid-email');
-          return true;
-        }
-
-
-
-        // Listener en tiempo real
-        if (emailRegistro) {
-          emailRegistro.addEventListener('input', evaluateEmail);
-          if (formRegistro) {
-            formRegistro.addEventListener('submit', (e) => {
-              if (!evaluateEmail() || !evaluatePassword()) {
-                e.preventDefault();
-                emailRegistro.focus();
-              }
-            });
-          }
-        }
-
-        // --- GRUPO 4: ASIGNACIÓN DE EVENT LISTENERS ---
-        if (flashModal && flashModal.dataset.hasMessages === 'true') {
-          flashModal.style.display = 'flex';
-        }
-
-        if (closeButton) closeButton.addEventListener('click', closeModal);
-
-        if (flashModal) {
-          flashModal.addEventListener('click', (e) => {
-            if (e.target === flashModal) closeModal();
-          });
-        }
-
-        if (goToRegister) {
-          goToRegister.addEventListener('click', (e) => {
-            e.preventDefault();
-            showView('register');
-          });
-        }
-
-        if (goToLogin) {
-          goToLogin.addEventListener('click', (e) => {
-            e.preventDefault();
-            showView('login');
-          });
-        }
-
-        if (passwordInput) {
-          passwordInput.addEventListener('input', evaluatePassword);
-          if (formRegistro) {
-            formRegistro.addEventListener('submit', (e) => {
-              if (!evaluatePassword()) {
-                e.preventDefault();
-                passwordInput.focus();
-              }
-            });
-          }
-        }
-
-
-        // LÓGICA AÑADIDA PARA "OLVIDÉ MI CONTRASEÑA"
-if (forgotPasswordLink && emailInput) {
-  forgotPasswordLink.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const correo = emailInput.value.trim();
-
-    // Asegura contenedor y abre modal con el mensaje correspondiente
-    ensureMessagesContainer();
-
-    if (!correo) {
-        mostrarMensajeModal(
-        'Por favor, ingresa tu correo electrónico en el campo correspondiente.',
-        'danger'
+          // Abre modal inmediatamente con estado "procesando"
+          mostrarMensajeModal(
+            `Procesando tu solicitud para <strong>${correo}</strong>...`,
+            'info'
           );
-          return;
-    }
 
-    // Abre modal inmediatamente con estado "procesando"
-    mostrarMensajeModal(
-      `Procesando tu solicitud para <strong>${correo}</strong>...`,
-      'info'
-    );
+          try {
+            const response = await fetch("{{ url_for('api_solicitar_restablecimiento') }}", {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ correo }),
+            });
+            const data = await response.json();
 
-    try {
-      const response = await fetch("{{ url_for('api_solicitar_restablecimiento') }}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ correo }),
-      });
-      const data = await response.json();
-
-      // Actualiza el MISMO modal con éxito o error
-      if (response.ok) {
-        mostrarMensajeModal(
-          data.mensaje || `Si el correo <strong>${correo}</strong> está registrado, te enviaremos un enlace de restablecimiento.`,
-          'info'
-        );
-      } else {
-        mostrarMensajeModal(
-          data.error || 'No se pudo procesar la solicitud. Inténtalo más tarde.',
-          'danger'
-        );
+            // Actualiza el MISMO modal con éxito o error
+            if (response.ok) {
+              mostrarMensajeModal(
+                data.mensaje || `Si el correo <strong>${correo}</strong> está registrado, te enviaremos un enlace de restablecimiento.`,
+                'info'
+              );
+            } else {
+              mostrarMensajeModal(
+                data.error || 'No se pudo procesar la solicitud. Inténtalo más tarde.',
+                'danger'
+              );
+            }
+          } catch (error) {
+            mostrarMensajeModal(
+              'No se pudo conectar con el servidor. Verifica tu conexión o inténtalo más tarde.',
+              'danger'
+            );
+          }
+        });
       }
-    } catch (error) {
-      mostrarMensajeModal(
-        'No se pudo conectar con el servidor. Verifica tu conexión o inténtalo más tarde.',
-        'danger'
-      );
-    }
-  });
-}
-        // --- GRUPO 5: INICIALIZACIÓN ---
-        showView('login');
-        evaluatePassword();
-      });
-    </script>
-  </body>
-</html>
+      // --- GRUPO 5: INICIALIZACIÓN ---
+      showView('login');
+      evaluatePassword();
+    });
+  </script>
+</body>
 
+</html>
