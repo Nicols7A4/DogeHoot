@@ -46,6 +46,10 @@ tags:
     externalDocs:
       description: Más información
       url: https://dmailproject.pythonanywhere.com/
+  - name: participantes
+    description: Gestión de participantes en partidas
+  - name: respuestas
+    description: Gestión de respuestas de participantes en partidas
 paths:
   /api_obtener_usuarios:
     get:
@@ -56,31 +60,28 @@ paths:
       operationId: obtenerUsuarios
       responses:
         '200':
-          description: Operación exitosa
+          description: Lista de usuarios obtenida correctamente
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  ok:
-                    type: boolean
-                    example: true
-                  usuarios:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Usuario'
+              example:
+                data: [{"id_usuario": 1, "nombre_completo": "Juan Pérez", "correo": "juan@usat.edu.pe"}]
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Error al obtener usuarios"
       security:
         - jwt_auth: []
   /api_obtener_usuario_por_id/{id_usuario}:
@@ -100,35 +101,36 @@ paths:
             format: int32
       responses:
         '200':
-          description: Operación exitosa
+          description: Usuario obtenido correctamente
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  ok:
-                    type: boolean
-                    example: true
-                  usuario:
+                  data:
                     $ref: '#/components/schemas/Usuario'
+              example:
+                data: {"id_usuario": 1, "nombre_completo": "Juan Pérez", "correo": "juan@usat.edu.pe"}
         '404':
-          description: Usuario no encontrado
+          description: Usuario no encontrado  
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Usuario no encontrado"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Error al obtener usuario"
       security:
         - jwt_auth: []
   /api_registrar_usuario:
@@ -207,43 +209,59 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                    example: true
-                  usuario:
-                    $ref: '#/components/schemas/Usuario'
+                $ref: '#/components/schemas/Usuario'
+              example:
+                id_usuario: 1
+                nombre_completo: "Juan Pérez García"
+                correo: "juan.perez@usat.edu.pe"
+                nombre_usuario: "juanperez"
+                tipo: "E"
+                puntos: 2000
+                monedas: 300
+                vigente: true
         '400':
           description: Datos inválidos
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Cantidad de monedas inválida"
         '404':
-          description: Usuario no encontrado
+          description: Usuario no encontrado o tipo inválido
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Usuario no encontrado"
         '409':
           description: Conflicto - Correo o nombre de usuario ya existe
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "El correo ya está en uso"
+                  campo:
+                    type: string
+                    example: "correo"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Error al actualizar usuario"
       security:
         - jwt_auth: []
   /api_eliminar_usuario:
@@ -1687,6 +1705,348 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
+  /api_registrar_participante:
+    post:
+      tags:
+        - participantes
+      summary: Crear un nuevo participante
+      description: Registra un participante en una partida
+      security:
+        - jwt_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParticipanteCreate'
+      responses:
+        '201':
+          description: Participante creado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '400':
+          description: Datos inválidos o incompletos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+  /api_obtener_participantes:
+    get:
+      tags:
+        - participantes
+      summary: Listar todos los participantes
+      description: Retorna la lista completa de participantes registrados
+      security:
+        - jwt_auth: []
+      responses:
+        '200':
+          description: Lista de participantes obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+  /api_obtener_participante_por_id/{id_participante}:
+    get:
+      tags:
+        - participantes
+      summary: Obtener participante por ID
+      description: Retorna un participante específico según su ID
+      security:
+        - jwt_auth: []
+      parameters:
+        - in: path
+          name: id_participante
+          required: true
+          description: ID del participante
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Participante encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '404':
+          description: Participante no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+  /api_actualizar_participante/{id_participante}:
+    put:
+      tags:
+        - participantes
+      summary: Actualizar un participante
+      description: Actualiza los datos de un participante existente
+      security:
+        - jwt_auth: []
+      parameters:
+        - in: path
+          name: id_participante
+          required: true
+          description: ID del participante a actualizar
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParticipanteUpdate'
+      responses:
+        '200':
+          description: Participante actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '404':
+          description: Participante no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+  /api_eliminar_participante/{id_participante}:
+    delete:
+      tags:
+        - participantes
+      summary: Eliminar un participante
+      description: Elimina un participante del sistema
+      security:
+        - jwt_auth: []
+      parameters:
+        - in: path
+          name: id_participante
+          required: true
+          description: ID del participante a eliminar
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Participante eliminado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '404':
+          description: Participante no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '409':
+          description: Conflicto al eliminar participante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+  /api_registrar_respuesta:
+    post:
+      tags:
+        - respuestas
+      summary: Registrar una respuesta
+      description: Registra la respuesta de un participante a una pregunta
+      security:
+        - jwt_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RespuestaCreate'
+      responses:
+        '201':
+          description: Respuesta registrada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '400':
+          description: Datos inválidos o error de integridad
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '409':
+          description: Respuesta duplicada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+  /api_obtener_respuestas:
+    get:
+      tags:
+        - respuestas
+      summary: Listar todas las respuestas
+      description: Retorna la lista completa de respuestas registradas
+      security:
+        - jwt_auth: []
+      responses:
+        '200':
+          description: Lista de respuestas obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+  /api_obtener_respuesta_por_id/{id_respuesta}:
+    get:
+      tags:
+        - respuestas
+      summary: Obtener respuesta por ID
+      description: Retorna una respuesta específica según su ID
+      security:
+        - jwt_auth: []
+      parameters:
+        - in: path
+          name: id_respuesta
+          required: true
+          description: ID de la respuesta
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Respuesta encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '404':
+          description: Respuesta no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+  /api_actualizar_respuesta/{id_respuesta}:
+    put:
+      tags:
+        - respuestas
+      summary: Actualizar una respuesta
+      description: Actualiza los datos de una respuesta existente
+      security:
+        - jwt_auth: []
+      parameters:
+        - in: path
+          name: id_respuesta
+          required: true
+          description: ID de la respuesta a actualizar
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RespuestaUpdate'
+      responses:
+        '200':
+          description: Respuesta actualizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '404':
+          description: Respuesta no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+  /api_eliminar_respuesta/{id_respuesta}:
+    delete:
+      tags:
+        - respuestas
+      summary: Eliminar una respuesta
+      description: Elimina una respuesta del sistema
+      security:
+        - jwt_auth: []
+      parameters:
+        - in: path
+          name: id_respuesta
+          required: true
+          description: ID de la respuesta a eliminar
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Respuesta eliminada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '404':
+          description: Respuesta no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEstandar'
 components:
   schemas:
     Usuario:
@@ -2485,6 +2845,157 @@ components:
         message:
           type: string
           example: Partida creada correctamente
+    RespuestaEstandar:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1
+        message:
+          type: string
+          example: Operación exitosa
+        data:
+          type: object
+          nullable: true
+          example: {}
+    Participante:
+      type: object
+      properties:
+        id_participante:
+          type: integer
+          format: int64
+          example: 105
+        nombre:
+          type: string
+          example: Jugador1
+        registrado:
+          type: integer
+          example: 0
+          description: 0=invitado, 1=registrado
+        puntaje:
+          type: integer
+          example: 0
+        id_partida:
+          type: integer
+          example: 480072
+        id_usuario:
+          type: integer
+          nullable: true
+          example: 10
+        id_grupo:
+          type: integer
+          nullable: true
+          example: 1
+        grupo:
+          type: integer
+          nullable: true
+          example: 1
+    ParticipanteCreate:
+      type: object
+      required:
+        - id_partida
+        - nombre
+      properties:
+        id_partida:
+          type: integer
+          example: 480072
+        nombre:
+          type: string
+          example: NuevoJugador
+        registrado:
+          type: integer
+          default: 0
+        id_usuario:
+          type: integer
+          nullable: true
+    ParticipanteUpdate:
+      type: object
+      properties:
+        nombre:
+          type: string
+          example: JugadorActualizado
+        puntaje:
+          type: integer
+          example: 1500
+        grupo:
+          type: integer
+          example: 2
+    RespuestaJuego:
+      type: object
+      properties:
+        id_respuesta:
+          type: integer
+          format: int64
+          example: 501
+        id_participante:
+          type: integer
+          example: 10
+        id_partida:
+          type: integer
+          example: 480072
+        id_pregunta:
+          type: integer
+          example: 33
+        opcion_texto:
+          type: string
+          example: "48"
+        es_correcta:
+          type: integer
+          example: 1
+          description: 0=incorrecta, 1=correcta
+        puntaje:
+          type: integer
+          example: 1000
+        tiempo_respuesta:
+          type: string
+          example: "00:00:02"
+        creado_en:
+          type: string
+          format: date-time
+          example: "2025-11-18T15:30:00"
+    RespuestaCreate:
+      type: object
+      required:
+        - id_participante
+        - id_partida
+        - id_pregunta
+      properties:
+        id_participante:
+          type: integer
+          example: 10
+        id_opcion:
+          type: integer
+          example: 55
+        id_partida:
+          type: integer
+          example: 480072
+        id_pregunta:
+          type: integer
+          example: 33
+        opcion_texto:
+          type: string
+          example: "48"
+        es_correcta:
+          type: integer
+          example: 1
+        puntaje:
+          type: integer
+          example: 1000
+        tiempo_respuesta:
+          type: string
+          example: "00:00:02"
+    RespuestaUpdate:
+      type: object
+      properties:
+        es_correcta:
+          type: integer
+          enum: [0, 1]
+        puntaje:
+          type: integer
+          example: 1200
+        opcion_texto:
+          type: string
+          example: "Respuesta actualizada"
   securitySchemes:
     jwt_auth:
       type: http
