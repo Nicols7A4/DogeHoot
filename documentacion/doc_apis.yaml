@@ -2113,19 +2113,49 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RptaStandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "Inventario registrado correctamente."
         '400':
-          description: Datos incompletos o inválidos
+          description: Datos incompletos o registro duplicado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "id_usuario e id_skin son obligatorios. o El registro ya existe en el inventario."
         '500':
           description: Error interno al registrar el inventario
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo registrar el inventario: error"
   /api_actualizarinventario/{id_usuario}/{id_skin}:
     put:
       tags:
@@ -2161,25 +2191,65 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RptaStandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "Inventario actualizado correctamente."
         '400':
           description: Datos inválidos
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "Debe enviar el nuevo id_skin para actualizar."
         '404':
           description: Registro no encontrado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se encontró el registro para actualizar."
         '500':
           description: Error interno al actualizar el inventario
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo actualizar el inventario: error"
   /api_eliminarinventario/{id_usuario}/{id_skin}:
     delete:
       tags:
@@ -2209,19 +2279,49 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RptaStandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "Inventario eliminado correctamente."
         '404':
           description: Registro no encontrado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se encontró el registro a eliminar."
         '500':
           description: Error interno al eliminar el inventario
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo eliminar el inventario: error"
   /api_obtenerinventarios:
     get:
       tags:
@@ -2236,13 +2336,47 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RptaListaInventario'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id_usuario:
+                          type: integer
+                          example: 15
+                        id_skin:
+                          type: integer
+                          example: 3
+                        nombre_usuario:
+                          type: string
+                          example: "Juan Pérez"
+                        ruta_skin:
+                          type: string
+                          example: "/static/img/skins/skin_dragon.png"
+                  message:
+                    type: string
+                    example: "Inventarios obtenidos correctamente."
         '500':
           description: Error interno al obtener los inventarios
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudieron obtener los inventarios: error"
   /api_obtenerinventarioporusuario/{id_usuario}:
     get:
       tags:
@@ -2265,19 +2399,50 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RptaListaSkinsUsuario'
-        '404':
-          description: Usuario no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id_skin:
+                          type: integer
+                          example: 3
+                        ruta:
+                          type: string
+                          example: "/static/img/skins/skin_dragon.png"
+                        tipo:
+                          type: string
+                          example: "premium"
+                        precio:
+                          type: integer
+                          example: 500
+                        vigente:
+                          type: integer
+                          example: 1
+                  message:
+                    type: string
+                    example: "Inventario del usuario obtenido correctamente."
         '500':
-          description: Error interno al obtener el inventario del usuario
+          description: Error interno al obtener el inventario
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo obtener el inventario: error"
   /api_registrar_participante:
     post:
       tags:
