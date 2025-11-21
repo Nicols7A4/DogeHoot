@@ -280,6 +280,26 @@ def obtener_por_id(id_usuario):
             conexion.close()
     return usuario
 
+
+def obtener_por_id_para_api(id_usuario):
+    conexion = obtener_conexion()
+    usuario = None
+    try:
+        with conexion.cursor() as cursor:
+            sql = """
+                SELECT u.id_usuario, u.nombre_completo, u.nombre_usuario, u.correo,
+                       u.tipo, u.puntos, u.monedas, u.vigente, u.id_skin_activa, s.ruta AS skin_ruta, u.foto
+                FROM USUARIO u
+                LEFT JOIN SKINS s ON u.id_skin_activa = s.id_skin
+                WHERE u.id_usuario = %s
+            """
+            cursor.execute(sql, (id_usuario,))
+            usuario = cursor.fetchone()
+    finally:
+        if conexion:
+            conexion.close()
+    return usuario
+
 def obtener_por_correo(correo):
     conexion = obtener_conexion()
     usuario = None

@@ -66,12 +66,18 @@ paths:
               schema:
                 type: object
                 properties:
+                  code:
+                    type: integer
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
               example:
-                data: [{"id_usuario": 1, "nombre_completo": "Juan Pérez", "correo": "juan@usat.edu.pe"}]
+                code: 1
+                data: [{"correo": "73073168@usa.edu.pe", "id_usuario": 1, "monedas": 12062, "nombre_completo": "Victor Adolfo Pongo Calvay", "nombre_usuario": "Yaco177", "puntos": 266972, "tipo": "P", "vigente": 1},{"correo": "jcachay@usat.edu.pe", "id_usuario": 85, "monedas": 0, "nombre_completo": "Junior Eugenio Cachay Maco", "nombre_usuario": "jcachay", "puntos": 0, "tipo": "P", "vigente": 1 }]
+                message: "Usuarios obtenidos con éxito"
         '500':
           description: Error interno del servidor
           content:
@@ -79,9 +85,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
                     type: string
-                    example: "Error al obtener usuarios"
+                    example: "Error al obtener usuarios, motivo: 'list' object has no attribute 'trim'"
       security:
         - jwt_auth: []
   /api_obtener_usuario_por_id/{id_usuario}:
@@ -107,10 +116,16 @@ paths:
               schema:
                 type: object
                 properties:
+                  code:
+                    type: integer
                   data:
                     $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
               example:
-                data: {"id_usuario": 1, "nombre_completo": "Juan Pérez", "correo": "juan@usat.edu.pe"}
+                code: 1
+                data: {"correo": "adolfopongo1705@gmail.com", "foto": "img/usuario/user_1_20251020041500.jpg","id_skin_activa": 30017,"id_usuario": 1,"monedas": 12062,"nombre_completo": "Victor Adolfo Pongo Calvay","nombre_usuario": "Yaco177","puntos": 266972, "skin_ruta": "img/skins/marco16.png", "tipo": "P", "vigente": 1}
+                message: "Usuario obtenido con éxito"
         '404':
           description: Usuario no encontrado  
           content:
@@ -118,7 +133,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
                     type: string
                     example: "Usuario no encontrado"
         '500':
@@ -128,9 +146,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
                     type: string
-                    example: "Error al obtener usuario"
+                    example: "Error al obtener usuario, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_registrar_usuario:
@@ -155,12 +176,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  ok:
-                    type: boolean
-                    example: true
-                  mensaje:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
                     type: string
-                    example: Usuario registrado exitosamente
+                    example: Usuario registrado
         '400':
           description: Datos de entrada inválidos
           content:
@@ -168,9 +189,44 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
                     type: string
-                    example: Faltan datos requeridos
+              examples:
+                datosFaltantes:
+                  value:
+                    code: 0
+                    message: "Faltan datos requeridos"
+                correoInvalido:
+                  value:
+                    code: 0
+                    message: "Solo son válidos correos de la USAT"
+                contrasenaCorta:
+                  value:
+                    code: 0
+                    message: "La contraseña debe tener como mínimo 8 caracteres"
+                sinMinuscula:
+                  value:
+                    code: 0
+                    message: "La contraseña debe contener al menos una letra minúscula"
+                sinMayuscula:
+                  value:
+                    code: 0
+                    message: "La contraseña debe contener al menos una letra mayúscula"
+                sinNumero:
+                  value:
+                    code: 0
+                    message: "La contraseña debe contener al menos un número"
+                sinSimbolo:
+                  value:
+                    code: 0
+                    message: "La contraseña debe contener al menos un símbolo especial"
+                tipoInvalido:
+                  value:
+                    code: 0
+                    message: "Tipo de usuario inválido"
         '409':
           description: Conflicto - Usuario ya existe
           content:
@@ -178,15 +234,33 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
                     type: string
-                    example: El correo ya está registrado
-        default:
-          description: Error inesperado
+              examples:
+                correoEnUso:
+                  value:
+                    code: 0
+                    message: "Conflicto. El correo ya está en uso"
+                usuarioEnUso:
+                  value:
+                    code: 0
+                    message: "Conflicto. El nombre de usuario ya está en uso"
+        '500':
+          description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al registrar usuario, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_actualizar_usuario:
@@ -209,16 +283,18 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Usuario'
+                properties:
+                  code:
+                    type: integer
+                    
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+                  message:
+                    type: string
               example:
-                id_usuario: 1
-                nombre_completo: "Juan Pérez García"
-                correo: "juan.perez@usat.edu.pe"
-                nombre_usuario: "juanperez"
-                tipo: "E"
-                puntos: 2000
-                monedas: 300
-                vigente: true
+                code: 1
+                data: {"correo": "abc123@usat.pe","foto": null,"id_skin_activa": null,"id_usuario": 30094,"monedas": 500,"nombre_completo": "Alberto Benavides,Carrión","nombre_usuario": "ABC123_XYZ","puntos": 1700,"skin_ruta": null,"tipo": "P","vigente": 0}
+                message: Usuario actualizado con éxito
         '400':
           description: Datos inválidos
           content:
@@ -226,17 +302,39 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
                     type: string
-                    example: "Cantidad de monedas inválida"
+              examples:
+                datosFaltantes:
+                  value:
+                    code: 0
+                    message: "Faltan datos requeridos"
+                tipoInvalido:
+                  value:
+                    code: 0
+                    message: "Error: Tipo de usuario inválido"
+                monedasInvalidas:
+                  value:
+                    code: 0
+                    message: "Error: Cantidad de monedas inválida"
+                puntosInvalidos:
+                  value:
+                    code: 0
+                    message: "Error: Cantidad de puntos inválida"
         '404':
-          description: Usuario no encontrado o tipo inválido
+          description: Usuario no encontrado
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  error:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
                     type: string
                     example: "Usuario no encontrado"
         '409':
@@ -246,12 +344,20 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
                     type: string
-                    example: "El correo ya está en uso"
-                  campo:
-                    type: string
-                    example: "correo"
+              examples:
+                correoEnUso:
+                  value:
+                    code: 0
+                    message: "Conflicto: El correo ya está en uso"
+                usuarioEnUso:
+                  value:
+                    code: 0
+                    message: "Conflicto: El nombre de usuario ya está en uso"
         '500':
           description: Error interno del servidor
           content:
@@ -259,9 +365,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  code:
+                    type: integer
+                    example: 0                      
+                  message:
                     type: string
-                    example: "Error al actualizar usuario"
+                    example: "Error al actualizar usuario, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_eliminar_usuario:
@@ -293,15 +402,34 @@ paths:
               schema:
                 type: object
                 properties:
-                  ok:
-                    type: boolean
-                    example: true
-                  id_usuario:
+                  code:
                     type: integer
-                    example: 5
-                  vigente:
-                    type: boolean
-                    example: false
+                    example: 1
+                  message:
+                    type: string
+                    example: "Usuario desactivado con éxito"
+                  data:
+                    type: object
+                    properties:
+                      id_usuario:
+                        type: integer
+                        example: 5
+                      vigente:
+                        type: boolean
+                        example: false
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: Faltan datos requeridos
         '404':
           description: Usuario no encontrado
           content:
@@ -309,7 +437,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
                     type: string
                     example: Usuario no encontrado
         '500':
@@ -319,75 +450,20 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
-                    type: string
-                    example: No se pudo desactivar el usuario
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-      security:
-        - jwt_auth: []
-    delete:
-      tags:
-        - usuarios
-      summary: Eliminar (desactivar) usuario (método DELETE)
-      description: Desactiva un usuario de la plataforma (no se elimina físicamente). Nota - OpenAPI no permite requestBody en DELETE, pero tu API lo acepta.
-      operationId: eliminarUsuarioDelete
-      parameters:
-        - name: id_usuario
-          in: query
-          description: ID del usuario a eliminar (o enviar en body según implementación)
-          required: false
-          schema:
-            type: integer
-            format: int32
-            example: 5
-      responses:
-        '200':
-          description: Usuario desactivado exitosamente
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                    example: true
-                  id_usuario:
+                  code:
                     type: integer
-                    example: 5
-                  vigente:
-                    type: boolean
-                    example: false
-        '404':
-          description: Usuario no encontrado
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
+                    example: 0
+                  message:
                     type: string
-                    example: Usuario no encontrado
-        '500':
-          description: Error al desactivar usuario
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: No se pudo desactivar el usuario
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+              examples:
+                noSeAfectaron:
+                  value:
+                    code: 0
+                    message: "No se pudo desactivar el usuario"
+                errorInterno:
+                  value:
+                    code: 0
+                    message: "Error al desactivar usuario, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_registrarskin:
@@ -2207,7 +2283,7 @@ components:
         tipo:
           type: string
           enum: [E, P]
-          example: E
+          example: P
           description: Tipo de usuario - E (Estudiante), P (Profesor). Se determina automáticamente por el dominio del correo
     UsuarioActualizacion:
       type: object
@@ -2676,6 +2752,18 @@ components:
           type: string
         message:
           type: string
+      required:
+        - code
+        - message
+    ErrorApi:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: Conflicto
       required:
         - code
         - message

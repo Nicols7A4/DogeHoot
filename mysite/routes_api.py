@@ -76,74 +76,79 @@ def api_test():
 def fn_api_obtener_usuarios():
     try:
         usuarios = ctrl.obtener_todos()
-        return jsonify({"data":usuarios}), 200
+        return jsonify({"code":1, "data":usuarios, "message":"Usuarios obtenidos con éxito"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"code":0,"message": f"Error al obtener usuarios, motivo: {str(e)}"}), 500 
 
 @app.route("/api_obtener_usuario_por_id/<int:id_usuario>", methods=['GET'])
 @jwt_required()
 def fn_api_obtener_usuario_por_id(id_usuario):
     try:
         # id_usuario = request.args.get('id_usuario', type=int)
-        usuario = ctrl.obtener_por_id(id_usuario)
-        return jsonify({"data":usuario}), 200
+        usuario = ctrl.obtener_por_id_para_api(id_usuario)
+        
+        if not usuario: return jsonify({"code":0,"message":"Usuario no encontrado"}), 404
+        
+        return jsonify({"code":1,"data":usuario, "message":"Usuario obtenido con éxito"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"code":0,"message": f"Error al obtener usuario, motivo: {str(e)}"}), 500 
 
 @app.route("/api_registrar_usuario", methods=['POST'])
 @jwt_required()
 def fn_api_registrar_usuario():
-    data = request.get_json(force=True) or {}
-    nombre_completo = (data.get("nombre_completo") or "").strip()
-    nombre_usuario  = (data.get("nombre_usuario")  or "").strip()
-    correo          = (data.get("correo")          or "").strip().lower()
-    contrasena      = (data.get("contrasena")      or "")
-    tipo            = (data.get("tipo")            or "E").strip()
-
-    conexion = obtener_conexion()
     try:
-        with conexion.cursor() as c:
-            c.execute("SELECT id_usuario FROM USUARIO WHERE correo=%s AND vigente = true;", (correo))
-            if c.fetchone():
-                return jsonify({"error":"El correo ya está en uso", "campo":"correo"}), 409
-            c.execute("SELECT id_usuario FROM USUARIO WHERE nombre_usuario=%s AND vigente = true;", (nombre_usuario))
-            if c.fetchone():
-                return jsonify({"error":"El nombre de usuario ya está en uso", "campo":"nombre_usuario"}), 409
-    finally:
-        if conexion:
-            conexion.close()
+        data = request.get_json(force=True) or {}
+        nombre_completo = (data.get("nombre_completo") or "").strip()
+        nombre_usuario  = (data.get("nombre_usuario")  or "").strip()
+        correo          = (data.get("correo")          or "").strip().lower()
+        contrasena      = (data.get("contrasena")      or "")
+        tipo            = (data.get("tipo")            or "E").strip()
 
-    if not (nombre_completo and nombre_usuario and correo and contrasena):
-        return jsonify({"error": "Faltan campos obligatorios"}), 400
-    
+        if not (nombre_completo and nombre_usuario and correo and contrasena and tipo):
+            return jsonify({"code":0, "message":"Faltan datos requeridos"}), 400
 
-    if not (correo.endswith("@usat.edu.pe") or correo.endswith("@usat.pe")):
-        return jsonify({"error": "Solo son válidas correos de la USAT"}), 400
-    
-    if len(contrasena) < 8:
-        return jsonify({"error": "La contraseña debe tener como mínimo 8 caractares"}), 400
-    if not any(c.islower() for c in contrasena):
-        return jsonify({"error": "La contraseña debe contener al menos una letra minúscula"}), 400
-    if not any(c.isupper() for c in contrasena):
-        return jsonify({"error": "La contraseña debe contener al menos una letra mayúscula"}), 400
-    if not any(c.isdigit() for c in contrasena):
-        return jsonify({"error": "La contraseña debe contener al menos un número"}), 400
-    if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?/~`" for c in contrasena):
-        return jsonify({"error": "La contraseña debe contener al menos un símbolo especial"}), 400
-    
-    if tipo != "P" or tipo != "E":
-            return jsonify({"error": "Tipo de usuario inválido"}), 404
-    tipo = "P" if correo.endswith("@usat.edu.pe") else "E"
+        conexion = obtener_conexion()
+        try:
+            with conexion.cursor() as c:
+                c.execute("SELECT id_usuario FROM USUARIO WHERE correo=%s AND vigente = true;", (correo))
+                if c.fetchone():
+                    return jsonify({"code":0, "message":"Conflicto. El correo ya está en uso"}), 409
+                c.execute("SELECT id_usuario FROM USUARIO WHERE nombre_usuario=%s AND vigente = true;", (nombre_usuario))
+                if c.fetchone():
+                    return jsonify({"code":0, "message":"Conflicto. El nombre de usuario ya está en uso"}), 409
+        finally:
+            if conexion:
+                conexion.close()
 
-    modo = (request.args.get("modo") or "pendiente").lower()
-    if modo == "directo" or True:
-        ok, msg = ctrl.crear_usuario_t(nombre_completo, nombre_usuario, correo, contrasena, tipo)
-        return (jsonify({"ok": True, "mensaje": msg}), 201) if ok else (jsonify({"error": msg}), 409)
+        if not (correo.endswith("@usat.edu.pe") or correo.endswith("@usat.pe")):
+            return jsonify({"code": 0, "message": "Solo son válidos correos de la USAT"}), 400
+        
+        if len(contrasena) < 8:
+            return jsonify({"code": 0, "message": "La contraseña debe tener como mínimo 8 caracteres"}), 400
+        if not any(c.islower() for c in contrasena):
+            return jsonify({"code": 0, "message": "La contraseña debe contener al menos una letra minúscula"}), 400
+        if not any(c.isupper() for c in contrasena):
+            return jsonify({"code": 0, "message": "La contraseña debe contener al menos una letra mayúscula"}), 400
+        if not any(c.isdigit() for c in contrasena):
+            return jsonify({"code": 0, "message": "La contraseña debe contener al menos un número"}), 400
+        if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?/~`" for c in contrasena):
+            return jsonify({"code": 0, "message": "La contraseña debe contener al menos un símbolo especial"}), 400
+        
+        if tipo != "P" and tipo != "E":
+                return jsonify({"code": 0, "message": "Tipo de usuario inválido"}), 400
+        tipo = "P" if correo.endswith("@usat.edu.pe") else "E"
 
-    # ok, resultado = ctrl.crear_usuario_pendiente(nombre_completo, nombre_usuario, correo, contrasena, tipo)
-    # if ok:
-    #     return jsonify({"ok": True, "Mensaje":"Usuario registrado"}), 201
-    # return jsonify({"error": resultado}), 409
+        modo = (request.args.get("modo") or "pendiente").lower()
+        if modo == "directo" or True:
+            ok, msg = ctrl.crear_usuario_t(nombre_completo, nombre_usuario, correo, contrasena, tipo)
+            return (jsonify({"code": 1, "message": msg}), 201) if ok else (jsonify({"code": 0, "message": msg}), 409)
+
+        # ok, resultado = ctrl.crear_usuario_pendiente(nombre_completo, nombre_usuario, correo, contrasena, tipo)
+        # if ok:
+        #     return jsonify({"ok": True, "Mensaje":"Usuario registrado"}), 201
+        # return jsonify({"error": resultado}), 409
+    except Exception as e:
+        return jsonify({"code":0,"message": f"Error al registrar usuario, motivo: {str(e)}"}), 500    
 
 @app.route("/api_actualizar_usuario", methods=['PUT'])
 @jwt_required()
@@ -154,7 +159,8 @@ def fn_api_actulizar_usuario():
         # Lógica para actualizar un usuario
         actual = ctrl.obtener_por_id(id_usuario)
         if not actual:
-            return jsonify({"error": "Usuario no encontrado"}), 404
+            return jsonify({"code":0,"message":"Usuario no encontrado"}), 404
+            # return jsonify({"error": "Usuario no encontrado"}), 404
 
         data = request.get_json(force=True) or {}
 
@@ -167,13 +173,15 @@ def fn_api_actulizar_usuario():
         monedas         = int(data.get("monedas") if data.get("monedas") is not None else actual["monedas"])
         vigente         = bool(data.get("vigente") if data.get("vigente") is not None else actual["vigente"])
 
-        if tipo != "P" or tipo != "E":
-            return jsonify({"error": "Tipo de usuario inválido"}), 404
+        if not (nombre_completo and nombre_usuario and correo and tipo and puntos and monedas and vigente):
+            return jsonify({"code":0, "message":"Faltan datos requeridos"}), 400
+
+        if tipo != "P" and tipo != "E":
+            return jsonify({"code":0,"message":"Error: Tipo de usuario inválido"}), 400
         if monedas <= 0:
-            return jsonify({"error": "Cantidad de monedas inválida"}), 404
+            return jsonify({"code":0,"message":"Error: Cantidad de monedas inválida"}), 400
         if puntos <= 0:
-            return jsonify({"error": "Cantidad de puntos inválida"}), 404
-        
+            return jsonify({"code":0,"message":"Error: Cantidad de puntos inválida"}), 400        
         
         # unicidad correo / nombre_usuario (excluyendo mi propio id)
         conexion = obtener_conexion()
@@ -181,10 +189,10 @@ def fn_api_actulizar_usuario():
             with conexion.cursor() as c:
                 c.execute("SELECT id_usuario FROM USUARIO WHERE correo=%s AND id_usuario<>%s LIMIT 1", (correo, id_usuario))
                 if c.fetchone():
-                    return jsonify({"error":"El correo ya está en uso", "campo":"correo"}), 409
+                    return jsonify({"code":0,"message":"Conflicto: El correo ya está en uso"}), 409
                 c.execute("SELECT id_usuario FROM USUARIO WHERE nombre_usuario=%s AND id_usuario<>%s LIMIT 1", (nombre_usuario, id_usuario))
                 if c.fetchone():
-                    return jsonify({"error":"El nombre de usuario ya está en uso", "campo":"nombre_usuario"}), 409
+                    return jsonify({"code":0,"message":"Conflicto: El nombre de usuario ya está en uso"}), 409
         finally:
             if conexion:
                 conexion.close()
@@ -192,9 +200,10 @@ def fn_api_actulizar_usuario():
         ctrl.actualizar(id_usuario, nombre_completo, nombre_usuario, correo, tipo, puntos, monedas, vigente)
         actualizado = ctrl.obtener_por_id(id_usuario)
         actualizado.pop("contraseña", None)
-        return jsonify(actualizado), 200
+        return jsonify({"code":1,"data":actualizado,"message":"Usuario actualizado con éxito"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"code":0,"message": f"Error al actualizar usuario, motivo: {str(e)}"}), 500    
+        # return jsonify({"error": str(e)}), 500 
 
 @app.route("/api_eliminar_usuario", methods=['POST','DELETE'])
 @jwt_required()
@@ -202,18 +211,24 @@ def fn_api_eliminar_usuario():
     try:
         data = request.get_json(force=True) or {}
         id_usuario = data.get("id_usuario")
+        
+        if not id_usuario:
+            return jsonify({"code":0, "message":"Faltan datos requeridos"}), 400
+        
         # Lógica para eliminar (o desactivar) un usuario
         if not ctrl.obtener_por_id(id_usuario):
-            return jsonify({"error": "Usuario no encontrado"}), 404
+            return jsonify({"code":0,"message":"Usuario no encontrado"}), 404
+            # return jsonify({"error": "Usuario no encontrado"}), 404
 
         ok = ctrl.desactivar(id_usuario)  # True/False
         if not ok:
             # No se afectó ninguna fila
-            return jsonify({"error": "No se pudo desactivar el usuario"}), 500
+            return jsonify({"code":0,"message":"No se pudo desactivar el usuario"}), 500
 
-        return jsonify({"ok": True, "id_usuario": id_usuario, "vigente": False}), 200
+        return jsonify({"code": 1, "message": "Usuario desactivado con éxito", "data": {"id_usuario": id_usuario, "vigente": False}}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"code":0,"message": f"Error al desactivar usuario, motivo: {str(e)}"}), 500    
+        # return jsonify({"error": str(e)}), 500 
 
 
 # ---------------------------------------------------------------
@@ -441,6 +456,7 @@ def fn_api_actualizar_cuestionario():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api_eliminar_cuestionario", methods=['POST','DELETE'])
 @jwt_required()
 def fn_api_eliminar_cuestionario():
     try:
@@ -865,7 +881,7 @@ def fn_api_actualizar_opcion():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api_eliminar_opcion", methods=['DELETE'])
+@app.route("/api_eliminar_opcion", methods=['DELETE','POST'])
 @jwt_required()
 def fn_api_delete_opcion():
     try:
