@@ -2744,11 +2744,11 @@ components:
       properties:
         code:
           type: integer
-          format: int32
-          example: 200
-        type:
-          type: string
-          example: success
+          example: 1
+        data:
+          type: object
+          nullable: true
+          example: {}
         message:
           type: string
           example: Operación realizada con éxito
@@ -2838,12 +2838,12 @@ components:
           example: Cuestionario básico sobre conceptos de Python
         es_publico:
           type: boolean
-          example: true
+          example: 1
           description: Indica si el cuestionario es público o privado (tinyint)
         fecha_hora_creacion:
           type: string
           format: date-time
-          example: "2025-11-18T10:30:00"
+          example: "Sat, 11 Oct 2025 21:30:00 GMT"
           description: Fecha y hora de creación del cuestionario
         id_usuario:
           type: integer
@@ -2863,7 +2863,7 @@ components:
           description: ID del cuestionario original si es una copia
         vigente:
           type: boolean
-          example: true
+          example: 1
           description: Estado del cuestionario (tinyint)
     CuestionarioCreate:
       type: object
@@ -3309,12 +3309,12 @@ components:
         fecha_hora_inicio:
           type: string
           format: date-time
-          example: "2025-11-18T15:30:00"
+          example: "Sat, 11 Oct 2025 22:30:00 GMT"
         fecha_hora_fin:
           type: string
           format: date-time
           nullable: true
-          example: "2025-11-18T16:00:00"
+          example: "Sat, 11 Oct 2025 22:33:00 GMT"
         cant_grupos:
           type: integer
           nullable: true
@@ -3352,12 +3352,12 @@ components:
         fecha_hora_inicio:
           type: string
           format: date-time
-          example: "2025-11-18T15:30:00"
+          example: "Sat, 11 Oct 2025 15:30:00 GMT"
         fecha_hora_fin:
           type: string
           format: date-time
           nullable: true
-          example: "2025-11-18T16:00:00"
+          example: "Sat, 11 Oct 2025 15:35:00 GMT"
         cant_grupos:
           type: integer
           nullable: true
@@ -3389,12 +3389,12 @@ components:
         fecha_hora_inicio:
           type: string
           format: date-time
-          example: "2025-11-18T15:30:00"
+          example: "Sat, 11 Oct 2025 15:30:00 GMT"
         fecha_hora_fin:
           type: string
           format: date-time
           nullable: true
-          example: "2025-11-18T16:00:00"
+          example: "Sat, 11 Oct 2025 15:35:00 GMT"
         cant_grupos:
           type: integer
           nullable: true
@@ -3550,7 +3550,7 @@ components:
         creado_en:
           type: string
           format: date-time
-          example: "2025-11-18T15:30:00"
+          example: "Sat, 11 Oct 2025 15:31:00 GMT"
     RespuestaCreate:
       type: object
       required:

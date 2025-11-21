@@ -712,10 +712,21 @@ def fn_api_registrar_pregunta():
 def fn_api_actualizar_pregunta():
     try:
         data = request.json
+        id_pregunta = data['id_pregunta']
+        pregunta = data['pregunta']
+        puntaje_base = data['puntaje_base']
+        
+        try:
+            conexion = obtener_conexion()
+            with conexion.cursor() as cursor:
+                cursor.execute("SELECT * FROM PREGUNTAS WHERE id_pregunta = %s;",(id_pregunta))
+                if not cursor.fetchone():
+                    return jsonify({"code":0, "message": "Pregunta no encontrada"}), 404
+        finally:
+            if conexion: conexion.close()
+        
         cpo.actualizar_pregunta(
-            data['id_pregunta'],
-            data['pregunta'], 
-            data['puntaje_base']
+            id_pregunta, pregunta, puntaje_base
         )
         return jsonify({"code":1, "message": "Pregunta actualizada con éxito"}), 200
     except KeyError:
@@ -732,6 +743,15 @@ def fn_api_eliminar_pregunta():
         
         if not id_pregunta:
             return jsonify({"code":0, "message":"Faltan datos requeridos"}), 400
+        
+        try:
+            conexion = obtener_conexion()
+            with conexion.cursor() as cursor:
+                cursor.execute("SELECT * FROM PREGUNTAS WHERE id_pregunta = %s and vigente = true;",(id_pregunta))
+                if not cursor.fetchone():
+                    return jsonify({"code":0, "message": "Pregunta no encontrada"}), 404
+        finally:
+            if conexion: conexion.close()
         
         cpo.eliminar_pregunta_logica(id_pregunta)
         return jsonify({"code":1, "message": "Pregunta eliminada con éxito"}), 200
