@@ -480,30 +480,53 @@ paths:
             schema:
               $ref: '#/components/schemas/SkinCreate'
       responses:
-        '200':
-          description: Skin registrada correctamente
+        '201':
+          description: Skin creada correctamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: "Skin creada correctamente"
         '400':
           description: Datos de entrada inválidos
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+              examples:
+                datosIncompletos:
+                  value:
+                    code: 0
+                    message: "Faltan datos requeridos"
+                tipoInvalido:
+                  value:
+                    code: 0
+                    message: "tipo debe ser 'marco' o 'fondo'."
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al crear skin, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_obtenerskins:
@@ -523,26 +546,27 @@ paths:
                 properties:
                   code:
                     type: integer
-                    example: 200
+                    example: 1
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Skin'
                   message:
                     type: string
-                    example: Skins obtenidas exitosamente
+                    example: "Skins obtenidas correctamente"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al obtener skins, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_obtenerskinporid/{id}:
@@ -566,31 +590,42 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Skin'
-        '400':
-          description: ID inválido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    $ref: '#/components/schemas/Skin'
+                  message:
+                    type: string
+                    example: "Skin obtenida correctamente"
         '404':
           description: Skin no encontrada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Skin no encontrada"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al obtener skin, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_actualizarskin/{id}:
@@ -620,31 +655,61 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: "Skin actualizada correctamente"
         '400':
           description: Datos inválidos
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+              examples:
+                sinCambios:
+                  value:
+                    code: 0
+                    message: "No se enviaron campos a actualizar."
+                tipoInvalido:
+                  value:
+                    code: 0
+                    message: "tipo debe ser 'marco' o 'fondo'."
         '404':
           description: Skin no encontrada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Skin no encontrada"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al actualizar skin, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_eliminarskin/{id}:
@@ -668,31 +733,40 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '400':
-          description: ID inválido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: "Skin eliminada correctamente"
         '404':
           description: Skin no encontrada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Skin no encontrada"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al eliminar skin, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_obtener_cuestionarios:
@@ -749,30 +823,55 @@ paths:
             schema:
               $ref: '#/components/schemas/CategoriaCreate'
       responses:
-        '200':
-          description: Categoría registrada correctamente
+        '201':
+          description: Categoría creada correctamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: object
+                    properties:
+                      id_categoria:
+                        type: integer
+                        example: 30008
+                  message:
+                    type: string
+                    example: "Categoría creada correctamente"
         '400':
           description: Datos de entrada inválidos
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "categoria es obligatorio."
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Error al crear categoría, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_obtenercategorias:
@@ -792,26 +891,29 @@ paths:
                 properties:
                   code:
                     type: integer
-                    example: 200
+                    example: 1
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Categoria'
                   message:
                     type: string
-                    example: Categorías obtenidas exitosamente
+                    example: "Categorías obtenidas correctamente"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Error al obtener categorías, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_obtener_cuestionario_por_id/{id_cuestionario}:
@@ -949,31 +1051,46 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Categoria'
-        '400':
-          description: ID inválido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    $ref: '#/components/schemas/Categoria'
+                  message:
+                    type: string
+                    example: "Categoría obtenida correctamente"
         '404':
           description: Categoría no encontrada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Categoría no encontrada"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Error al obtener categoría, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_actualizar_cuestionario:
@@ -1564,31 +1681,46 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '400':
-          description: ID inválido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Categoría eliminada correctamente"
         '404':
           description: Categoría no encontrada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Categoría no encontrada"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Error al eliminar categoría, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_actualizar_opcion:
@@ -2623,7 +2755,7 @@ components:
     Skin:
       type: object
       properties:
-        id:
+        id_skin:
           type: integer
           format: int64
           example: 60004
@@ -2632,10 +2764,11 @@ components:
           example: img/skins/skin_prueba.png
         tipo:
           type: string
+          enum: [marco, fondo]
           example: marco
-          description: Tipo de skin (marco, avatar, fondo, etc.)
+          description: Tipo de skin
         precio:
-          type: number
+          type: integer
           example: 150
           description: Precio en monedas de la plataforma
         vigente:
@@ -2655,10 +2788,11 @@ components:
           description: Ruta de la imagen de la skin
         tipo:
           type: string
+          enum: [marco, fondo]
           example: marco
           description: Tipo de skin
         precio:
-          type: number
+          type: integer
           example: 150
           minimum: 0
           description: Precio en monedas
@@ -2676,10 +2810,11 @@ components:
           description: Nueva ruta de la imagen
         tipo:
           type: string
-          example: avatar
+          enum: [marco, fondo]
+          example: fondo
           description: Nuevo tipo de skin
         precio:
-          type: number
+          type: integer
           example: 200
           minimum: 0
           description: Nuevo precio
@@ -2996,7 +3131,7 @@ components:
     Categoria:
       type: object
       properties:
-        id:
+        id_categoria:
           type: integer
           format: int64
           example: 30006
@@ -3004,6 +3139,11 @@ components:
           type: string
           example: Matemáticas
           description: Nombre de la categoría
+        descripcion:
+          type: string
+          nullable: true
+          example: "Preguntas de matemáticas y álgebra"
+          description: Descripción de la categoría
         vigente:
           type: integer
           example: 1
@@ -3018,6 +3158,11 @@ components:
           example: Categoría de Prueba
           description: Nombre de la categoría a crear
           minLength: 1
+        descripcion:
+          type: string
+          nullable: true
+          example: "Descripción de la categoría"
+          description: Descripción opcional de la categoría
     CategoriaUpdate:
       type: object
       properties:
