@@ -404,18 +404,20 @@ def api_correo_activo():
 def fn_api_obtener_cuestionarios():
     try:
         cuestionarios = cc.obtener_cuestionarios_todos()
-        return jsonify({"data":cuestionarios}), 200
+        return jsonify({"code":1, "data":cuestionarios, "message":"Cuestionarios obtenidos con éxito"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"code":0, "message": f"Error al obtener cuestionarios, motivo: {str(e)}"}), 500 
 
 @app.route("/api_obtener_cuestionario_por_id/<int:id_cuestionario>", methods=['GET'])
 @jwt_required()
 def fn_api_obtener_cuestionario_por_id(id_cuestionario):
     try:
         cuestionario = cc.obtener_cuestionario_por_id(id_cuestionario)
-        return jsonify({"data":cuestionario}), 200
+        if not cuestionario:
+            return jsonify({"code":0, "message":"Cuestionario no encontrado"}), 404
+        return jsonify({"code":1, "data":cuestionario, "message":"Cuestionario obtenido con éxito"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"code":0, "message": f"Error al obtener cuestionario, motivo: {str(e)}"}), 500 
 
 @app.route("/api_registar_cuestionario", methods=['POST'])
 @jwt_required()
@@ -430,11 +432,11 @@ def fn_api_registrar_cuestionario():
             id_categoria=data['id_categoria'],
             id_cuestionario_original=data.get('id_cuestionario_original') # .get() para campos opcionales
         )
-        return jsonify({"mensaje": "Cuestionario creado con éxito"}), 201
+        return jsonify({"code":1, "message": "Cuestionario creado con éxito"}), 201
     except KeyError:
-        return jsonify({"error": "Faltan datos requeridos"}), 400
+        return jsonify({"code":0, "message": "Faltan datos requeridos"}), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"code":0, "message": f"Error al crear cuestionario, motivo: {str(e)}"}), 500
 
 @app.route("/api_actualizar_cuestionario", methods=['PUT'])
 @jwt_required()
@@ -450,11 +452,11 @@ def fn_api_actualizar_cuestionario():
             id_categoria=data['id_categoria'],
             vigente=data['vigente']
         )
-        return jsonify({"mensaje": "Cuestionario actualizado con éxito"}), 201
+        return jsonify({"code":1, "message": "Cuestionario actualizado con éxito"}), 200
     except KeyError:
-        return jsonify({"error": "Faltan datos requeridos"}), 400
+        return jsonify({"code":0, "message": "Faltan datos requeridos"}), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"code":0, "message": f"Error al actualizar cuestionario, motivo: {str(e)}"}), 500
 
 @app.route("/api_eliminar_cuestionario", methods=['POST','DELETE'])
 @jwt_required()
@@ -462,16 +464,20 @@ def fn_api_eliminar_cuestionario():
     try:
         data = request.get_json(force=True) or {}
         id_cuestionario = data.get("id_cuestionario")
+        
+        if not id_cuestionario:
+            return jsonify({"code":0, "message":"Faltan datos requeridos"}), 400
+        
         # Llama a la función del controlador para desactivar
         exito = cc.desactivar(id_cuestionario)
 
         if exito:
-            return jsonify({"mensaje": "Cuestionario desactivado correctamente"}), 200
+            return jsonify({"code":1, "message": "Cuestionario desactivado con éxito"}), 200
         else:
-            return jsonify({"error": "Cuestionario no encontrado"}), 404
+            return jsonify({"code":0, "message": "Cuestionario no encontrado"}), 404
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"code":0, "message": f"Error al eliminar cuestionario, motivo: {str(e)}"}), 500
 
 
 # ---------------------------------------------------------------
@@ -653,19 +659,21 @@ def api_guardar_cuestionario_basico():
 @jwt_required()
 def fn_api_obtener_preguntas():
     try:
-        cuestionarios = cpo.obtener_preguntas_todos()
-        return jsonify({"data":cuestionarios}), 200
+        preguntas = cpo.obtener_preguntas_todos()
+        return jsonify({"code":1, "data":preguntas, "message":"Preguntas obtenidas con éxito"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"code":0, "message": f"Error al obtener preguntas, motivo: {str(e)}"}), 500 
 
 @app.route("/api_obtener_pregunta_por_id/<int:id_pregunta>", methods=['GET'])
 @jwt_required()
 def fn_api_obtener_pregunta_por_id(id_pregunta):
     try:
         pregunta = cpo.obtener_pregunta_por_id(id_pregunta)
-        return jsonify({"data": pregunta}) if pregunta else (jsonify({"error": "Pregunta no encontrada"}), 404)
+        if not pregunta:
+            return jsonify({"code":0, "message":"Pregunta no encontrada"}), 404
+        return jsonify({"code":1, "data":pregunta, "message":"Pregunta obtenida con éxito"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"code":0, "message": f"Error al obtener pregunta, motivo: {str(e)}"}), 500 
 
 @app.route("/api_registrar_pregunta", methods=['POST'])
 @jwt_required()
@@ -673,18 +681,17 @@ def fn_api_registrar_pregunta():
     try:
         data = request.json
         
-        id_cuestionario=data['id_cuestionario'],
-        pregunta=data['pregunta'],
-        num_pregunta=data['num_pregunta'],
-        puntaje_base=data['puntaje_base'],
-        tiempo=data.get('tiempo'),
-        adjunto=data.get('adjunto')
+        id_cuestionario = data['id_cuestionario']
+        pregunta = data['pregunta']
+        num_pregunta = data['num_pregunta']
+        puntaje_base = data['puntaje_base']
+        tiempo = data.get('tiempo')
+        adjunto = data.get('adjunto')
 
-        if tiempo < 10 or tiempo > 100:
-            return jsonify({"error": "Tiempo de pregunta no inválido"}), 404
+        if tiempo and (tiempo < 10 or tiempo > 100):
+            return jsonify({"code":0, "message": "Tiempo de pregunta inválido (debe estar entre 10 y 100)"}), 400
         if puntaje_base > 1000 or puntaje_base < 0:
-            return jsonify({"error": "Puntaje de pregunta no inválido"}), 404
-        
+            return jsonify({"code":0, "message": "Puntaje de pregunta inválido (debe estar entre 0 y 1000)"}), 400
         
         cpo.crear_pregunta(
             id_cuestionario,
@@ -694,11 +701,11 @@ def fn_api_registrar_pregunta():
             tiempo,
             adjunto
         )
-        return jsonify({"mensaje": "Pregunta creada con éxito"}), 201
+        return jsonify({"code":1, "message": "Pregunta creada con éxito"}), 201
     except KeyError:
-        return jsonify({"error": "Faltan datos requeridos"}), 400
+        return jsonify({"code":0, "message": "Faltan datos requeridos"}), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"code":0, "message": f"Error al crear pregunta, motivo: {str(e)}"}), 500
 
 @app.route("/api_actualizar_pregunta", methods=['PUT'])
 @jwt_required()
@@ -710,20 +717,26 @@ def fn_api_actualizar_pregunta():
             data['pregunta'], 
             data['puntaje_base']
         )
-        return jsonify({"mensaje": "Pregunta actualizada"})
+        return jsonify({"code":1, "message": "Pregunta actualizada con éxito"}), 200
+    except KeyError:
+        return jsonify({"code":0, "message": "Faltan datos requeridos"}), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"code":0, "message": f"Error al actualizar pregunta, motivo: {str(e)}"}), 500 
 
 @app.route("/api_eliminar_pregunta", methods=['POST','DELETE'])
 @jwt_required()
 def fn_api_eliminar_pregunta():
     try:
-        data = request.json
-        # cpo.eliminar_pregunta(data['id_pregunta'])
-        cpo.eliminar_pregunta_logica(data['id_pregunta'])
-        return jsonify({"mensaje": "Pregunta eliminada logicamente"})
+        data = request.get_json(force=True) or {}
+        id_pregunta = data.get('id_pregunta')
+        
+        if not id_pregunta:
+            return jsonify({"code":0, "message":"Faltan datos requeridos"}), 400
+        
+        cpo.eliminar_pregunta_logica(id_pregunta)
+        return jsonify({"code":1, "message": "Pregunta eliminada con éxito"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"code":0, "message": f"Error al eliminar pregunta, motivo: {str(e)}"}), 500
 
 
 # ---------------------------------------------------------------
@@ -839,19 +852,21 @@ def api_delete_pregunta(id_pregunta):
 @jwt_required()
 def fn_api_obtener_opciones():
     try:
-        cuestionarios = cpo.obtener_opciones_todas()
-        return jsonify({"data":cuestionarios}), 200
+        opciones = cpo.obtener_opciones_todas()
+        return jsonify({"code":1, "data":opciones, "message":"Opciones obtenidas con éxito"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"code":0, "message": f"Error al obtener opciones, motivo: {str(e)}"}), 500 
 
 @app.route("/api_obtener_opcion_por_id/<int:id_opcion>", methods=['GET'])
 @jwt_required()
 def fn_api_get_opcion_por_id(id_opcion):
     try:
         opcion = cpo.obtener_opcion_por_id(id_opcion)
-        return jsonify({"data": opcion}) if opcion else (jsonify({"error": "Opción no encontrada"}), 404)
+        if not opcion:
+            return jsonify({"code":0, "message":"Opción no encontrada"}), 404
+        return jsonify({"code":1, "data":opcion, "message":"Opción obtenida con éxito"}), 200
     except Exception as e:
-            return jsonify({"error": str(e)}), 500 
+        return jsonify({"code":0, "message": f"Error al obtener opción, motivo: {str(e)}"}), 500 
 
 @app.route("/api_registar_opcion", methods=['POST'])
 @jwt_required()
@@ -865,11 +880,11 @@ def fn_api_registrar_opcion():
             # descripcion=data.get('descripcion'),
             # adjunto=data.get('adjunto')
         )
-        return jsonify({"mensaje": "Opción creada con éxito"}), 201
+        return jsonify({"code":1, "message": "Opción creada con éxito"}), 201
     except KeyError:
-        return jsonify({"error": "Faltan datos requeridos"}), 400
+        return jsonify({"code":0, "message": "Faltan datos requeridos"}), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"code":0, "message": f"Error al crear opción, motivo: {str(e)}"}), 500
 
 @app.route("/api_actualizar_opcion", methods=['PUT'])
 @jwt_required()
@@ -877,20 +892,26 @@ def fn_api_actualizar_opcion():
     try:
         data = request.json
         cpo.actualizar_opcion(data['id_opcion'], data['opcion'])
-        return jsonify({"mensaje": "Opción actualizada"})
+        return jsonify({"code":1, "message": "Opción actualizada con éxito"}), 200
+    except KeyError:
+        return jsonify({"code":0, "message": "Faltan datos requeridos"}), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"code":0, "message": f"Error al actualizar opción, motivo: {str(e)}"}), 500
 
 @app.route("/api_eliminar_opcion", methods=['DELETE','POST'])
 @jwt_required()
 def fn_api_delete_opcion():
     try:
-        data = request.json
-        # cpo.eliminar_opcion(data['id_opcion'])
-        cpo.eliminar_opcion_logica(data['id_opcion'])
-        return jsonify({"mensaje": "Opción eliminada"})
+        data = request.get_json(force=True) or {}
+        id_opcion = data.get('id_opcion')
+        
+        if not id_opcion:
+            return jsonify({"code":0, "message":"Faltan datos requeridos"}), 400
+        
+        cpo.eliminar_opcion_logica(id_opcion)
+        return jsonify({"code":1, "message": "Opción eliminada con éxito"}), 200
     except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        return jsonify({"code":0, "message": f"Error al eliminar opción, motivo: {str(e)}"}), 500
 
 
 # ------------------------------------------------------------------------------

@@ -704,7 +704,37 @@ paths:
       operationId: obtenerCuestionarios
       responses:
         '200':
-          description: Operación exitosa
+          description: Cuestionarios obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Cuestionario'
+                  message:
+                    type: string
+                    example: "Cuestionarios obtenidos con éxito"
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al obtener cuestionarios, motivo: <motivo>"
+      security:
+        - jwt_auth: []
   /api_registrarcategoria:
     post:
       tags:
@@ -801,26 +831,46 @@ paths:
             format: int32
       responses:
         '200':
-          description: Operación exitosa
+          description: Cuestionario obtenido correctamente
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  code:
+                    type: integer
+                    example: 1
                   data:
                     $ref: '#/components/schemas/Cuestionario'
+                  message:
+                    type: string
+                    example: "Cuestionario obtenido con éxito"
+        '404':
+          description: Cuestionario no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Cuestionario no encontrado"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al obtener cuestionario, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_registar_cuestionario:
@@ -844,11 +894,40 @@ paths:
               schema:
                 type: object
                 properties:
-                  mensaje:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
                     type: string
-                    example: Cuestionario creado con éxito
+                    example: "Cuestionario creado con éxito"
         '400':
           description: Faltan datos requeridos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Faltan datos requeridos"
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al crear cuestionario, motivo: <motivo>"
+      security:
+        - jwt_auth: []
   /api_obtenercategoriaporid/{id}:
     get:
       tags:
@@ -911,51 +990,67 @@ paths:
             schema:
               $ref: '#/components/schemas/CuestionarioUpdate'
       responses:
-        '201':
+        '200':
           description: Cuestionario actualizado exitosamente
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  mensaje:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
                     type: string
-                    example: Cuestionario actualizado con éxito
+                    example: "Cuestionario actualizado con éxito"
         '400':
           description: Faltan datos requeridos
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Faltan datos requeridos"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al actualizar cuestionario, motivo: <motivo>"
       security:
         - jwt_auth: []
-  /api_elimiinar_cuestionario:
-    delete:
+  /api_eliminar_cuestionario:
+    post:
       tags:
         - cuestionarios
       summary: Eliminar cuestionario
-      description: Desactiva un cuestionario (eliminación lógica)
+      description: Desactiva un cuestionario (eliminación lógica). Envía el id_cuestionario en el body JSON.
       operationId: eliminarCuestionario
-      parameters:
-        - name: id_cuestionario
-          in: query
-          description: ID del cuestionario a eliminar
-          required: true
-          schema:
-            type: integer
-            format: int32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_cuestionario
+              properties:
+                id_cuestionario:
+                  type: integer
+                  format: int32
+                  example: 210028
       responses:
         '200':
           description: Cuestionario desactivado exitosamente
@@ -964,27 +1059,51 @@ paths:
               schema:
                 type: object
                 properties:
-                  mensaje:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
                     type: string
-                    example: Cuestionario desactivado correctamente
+                    example: "Cuestionario desactivado con éxito"
+        '400':
+          description: Faltan datos requeridos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Faltan datos requeridos"
         '404':
           description: Cuestionario no encontrado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Cuestionario no encontrado"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al eliminar cuestionario, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_obtener_preguntas:
@@ -996,28 +1115,35 @@ paths:
       operationId: obtenerPreguntas
       responses:
         '200':
-          description: Operación exitosa
+          description: Preguntas obtenidas correctamente
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  code:
+                    type: integer
+                    example: 1
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Pregunta'
+                  message:
+                    type: string
+                    example: "Preguntas obtenidas con éxito"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al obtener preguntas, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_obtener_pregunta_por_id/{id_pregunta}:
@@ -1037,32 +1163,46 @@ paths:
             format: int32
       responses:
         '200':
-          description: Operación exitosa
+          description: Pregunta obtenida correctamente
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  code:
+                    type: integer
+                    example: 1
                   data:
                     $ref: '#/components/schemas/Pregunta'
+                  message:
+                    type: string
+                    example: "Pregunta obtenida con éxito"
         '404':
           description: Pregunta no encontrada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Pregunta no encontrada"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al obtener pregunta, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_registrar_pregunta:
@@ -1086,33 +1226,50 @@ paths:
               schema:
                 type: object
                 properties:
-                  mensaje:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
                     type: string
-                    example: Pregunta creada con éxito
+                    example: "Pregunta creada con éxito"
         '400':
-          description: Faltan datos requeridos
+          description: Faltan datos requeridos o validación fallida
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Validación fallida (tiempo o puntaje inválido)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+              examples:
+                datosFaltantes:
+                  value:
+                    code: 0
+                    message: "Faltan datos requeridos"
+                tiempoInvalido:
+                  value:
+                    code: 0
+                    message: "Tiempo de pregunta inválido (debe estar entre 10 y 100)"
+                puntajeInvalido:
+                  value:
+                    code: 0
+                    message: "Puntaje de pregunta inválido (debe estar entre 0 y 1000)"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al crear pregunta, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_actualizar_pregunta:
@@ -1136,38 +1293,60 @@ paths:
               schema:
                 type: object
                 properties:
-                  mensaje:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
                     type: string
-                    example: Pregunta actualizada
+                    example: "Pregunta actualizada con éxito"
+        '400':
+          description: Faltan datos requeridos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Faltan datos requeridos"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al actualizar pregunta, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_eliminar_pregunta:
-    delete:
+    post:
       tags:
         - preguntas
       summary: Eliminar pregunta
-      description: Elimina lógicamente una pregunta
+      description: Elimina lógicamente una pregunta. Envía el id_pregunta en el body JSON.
       operationId: eliminarPregunta
-      parameters:
-        - name: id_pregunta
-          in: query
-          description: ID de la pregunta a eliminar
-          required: true
-          schema:
-            type: integer
-            format: int32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_pregunta
+              properties:
+                id_pregunta:
+                  type: integer
+                  format: int32
+                  example: 330192
       responses:
         '200':
           description: Pregunta eliminada exitosamente
@@ -1176,21 +1355,38 @@ paths:
               schema:
                 type: object
                 properties:
-                  mensaje:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
                     type: string
-                    example: Pregunta eliminada logicamente
+                    example: "Pregunta eliminada con éxito"
+        '400':
+          description: Faltan datos requeridos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Faltan datos requeridos"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al eliminar pregunta, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_obtener_opciones:
@@ -1202,28 +1398,35 @@ paths:
       operationId: obtenerOpciones
       responses:
         '200':
-          description: Operación exitosa
+          description: Opciones obtenidas correctamente
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  code:
+                    type: integer
+                    example: 1
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Opcion'
+                  message:
+                    type: string
+                    example: "Opciones obtenidas con éxito"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al obtener opciones, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_obtener_opcion_por_id/{id_opcion}:
@@ -1243,32 +1446,46 @@ paths:
             format: int32
       responses:
         '200':
-          description: Operación exitosa
+          description: Opción obtenida correctamente
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  code:
+                    type: integer
+                    example: 1
                   data:
                     $ref: '#/components/schemas/Opcion'
+                  message:
+                    type: string
+                    example: "Opción obtenida con éxito"
         '404':
           description: Opción no encontrada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Opción no encontrada"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al obtener opción, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_registar_opcion:
@@ -1292,11 +1509,40 @@ paths:
               schema:
                 type: object
                 properties:
-                  mensaje:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
                     type: string
-                    example: Opción creada con éxito
+                    example: "Opción creada con éxito"
         '400':
           description: Faltan datos requeridos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Faltan datos requeridos"
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al crear opción, motivo: <motivo>"
+      security:
+        - jwt_auth: []
   /api_eliminarcategoria/{id}:
     delete:
       tags:
@@ -1366,38 +1612,60 @@ paths:
               schema:
                 type: object
                 properties:
-                  mensaje:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
                     type: string
-                    example: Opción actualizada
+                    example: "Opción actualizada con éxito"
+        '400':
+          description: Faltan datos requeridos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Faltan datos requeridos"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al actualizar opción, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_eliminar_opcion:
-    delete:
+    post:
       tags:
         - opciones
       summary: Eliminar opción
-      description: Elimina lógicamente una opción de respuesta
+      description: Elimina lógicamente una opción de respuesta. Envía el id_opcion en el body JSON.
       operationId: eliminarOpcion
-      parameters:
-        - name: id_opcion
-          in: query
-          description: ID de la opción a eliminar
-          required: true
-          schema:
-            type: integer
-            format: int32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_opcion
+              properties:
+                id_opcion:
+                  type: integer
+                  format: int32
+                  example: 440245
       responses:
         '200':
           description: Opción eliminada exitosamente
@@ -1406,21 +1674,38 @@ paths:
               schema:
                 type: object
                 properties:
-                  mensaje:
+                  code:
+                    type: integer
+                    example: 1
+                  message:
                     type: string
-                    example: Opción eliminada
+                    example: "Opción eliminada con éxito"
+        '400':
+          description: Faltan datos requeridos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Faltan datos requeridos"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          description: Error inesperado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Error al eliminar opción, motivo: <motivo>"
       security:
         - jwt_auth: []
   /api_registrarpartida:
