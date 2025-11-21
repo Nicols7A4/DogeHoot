@@ -2283,7 +2283,7 @@ paths:
       tags:
         - participantes
       summary: Crear un nuevo participante
-      description: Registra un participante en una partida
+      description: Registra un participante en una partida. Campos obligatorios id_partida y nombre.
       security:
         - jwt_auth: []
       requestBody:
@@ -2298,40 +2298,98 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    $ref: '#/components/schemas/Participante'
+                  message:
+                    type: string
+                    example: "Participante creado correctamente"
         '400':
           description: Datos inválidos o incompletos
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "id_partida y nombre son obligatorios."
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo crear el participante: <motivo>"
   /api_obtener_participantes:
     get:
       tags:
         - participantes
       summary: Listar todos los participantes
-      description: Retorna la lista completa de participantes registrados
+      description: Retorna la lista completa de participantes registrados. Filtro opcional id_partida.
       security:
         - jwt_auth: []
+      parameters:
+        - in: query
+          name: id_partida
+          required: false
+          description: Filtrar participantes por ID de partida
+          schema:
+            type: integer
+            example: 42
       responses:
         '200':
           description: Lista de participantes obtenida correctamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Participante'
+                  message:
+                    type: string
+                    example: "Participantes obtenidos correctamente"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudieron obtener los participantes: <motivo>"
   /api_obtener_participante_por_id/{id_participante}:
     get:
       tags:
@@ -2354,19 +2412,48 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    $ref: '#/components/schemas/Participante'
+                  message:
+                    type: string
+                    example: "Participante obtenido correctamente"
         '404':
           description: Participante no encontrado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "Participante no encontrado"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo obtener el participante: <motivo>"
   /api_actualizar_participante/{id_participante}:
     put:
       tags:
@@ -2395,25 +2482,70 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    $ref: '#/components/schemas/Participante'
+                  message:
+                    type: string
+                    example: "Participante actualizado correctamente"
+        '400':
+          description: No se enviaron campos a actualizar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se enviaron campos a actualizar."
         '404':
           description: Participante no encontrado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "Datos a actualizar son iguales o participante no encontrado."
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo actualizar el participante: <motivo>"
   /api_eliminar_participante/{id_participante}:
     delete:
       tags:
         - participantes
       summary: Eliminar un participante
-      description: Elimina un participante del sistema
+      description: Elimina un participante del sistema y todas sus respuestas asociadas
       security:
         - jwt_auth: []
       parameters:
@@ -2430,31 +2562,77 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: object
+                    properties:
+                      respuestas_eliminadas:
+                        type: integer
+                        example: 5
+                      participantes_eliminados:
+                        type: integer
+                        example: 1
+                  message:
+                    type: string
+                    example: "Participante y sus respuestas eliminados correctamente"
         '404':
           description: Participante no encontrado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "Participante no encontrado"
         '409':
-          description: Conflicto al eliminar participante
+          description: Conflicto al eliminar participante (es líder de grupo)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo eliminar: El participante es líder de un grupo (id_grupo). Primero elimine el grupo."
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo eliminar el participante: <motivo>"
   /api_registrar_respuesta:
     post:
       tags:
         - respuestas
       summary: Registrar una respuesta
-      description: Registra la respuesta de un participante a una pregunta
+      description: Registra la respuesta de un participante a una pregunta y actualiza su puntaje. Campos obligatorios id_participante, id_partida, id_pregunta.
       security:
         - jwt_auth: []
       requestBody:
@@ -2469,46 +2647,131 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    $ref: '#/components/schemas/RespuestaJuego'
+                  message:
+                    type: string
+                    example: "Respuesta registrada y puntaje actualizado"
         '400':
           description: Datos inválidos o error de integridad
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+              examples:
+                camposObligatorios:
+                  value:
+                    code: 0
+                    data: {}
+                    message: "id_participante, id_partida, y id_pregunta son obligatorios."
+                errorFK:
+                  value:
+                    code: 0
+                    data: {}
+                    message: "Error de integridad (FK): El 'id_participante' (456) o el 'id_opcion' no existen en la base de datos."
         '409':
           description: Respuesta duplicada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "Error de duplicado: El participante 456 ya respondió la pregunta 789."
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo crear la respuesta: <motivo>"
   /api_obtener_respuestas:
     get:
       tags:
         - respuestas
       summary: Listar todas las respuestas
-      description: Retorna la lista completa de respuestas registradas
+      description: Retorna la lista completa de respuestas registradas. Filtros opcionales id_partida o id_participante.
       security:
         - jwt_auth: []
+      parameters:
+        - in: query
+          name: id_partida
+          required: false
+          description: Filtrar respuestas por ID de partida
+          schema:
+            type: integer
+            example: 42
+        - in: query
+          name: id_participante
+          required: false
+          description: Filtrar respuestas por ID de participante
+          schema:
+            type: integer
+            example: 123
       responses:
         '200':
           description: Lista de respuestas obtenida correctamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RespuestaJuego'
+                  message:
+                    type: string
+                    example: "Respuestas obtenidas correctamente"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudieron obtener las respuestas: <motivo>"
   /api_obtener_respuesta_por_id/{id_respuesta}:
     get:
       tags:
@@ -2531,25 +2794,54 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    $ref: '#/components/schemas/RespuestaJuego'
+                  message:
+                    type: string
+                    example: "Respuesta obtenida correctamente"
         '404':
           description: Respuesta no encontrada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "Respuesta no encontrada"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo obtener la respuesta: <motivo>"
   /api_actualizar_respuesta/{id_respuesta}:
     put:
       tags:
         - respuestas
       summary: Actualizar una respuesta
-      description: Actualiza los datos de una respuesta existente
+      description: Actualiza los datos de una respuesta existente y recalcula el puntaje del participante
       security:
         - jwt_auth: []
       parameters:
@@ -2572,25 +2864,70 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    $ref: '#/components/schemas/RespuestaJuego'
+                  message:
+                    type: string
+                    example: "Respuesta actualizada y puntaje recalculado"
+        '400':
+          description: No se enviaron campos a actualizar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se enviaron campos a actualizar."
         '404':
           description: Respuesta no encontrada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "Respuesta no encontrada"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo actualizar la respuesta: <motivo>"
   /api_eliminar_respuesta/{id_respuesta}:
     delete:
       tags:
         - respuestas
       summary: Eliminar una respuesta
-      description: Elimina una respuesta del sistema
+      description: Elimina una respuesta del sistema y resta el puntaje del participante
       security:
         - jwt_auth: []
       parameters:
@@ -2607,19 +2944,55 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 1
+                  data:
+                    type: object
+                    properties:
+                      puntaje_restado:
+                        type: integer
+                        example: 100
+                      id_participante_afectado:
+                        type: integer
+                        example: 456
+                  message:
+                    type: string
+                    example: "Respuesta eliminada y puntaje de participante actualizado"
         '404':
           description: Respuesta no encontrada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "Respuesta no encontrada"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaEstandar'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    example: {}
+                  message:
+                    type: string
+                    example: "No se pudo eliminar la respuesta: <motivo>"
 components:
   schemas:
     Usuario:
