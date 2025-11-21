@@ -1110,7 +1110,7 @@ def api_obtenerpartidas():
     finally:
         if conexion:
             conexion.close()
-
+ 
 @app.route("/api_obtenerpartidaporid/<int:id_partida>", methods=["GET"])
 @jwt_required()
 def api_obtenerpartidaporid(id_partida):

@@ -1370,17 +1370,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/RptaCrearPartida'
         '400':
-          description: Datos incompletos o inválidos
+          description: pin, id_cuestionario, modalidad, estado y fecha_hora_inicio son obligatorios.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "pin, id_cuestionario, modalidad, estado y fecha_hora_inicio son obligatorios."
         '500':
-          description: Error interno al crear la partida
+          description: No se pudo crear la partida {e}
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "No se pudo crear la partida: error"
   /api_obtenerpartidas:
     get:
       tags:
@@ -1397,11 +1413,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/RptaListaPartida'
         '500':
-          description: Error interno al obtener las partidas
+          description: No se pudieron obtener las partidas {e}
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "No se pudieron obtener las partidas: error"
   /api_obtenerpartidaporid/{id_partida}:
     get:
       tags:
@@ -1430,13 +1454,29 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Partida no encontrada"
         '500':
-          description: Error interno al obtener la partida
+          description: No se pudo obtener la partida {e}
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "No se pudo obtener la partida: error"
   /api_actualizarpartida/{id_partida}:
     put:
       tags:
@@ -1468,23 +1508,47 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
         '400':
-          description: No se enviaron campos a actualizar
+          description: No se enviaron campos a actualizar.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "No se enviaron campos a actualizar."
         '404':
           description: Partida no encontrada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Partida no encontrada"
         '500':
-          description: Error interno al actualizar la partida
+          description: No se pudo actualizar la partida {e}
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "No se pudo actualizar la partida: error"
   /api_eliminarpartida/{id_partida}:
     delete:
       tags:
@@ -1513,13 +1577,29 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Partida no encontrada"
         '500':
-          description: Error interno al eliminar la partida
+          description: No se pudo eliminar la partida {e}
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "No se pudo eliminar la partida: error"
   /api_registrarinventario:
     post:
       tags:
