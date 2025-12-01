@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/ico.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>404 - DogeHoot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #FFF9ED 0%, #FFE5B4 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .error-container {
+            text-align: center;
+            background: white;
+            padding: 60px 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .error-code {
+            font-size: 120px;
+            font-weight: 700;
+            color: #F77F00;
+            line-height: 1;
+            margin-bottom: 20px;
+            text-shadow: 4px 4px 0px rgba(247, 127, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #333333;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        p {
+            font-size: 16px;
+            color: #6c757d;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .cat-image {
+            width: 300px;
+            max-width: 100%;
+            height: auto;
+            border-radius: 16px;
+            margin: 0 auto 40px auto;
+            display: block;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #F77F00 0%, #FF9500 100%);
+            color: white;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 14px rgba(247, 127, 0, 0.3);
+        }
+
+        .btn-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(247, 127, 0, 0.4);
+        }
+
+        .btn-home svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 40px 30px;
+            }
+
+            .error-code {
+                font-size: 80px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .cat-image {
+                width: 250px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="error-container">
+        <div class="error-code">404</div>
+        <h1>¡Oops! Página no encontrada</h1>
+        <p>Lo sentimos, la página que buscas no existe o ha sido movida.</p>
+
+        <img src="https://http.cat/images/404.jpg" alt="404 cat" class="cat-image">
+
+        <a href="{{ url_for('dashboard') }}" class="btn-home">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            Volver al Inicio
+        </a>
+    </div>
+</body>
+
+</html>

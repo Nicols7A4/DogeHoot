@@ -2138,7 +2138,8 @@
         },
         // Utilidades
         help: {
-            keys: ['?'],
+            //keys: ['?'],
+            keys: ['Alt+P'],
             description: 'Mostrar ayuda de atajos',
             action: () => {
                 mostrarAyudaAtajos();
@@ -2202,7 +2203,8 @@
 
                 // Casos especiales sin modificadores
                 if (keyCombo === 'Escape') return e.key === 'Escape';
-                if (keyCombo === '?') return e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey;
+                //if (keyCombo === '?') return e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey;
+                if (keyCombo === 'P') return e.key === 'P' && !e.ctrlKey && !e.metaKey && !e.altKey;
                 if (keyCombo === 'Delete') return e.key === 'Delete' && !e.ctrlKey && !e.metaKey && !e.altKey;
 
                 // Atajos con modificadores

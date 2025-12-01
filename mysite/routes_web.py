@@ -383,10 +383,14 @@ def logout():
 # PANEL DEL PROFESOR
 
 
-@app.route("/home")
-def home():
-    return "/home"
+# @app.route("/home")
+# def home():
+#     return "/home"
 
+@app.errorhandler(404)
+def pagina_no_encontrada(error):
+    """Maneja errores 404 (página no encontrada)"""
+    return render_template('error_404.html'), 404
 
 @app.route('/dashboard')
 @login_required 
@@ -533,14 +537,14 @@ def clonar_cuestionario(id_cuestionario):
         return redirect(url_for('dashboard'))
 
 
-@app.route("/reportes", methods=['GET', 'POST'])
-def reportes():
-    return "/reportes"
+# @app.route("/reportes", methods=['GET', 'POST'])
+# def reportes():
+#     return "/reportes"
 
 
-@app.route("/reportes/<int:id_partida>")
-def reportes_detalle(id_partida):
-    return "/reportes/<int:id_partida>"
+# @app.route("/reportes/<int:id_partida>")
+# def reportes_detalle(id_partida):
+#     return "/reportes/<int:id_partida>"
 
 
 @app.route('/mis-partidas')
@@ -703,11 +707,12 @@ def eliminar_cuenta():
 # FLUJO DE JUEGO
 
 
-@app.route("/jugar")
-def jugar():
-    return "/jugar"
+# @app.route("/jugar")
+# def jugar():
+#     return "/jugar"
 
 @app.route('/partida/<int:id_cuestionario>')
+@profesor_required
 def generar_partida(id_cuestionario):
     
     if 'user_id' not in session:
@@ -731,6 +736,7 @@ def generar_partida(id_cuestionario):
 # ----
 
 @app.route('/jugar/<int:id_cuestionario>')
+@login_required
 def configurar_partida(id_cuestionario):
     if 'user_id' not in session:
         flash('Debes iniciar sesión para crear una partida.', 'warning')
