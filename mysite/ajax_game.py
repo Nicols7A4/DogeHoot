@@ -12,13 +12,13 @@ partidas_en_juego = {}
 
 RESULTS_DELAY_SECONDS = 4  # Tiempo de visualización del ranking/resultados (aumentado a 4 para mejor legibilidad)
 
-def _calcular_puntos(tiempo_restante, tiempo_total):
+def _calcular_puntos(tiempo_restante, tiempo_total, puntaje_base=1000):
     if tiempo_restante is None or tiempo_total is None:
         return 0
     if tiempo_restante <= 0:
         return 0
-    base = 1000
-    bonus = int(1000 * (tiempo_restante / float(tiempo_total)))
+    base = puntaje_base
+    bonus = int(puntaje_base * (tiempo_restante / float(tiempo_total)))
     return base + bonus
 
 
@@ -536,9 +536,10 @@ def submit_answer(pin, id_opcion, tiempo_restante):
 
     pregunta = partida['preguntas_data'][partida['pregunta_actual_index']]
     tiempo_total = pregunta['tiempo']
+    puntaje_base = pregunta['puntaje_base']
 
     es_correcta = opcion_db['es_correcta_bool']
-    puntos = _calcular_puntos(tiempo_restante, tiempo_total) if es_correcta else 0
+    puntos = _calcular_puntos(tiempo_restante, tiempo_total, puntaje_base) if es_correcta else 0
 
     if partida['modalidad_grupal']:
         nombre_grupo = participante.get('grupo')

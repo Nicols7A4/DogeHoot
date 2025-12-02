@@ -1409,76 +1409,139 @@
 </script>
 
 <script>
+    // ==========================================
+    // CONFIGURACIÓN INICIAL Y VARIABLES GLOBALES
+    // ==========================================
+
+    // Cargar datos de arranque desde el HTML
     const __BOOT = JSON.parse(document.getElementById('boot-data')?.textContent || '{}');
     const CUESTIONARIO_ID = __BOOT.CUESTIONARIO_ID ?? null;
     const MODO_VISUALIZACION = !!__BOOT.MODO_VISUALIZACION;
 
-    let cuestionarioData = { id_cuestionario: null, titulo: 'Nuevo Cuestionario', descripcion: '', id_categoria: 1, es_publico: false, id_usuario: __BOOT.SESSION_USER_ID, preguntas: [] };
-    let originalCuestionarioData;
-    let currentView = 'general';
-    let currentIndex = 0;
+    // Estado del cuestionario en memoria
+    let cuestionarioData = {
+        id_cuestionario: null,
+        titulo: 'Nuevo Cuestionario',
+        descripcion: '',
+        id_categoria: 1,
+        es_publico: false,
+        id_usuario: __BOOT.SESSION_USER_ID,
+        preguntas: []
+    };
+    let originalCuestionarioData; // Para detectar cambios
 
+    // Estado de navegación
+    let currentView = 'general'; // 'general' o 'preguntas'
+    let currentIndex = 0; // Índice de pregunta actual
+
+    // Cargar datos existentes del servidor si están disponibles
     const datosDesdeServidor = __BOOT.DATOS_DESDE_SERVIDOR;
-    if (datosDesdeServidor) { cuestionarioData = datosDesdeServidor; }
+    if (datosDesdeServidor) {
+        cuestionarioData = datosDesdeServidor;
+    }
 
+    // ==========================================
+    // UTILIDADES GENERALES
+    // ==========================================
+
+    /**
+     * Resuelve la ruta completa de una imagen adjunta
+     * Maneja diferentes formatos de rutas (data:image, http, /static/, etc.)
+     */
     function resolveAdjuntoSrc(adjunto) {
         if (!adjunto) return null;
+
+        // Si es base64, devolver tal cual
         if (adjunto.startsWith('data:image')) return adjunto;
+
+        // Si es URL completa, codificar y devolver
         if (adjunto.startsWith('http')) return encodeURI(adjunto);
+
+        // Si ya tiene la ruta /static/, codificar y devolver
         if (adjunto.startsWith('/static/')) return encodeURI(adjunto);
+
+        // Rutas relativas conocidas
         if (adjunto.startsWith('img/')) return encodeURI('/static/' + adjunto);
         if (adjunto.startsWith('uploads/')) return encodeURI('/static/' + adjunto);
+
+        // Si es solo nombre de archivo, construir ruta del cuestionario
         if (!adjunto.includes('/')) {
             if (typeof CUESTIONARIO_ID === 'number' || (typeof CUESTIONARIO_ID === 'string' && CUESTIONARIO_ID)) {
                 return encodeURI(`/static/img/cuestionarios/c_${CUESTIONARIO_ID}/${adjunto}`);
             }
             return encodeURI('/static/' + adjunto);
         }
+
+        // Por defecto, agregar /static/
         return encodeURI('/static/' + adjunto);
     }
 
+    /**
+     * Ajusta la vista según el tamaño de pantalla
+     * En desktop muestra sidebar y editor juntos
+     * En móvil permite alternar entre ellos
+     */
     function updateResponsiveMode() {
         const isDesktop = window.matchMedia('(min-width:1024px)').matches;
         const lay = document.getElementById('qlayout');
         const switcher = document.getElementById('qSwitch');
+
         if (!lay) return;
+
         if (isDesktop) {
+            // Desktop: mostrar ambos paneles, ocultar selector
             lay.classList.remove('show-sidebar', 'show-editor');
             if (switcher) switcher.style.display = 'none';
         } else {
-            if (!lay.classList.contains('show-sidebar') && !lay.classList.contains('show-editor')) lay.classList.add('show-sidebar');
+            // Móvil: activar modo sidebar por defecto, mostrar selector
+            if (!lay.classList.contains('show-sidebar') && !lay.classList.contains('show-editor')) {
+                lay.classList.add('show-sidebar');
+            }
             if (switcher) switcher.style.display = 'grid';
         }
     }
 
-    // TEST EXCEL antes de DOMContentLoaded
+    // ==========================================
+    // GESTIÓN DE IMPORTACIÓN DE EXCEL
+    // ==========================================
+
+    /**
+     * Cierra el modal de importación y limpia el formulario
+     */
     const cerrarModalImportar = () => {
         const modalOverlay = document.getElementById('modal-importar-overlay');
         if (modalOverlay) modalOverlay.style.display = 'none';
+
+        // Resetear formulario
         const form = document.getElementById('form-importar-preguntas');
         if (form) form.reset();
+
+        // Limpiar mensajes
         const msgDiv = document.getElementById('importar-mensaje');
         if (msgDiv) {
             msgDiv.style.display = 'none';
             msgDiv.textContent = '';
             msgDiv.className = 'importar-mensaje';
         }
+
+        // Rehabilitar botón de envío
         const btnSubmit = document.getElementById('btn-submit-importar');
         if (btnSubmit) btnSubmit.disabled = false;
     };
 
-    // Función para ABRIR el modal con logs
-    const abrirModalImportar = async () => { // Mantenemos async por si 'mostrarAlerta' es asíncrono
-
-        if (!CUESTIONARIO_ID) { // Si es un cuestionario nuevo (ID es null)
+    /**
+     * Abre el modal de importación de preguntas desde Excel
+     * Valida que el cuestionario esté guardado antes de permitir la importación
+     */
+    const abrirModalImportar = async () => {
+        // Validar que el cuestionario ya esté guardado
+        if (!CUESTIONARIO_ID) {
             await mostrarAlerta("Crea y guarda primero un cuestionario para importar preguntas por EXCEL.");
-            return; // ¡No continuar!
+            return;
         }
 
-        // El resto del código solo se ejecuta si CUESTIONARIO_ID SÍ existe:
-        const modalOverlay = document.getElementById('modal-importar-overlay');
+        // Configurar ID del cuestionario en el formulario
         const inputIdCuestionario = document.getElementById('import-cuestionario-id');
-
         if (inputIdCuestionario) {
             inputIdCuestionario.value = CUESTIONARIO_ID;
         } else {
@@ -1486,6 +1549,8 @@
             return;
         }
 
+        // Mostrar modal
+        const modalOverlay = document.getElementById('modal-importar-overlay');
         if (modalOverlay) {
             modalOverlay.style.display = 'flex';
         } else {
@@ -1493,20 +1558,28 @@
         }
     };
 
+    /**
+     * Procesa la importación de preguntas desde archivo Excel
+     * Las preguntas importadas REEMPLAZAN las existentes en memoria
+     * No se guardan automáticamente, requiere hacer clic en "Guardar cambios"
+     */
     async function subirImportacion(event) {
         event.preventDefault();
-        console.log("Función subirImportacion ejecutada."); // Log de depuración
+        console.log("Función subirImportacion ejecutada.");
 
+        // Referencias a elementos del DOM
         const form = document.getElementById('form-importar-preguntas');
         const fileInput = document.getElementById('archivo_excel_modal');
         const messageDiv = document.getElementById('importar-mensaje');
         const submitButton = document.getElementById('btn-submit-importar');
 
+        // Deshabilitar botón y limpiar mensajes previos
         if (submitButton) submitButton.disabled = true;
         messageDiv.style.display = 'none';
         messageDiv.textContent = '';
         messageDiv.className = 'importar-mensaje';
 
+        // Validar que se haya seleccionado un archivo
         if (!fileInput.files || fileInput.files.length === 0) {
             messageDiv.textContent = 'Por favor, selecciona un archivo Excel.';
             messageDiv.className = 'importar-mensaje error';
@@ -1518,6 +1591,7 @@
         const formData = new FormData(form);
 
         try {
+            // Enviar archivo al servidor
             const response = await fetch("{{ url_for('importarExcel.importar_preguntas_ajax') }}", {
                 method: 'POST',
                 body: formData,
@@ -1525,60 +1599,58 @@
 
             const result = await response.json();
 
-            // --- NUEVO COMPORTAMIENTO: Cargar en memoria SIN guardar automáticamente ---
             if (response.ok && result.success) {
-                // 1. REEMPLAZAR todas las preguntas existentes con las importadas
+                // Procesar preguntas importadas
                 if (result.preguntas_actualizadas && Array.isArray(result.preguntas_actualizadas)) {
-                    // Normalizar numeración de preguntas y ELIMINAR IDs (son preguntas nuevas de importación)
+                    // Normalizar preguntas: eliminar IDs para tratarlas como nuevas
                     const preguntasNormalizadas = result.preguntas_actualizadas.map((p, idx) => {
-                        // ⚠️ CRÍTICO: Eliminar id_pregunta para que se trate como pregunta nueva
+                        // Eliminar ID de pregunta (se generará al guardar)
                         delete p.id_pregunta;
 
-                        // También eliminar id_opcion de las opciones
+                        // Eliminar IDs de opciones
                         if (p.opciones && Array.isArray(p.opciones)) {
                             p.opciones.forEach(op => {
                                 delete op.id_opcion;
                             });
                         }
 
+                        // Asignar numeración secuencial
                         p.num_pregunta = idx + 1;
                         return p;
                     });
 
-                    // REEMPLAZAR (no añadir) las preguntas en memoria
+                    // REEMPLAZAR preguntas en memoria (no agregar)
                     cuestionarioData.preguntas = preguntasNormalizadas;
 
-                    // 2. IMPORTANTE: Actualizar también originalCuestionarioData para reflejar
-                    // el nuevo estado "base" (sin las preguntas antiguas)
-                    // Pero NO sincronizamos con las nuevas para que se detecte como cambio pendiente
+                    // Limpiar preguntas originales para marcar como cambio pendiente
                     originalCuestionarioData.preguntas = [];
 
-                    // 3. Marcar que hay cambios pendientes
+                    // Activar botones de guardar/cancelar
                     onAnyChange();
 
-                    console.log(`${preguntasNormalizadas.length} preguntas importadas y cargadas en memoria (pendientes de guardar).`);
+                    console.log(`${preguntasNormalizadas.length} preguntas importadas (pendientes de guardar).`);
                     console.log('[DEBUG] Preguntas sin IDs:', preguntasNormalizadas);
                 }
 
+                // Mostrar mensaje de éxito
                 messageDiv.textContent = (result.message || 'Preguntas importadas con éxito.') +
                     ' Las preguntas han reemplazado las anteriores. Usa "Guardar cambios" para persistir en la base de datos.';
                 messageDiv.className = 'importar-mensaje success';
                 messageDiv.style.display = 'block';
 
-                // 2. Cerrar modal y re-renderizar la UI
+                // Cerrar modal y actualizar interfaz
                 setTimeout(() => {
                     cerrarModalImportar();
-                    // Ir a la primera pregunta importada
-                    currentIndex = cuestionarioData.preguntas.length > 0 ? 0 : 0;
-                    renderQuestionsUI(true); // ¡Renderizar con las nuevas preguntas!
-                    updateActionButtons(); // Actualizar botones (debería mostrar "Guardar cambios" habilitado)
+                    currentIndex = 0; // Ir a la primera pregunta
+                    renderQuestionsUI(true);
+                    updateActionButtons();
                 }, 1500);
 
             } else {
-                // Manejar errores de validación
+                // Manejar errores del servidor
                 let errorMsg = result.error || 'Error desconocido del servidor.';
 
-                // Si hay errores múltiples, mostrarlos en lista
+                // Formatear errores múltiples si existen
                 if (result.errores && Array.isArray(result.errores)) {
                     errorMsg = result.error + '\n\n';
                     result.errores.forEach((err, idx) => {
@@ -1586,14 +1658,16 @@
                     });
                 }
 
+                // Mostrar mensaje de error
                 messageDiv.textContent = errorMsg;
                 messageDiv.className = 'importar-mensaje error';
                 messageDiv.style.display = 'block';
-                messageDiv.style.whiteSpace = 'pre-wrap'; // Permitir saltos de línea
-                messageDiv.style.textAlign = 'left'; // Alinear a la izquierda para listas
+                messageDiv.style.whiteSpace = 'pre-wrap';
+                messageDiv.style.textAlign = 'left';
                 if (submitButton) submitButton.disabled = false;
             }
         } catch (error) {
+            // Manejar errores de conexión
             console.error("Error en fetch:", error);
             messageDiv.textContent = 'Error de conexión al intentar subir el archivo.';
             messageDiv.className = 'importar-mensaje error';
@@ -1602,82 +1676,202 @@
         }
     }
 
-    //Lugar originar del DOM
+    // ==========================================
+    // DETECCIÓN DE CAMBIOS Y GESTIÓN DE BOTONES
+    // ==========================================
 
-    function hayCambios() { return JSON.stringify(cuestionarioData) !== JSON.stringify(originalCuestionarioData); }
-    function onAnyChange() { updateActionButtons(); }
-    function updateActionButtons() { const save = document.getElementById('btn-save'); const cancel = document.getElementById('btn-cancel'); if (!save || !cancel) return; const changed = hayCambios(); save.disabled = !changed; cancel.disabled = !changed; }
-
-    function switchView(view) {
-        currentView = view;
-        document.getElementById('tab-general').classList.toggle('active', view === 'general');
-        document.getElementById('tab-preguntas').classList.toggle('active', view === 'preguntas');
-        document.getElementById('view-general').classList.toggle('active', view === 'general');
-        document.getElementById('view-preguntas').classList.toggle('active', view === 'preguntas');
-        if (view === 'general') renderGeneral(); else renderQuestionsUI(true);
+    /**
+     * Verifica si hay cambios no guardados comparando datos actuales con originales
+     */
+    function hayCambios() {
+        return JSON.stringify(cuestionarioData) !== JSON.stringify(originalCuestionarioData);
     }
 
+    /**
+     * Marca que se realizó un cambio y actualiza el estado de los botones
+     */
+    function onAnyChange() {
+        updateActionButtons();
+    }
+
+    /**
+     * Habilita o deshabilita los botones de guardar/cancelar según haya cambios
+     */
+    function updateActionButtons() {
+        const save = document.getElementById('btn-save');
+        const cancel = document.getElementById('btn-cancel');
+
+        if (!save || !cancel) return;
+
+        const changed = hayCambios();
+        save.disabled = !changed;
+        cancel.disabled = !changed;
+    }
+
+    // ==========================================
+    // NAVEGACIÓN ENTRE VISTAS
+    // ==========================================
+
+    /**
+     * Cambia entre la vista de datos generales y la vista de preguntas
+     * @param {string} view - 'general' o 'preguntas'
+     */
+    function switchView(view) {
+        currentView = view;
+
+        // Actualizar tabs activos
+        document.getElementById('tab-general').classList.toggle('active', view === 'general');
+        document.getElementById('tab-preguntas').classList.toggle('active', view === 'preguntas');
+
+        // Mostrar/ocultar vistas correspondientes
+        document.getElementById('view-general').classList.toggle('active', view === 'general');
+        document.getElementById('view-preguntas').classList.toggle('active', view === 'preguntas');
+
+        // Renderizar la vista seleccionada
+        if (view === 'general') {
+            renderGeneral();
+        } else {
+            renderQuestionsUI(true);
+        }
+    }
+
+    /**
+     * Renderiza la vista de datos generales del cuestionario
+     * Carga los valores actuales en los campos del formulario
+     */
     function renderGeneral() {
         document.getElementById('titulo-pagina').textContent = cuestionarioData.titulo || 'Nuevo Cuestionario';
         document.getElementById('titulo').value = cuestionarioData.titulo;
         document.getElementById('descripcion').value = cuestionarioData.descripcion;
         document.getElementById('id_categoria').value = cuestionarioData.id_categoria;
         document.getElementById('es_publico').checked = cuestionarioData.es_publico;
+
+        // Actualizar contador de caracteres
         document.getElementById('descripcion').dispatchEvent(new Event('input'));
+
         updateActionButtons();
     }
 
+    // ==========================================
+    // RENDERIZADO DE PREGUNTAS
+    // ==========================================
+
+    /**
+     * Renderiza la interfaz completa de preguntas (sidebar + editor)
+     * @param {boolean} scrollCanvasTop - Si debe hacer scroll a la pregunta activa
+     */
     function renderQuestionsUI(scrollCanvasTop = false) {
         const sidebar = document.getElementById('slides-sidebar');
         const canvas = document.getElementById('canvas-contenido');
-        sidebar.innerHTML = ''; canvas.innerHTML = '';
+
+        // Limpiar contenido previo
+        sidebar.innerHTML = '';
+        canvas.innerHTML = '';
+
+        // Renderizar lista de preguntas en el sidebar
         cuestionarioData.preguntas.forEach((p, i) => {
             const card = document.createElement('div');
             card.className = 'slide-card' + (i === currentIndex ? ' active' : '');
-            card.onclick = () => { currentIndex = i; renderQuestionsUI(true); };
+            card.onclick = () => {
+                currentIndex = i;
+                renderQuestionsUI(true);
+            };
+
+            // Agregar miniatura si tiene imagen
             const src = resolveAdjuntoSrc(p.adjunto);
             if (src) {
-                const thumb = document.createElement('div'); thumb.className = 'slide-thumb16x9';
-                const img = document.createElement('img'); img.src = src; img.alt = 'Miniatura';
-                thumb.appendChild(img); card.appendChild(thumb);
+                const thumb = document.createElement('div');
+                thumb.className = 'slide-thumb16x9';
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = 'Miniatura';
+                thumb.appendChild(img);
+                card.appendChild(thumb);
             }
-            const title = document.createElement('div'); title.className = 'slide-title-full';
-            const texto = (p.pregunta && !/^Nueva Pregunta/.test(p.pregunta)) ? p.pregunta.trim() : `Pregunta ${i + 1}`;
-            title.textContent = texto; card.appendChild(title);
+
+            // Agregar título de la pregunta
+            const title = document.createElement('div');
+            title.className = 'slide-title-full';
+            const texto = (p.pregunta && !/^Nueva Pregunta/.test(p.pregunta))
+                ? p.pregunta.trim()
+                : `Pregunta ${i + 1}`;
+            title.textContent = texto;
+            card.appendChild(title);
+
+            // Agregar botón de eliminar (solo en modo edición)
             if (!MODO_VISUALIZACION) {
-                const row = document.createElement('div'); row.className = 'slide-row';
-                const del = document.createElement('button'); del.className = 'iconbtn';
+                const row = document.createElement('div');
+                row.className = 'slide-row';
+                const del = document.createElement('button');
+                del.className = 'iconbtn';
                 del.textContent = 'Eliminar';
                 del.title = 'Eliminar pregunta (Delete)';
-                del.onclick = async (ev) => { ev.stopPropagation(); if (await mostrarConfirmacion("¿Seguro que desea quitar esta pregunta?")) { cuestionarioData.preguntas.splice(i, 1); if (currentIndex >= cuestionarioData.preguntas.length) currentIndex = Math.max(0, cuestionarioData.preguntas.length - 1); onAnyChange(); renderQuestionsUI(true); } };
-                row.appendChild(del); card.appendChild(row);
+                del.onclick = async (ev) => {
+                    ev.stopPropagation();
+                    if (await mostrarConfirmacion("¿Seguro que desea quitar esta pregunta?")) {
+                        cuestionarioData.preguntas.splice(i, 1);
+                        if (currentIndex >= cuestionarioData.preguntas.length) {
+                            currentIndex = Math.max(0, cuestionarioData.preguntas.length - 1);
+                        }
+                        onAnyChange();
+                        renderQuestionsUI(true);
+                    }
+                };
+                row.appendChild(del);
+                card.appendChild(row);
             }
+
             sidebar.appendChild(card);
-            if (i === currentIndex) { setTimeout(() => card.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }), 0); }
+
+            // Hacer scroll a la tarjeta activa
+            if (i === currentIndex) {
+                setTimeout(() => card.scrollIntoView({
+                    block: 'center',
+                    inline: 'nearest',
+                    behavior: 'smooth'
+                }), 0);
+            }
         });
+
+        // Agregar botón para crear nueva pregunta (solo en modo edición)
         if (!MODO_VISUALIZACION) {
-            const add = document.createElement('button'); add.className = 'btn btn-primary btn-sm'; add.style.marginTop = '.25rem';
-            add.textContent = 'Añadir pregunta'; add.onclick = agregarPregunta; sidebar.appendChild(add);
+            const add = document.createElement('button');
+            add.className = 'btn btn-primary btn-sm';
+            add.style.marginTop = '.25rem';
+            add.textContent = 'Añadir pregunta';
+            add.onclick = agregarPregunta;
+            sidebar.appendChild(add);
         }
+
+        // Si no hay preguntas, mostrar mensaje vacío
         if (cuestionarioData.preguntas.length === 0) {
             const empty = document.createElement('div');
             empty.innerHTML = `<div style="display:grid;place-items:center;gap:.75rem;padding:2rem;border:1px dashed var(--border-soft);border-radius:12px;background:#fff;">
             <div class="q-title">Aún no hay preguntas</div>
             ${MODO_VISUALIZACION ? '' : '<button class="btn btn-primary" onclick="agregarPregunta()">Crear la primera pregunta</button>'}
         </div>`;
-            canvas.appendChild(empty); return;
+            canvas.appendChild(empty);
+            return;
         }
+        // Renderizar el editor de la pregunta actual
         const p = cuestionarioData.preguntas[currentIndex];
         const readonly = MODO_VISUALIZACION ? 'readonly' : '';
+
+        // Constantes para estilos de opciones
         const VARIANTS = ['variant-red', 'variant-blue', 'variant-yellow', 'variant-green'];
         const SHAPES = ['▲', '◆', '●', '■'];
+
+        // Función auxiliar para limpiar valores por defecto
         const cleanValue = (txt) => (!txt || /^Nueva (Pregunta|Opción)/.test(txt)) ? '' : txt;
+
         const mediaSrc = resolveAdjuntoSrc(p.adjunto);
+
+        // Generar HTML del editor
         const html = `
     <div class="q-header-grid">
       <div class="mini">
         <label for="puntaje-${currentIndex}">Puntos</label>
-        <input type="number" id="puntaje-${currentIndex}" class="form-control inPuntos" placeholder="0" value="${p.puntaje_base ?? ''}" oninput="actualizarPregunta(${currentIndex},'puntaje_base',parseInt(this.value,10))" min="1" max="1000" ${readonly}>
+        <input type="number" id="puntaje-${currentIndex}" class="form-control inPuntos" placeholder="0" value="${p.puntaje_base ?? ''}" oninput="actualizarPregunta(${currentIndex},'puntaje_base',parseInt(this.value,10))" min="100" max="1000" ${readonly}>
       </div>
       <div class="mini">
         <label for="tiempo-${currentIndex}">Tiempo (s)</label>
@@ -1736,94 +1930,376 @@
         <button class="add-more-btn" onclick="agregarOpcion(${currentIndex})">Añadir más respuestas</button>
       </div>`}
     </div>`;
+        // Insertar HTML generado en el canvas
         canvas.innerHTML = html;
+
+        // Activar contadores de caracteres
         canvas.querySelectorAll('input[maxlength]').forEach(el => el.dispatchEvent(new Event('input')));
-        if (!MODO_VISUALIZACION) initDropzone(`dropzone-${currentIndex}`, currentIndex);
-        if (scrollCanvasTop) { const target = document.querySelector('.slide-card.active'); if (target) target.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+
+        // Inicializar drag & drop de imágenes (solo en modo edición)
+        if (!MODO_VISUALIZACION) {
+            initDropzone(`dropzone-${currentIndex}`, currentIndex);
+        }
+
+        // Hacer scroll a la pregunta activa si se solicita
+        if (scrollCanvasTop) {
+            const target = document.querySelector('.slide-card.active');
+            if (target) {
+                target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+
         updateActionButtons();
     }
 
-    function initDropzone(id, idx) {
-        const z = document.getElementById(id); if (!z) return;
-        ['dragenter', 'dragover'].forEach(evn => z.addEventListener(evn, e => { e.preventDefault(); e.stopPropagation(); z.classList.add('dragover'); }));
-        ['dragleave', 'drop'].forEach(evn => z.addEventListener(evn, e => { e.preventDefault(); e.stopPropagation(); z.classList.remove('dragover'); }));
-        z.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if (f) handleImageFile(f, idx); });
-    }
-    function handleImageFile(file, indexPregunta) { const r = new FileReader(); r.onload = e => { cuestionarioData.preguntas[indexPregunta].adjunto = e.target.result; onAnyChange(); renderQuestionsUI(false); }; r.readAsDataURL(file); }
+    // ==========================================
+    // GESTIÓN DE IMÁGENES (DRAG & DROP)
+    // ==========================================
 
-    function actualizarDato(campo, valor) { if (!MODO_VISUALIZACION) { cuestionarioData[campo] = valor; onAnyChange(); } }
+    /**
+     * Inicializa la zona de drag & drop para subir imágenes
+     * @param {string} id - ID del elemento dropzone
+     * @param {number} idx - Índice de la pregunta
+     */
+    function initDropzone(id, idx) {
+        const z = document.getElementById(id);
+        if (!z) return;
+
+        // Eventos para resaltar cuando se arrastra
+        ['dragenter', 'dragover'].forEach(evn => {
+            z.addEventListener(evn, e => {
+                e.preventDefault();
+                e.stopPropagation();
+                z.classList.add('dragover');
+            });
+        });
+
+        // Eventos para quitar resaltado
+        ['dragleave', 'drop'].forEach(evn => {
+            z.addEventListener(evn, e => {
+                e.preventDefault();
+                e.stopPropagation();
+                z.classList.remove('dragover');
+            });
+        });
+
+        // Manejar el archivo soltado
+        z.addEventListener('drop', e => {
+            const f = e.dataTransfer?.files?.[0];
+            if (f) handleImageFile(f, idx);
+        });
+    }
+
+    /**
+     * Procesa un archivo de imagen y lo convierte a base64
+     * @param {File} file - Archivo de imagen
+     * @param {number} indexPregunta - Índice de la pregunta
+     */
+    function handleImageFile(file, indexPregunta) {
+        const r = new FileReader();
+        r.onload = e => {
+            cuestionarioData.preguntas[indexPregunta].adjunto = e.target.result;
+            onAnyChange();
+            renderQuestionsUI(false);
+        };
+        r.readAsDataURL(file);
+    }
+
+    // ==========================================
+    // GESTIÓN DE DATOS GENERALES
+    // ==========================================
+
+    /**
+     * Actualiza un dato general del cuestionario (título, descripción, etc.)
+     * @param {string} campo - Nombre del campo a actualizar
+     * @param {*} valor - Nuevo valor
+     */
+    function actualizarDato(campo, valor) {
+        if (!MODO_VISUALIZACION) {
+            cuestionarioData[campo] = valor;
+            onAnyChange();
+        }
+    }
+
+    // ==========================================
+    // GESTIÓN DE PREGUNTAS
+    // ==========================================
+
+    /**
+     * Agrega una nueva pregunta al cuestionario
+     * Se inicializa con una opción por defecto
+     */
     function agregarPregunta() {
         if (MODO_VISUALIZACION) return;
+
         const cant = cuestionarioData.preguntas.length;
-        // No incluir id_pregunta para preguntas nuevas (el servidor lo generará)
-        cuestionarioData.preguntas.push({ pregunta: `Nueva Pregunta ${cant + 1}`, num_pregunta: cant + 1, puntaje_base: 1000, tiempo: 15, adjunto: null, opciones: [] });
+
+        // Crear nueva pregunta (sin id_pregunta, se generará en el servidor)
+        cuestionarioData.preguntas.push({
+            pregunta: `Nueva Pregunta ${cant + 1}`,
+            num_pregunta: cant + 1,
+            puntaje_base: 1000,
+            tiempo: 15,
+            adjunto: null,
+            opciones: []
+        });
+
+        // Agregar primera opción automáticamente
         agregarOpcion(cuestionarioData.preguntas.length - 1);
+
+        // Navegar a la nueva pregunta
         currentIndex = cuestionarioData.preguntas.length - 1;
-        onAnyChange(); renderQuestionsUI(true);
-    }
-    function actualizarPregunta(index, campo, valor) { if (!MODO_VISUALIZACION) { cuestionarioData.preguntas[index][campo] = valor; onAnyChange(); } }
-    async function eliminarPregunta(index) {
-        if (MODO_VISUALIZACION) return;
-        if (await mostrarConfirmacion("¿Seguro que desea quitar esta pregunta?")) {
-            cuestionarioData.preguntas.splice(index, 1);
-            if (currentIndex >= cuestionarioData.preguntas.length) currentIndex = Math.max(0, cuestionarioData.preguntas.length - 1);
-            onAnyChange(); renderQuestionsUI(true);
-        }
-    }
-    function convertirImagen(input, indexPregunta) { const file = input.files[0]; if (!file) return; handleImageFile(file, indexPregunta); }
-    async function quitarImagen(indexPregunta) { if (await mostrarConfirmacion("¿Está seguro de eliminar la imagen?")) { cuestionarioData.preguntas[indexPregunta].adjunto = null; onAnyChange(); renderQuestionsUI(false); } }
-    async function agregarOpcion(indexPregunta) {
-        if (MODO_VISUALIZACION) return;
-        const opts = cuestionarioData.preguntas[indexPregunta].opciones;
-        if (opts.length >= 6) return await mostrarAlerta("Límite de 6 opciones por pregunta alcanzado.");
-        // No incluir id_opcion para opciones nuevas (el servidor lo generará)
-        opts.push({ opcion: `Nueva Opción ${opts.length + 1}`, es_correcta_bool: opts.length === 0, descripcion: null, adjunto: null });
-        onAnyChange(); renderQuestionsUI(false);
-    }
-    function actualizarOpcion(indexPregunta, indexOpcion, campo, valor) { if (!MODO_VISUALIZACION) { cuestionarioData.preguntas[indexPregunta].opciones[indexOpcion][campo] = valor; onAnyChange(); } }
-    async function eliminarOpcion(indexPregunta, indexOpcion) {
-        if (MODO_VISUALIZACION) return;
-        if (await mostrarConfirmacion("¿Seguro que desea quitar esta opción?")) {
-            cuestionarioData.preguntas[indexPregunta].opciones.splice(indexOpcion, 1);
-            onAnyChange(); renderQuestionsUI(false);
-        }
-    }
-    function marcarOpcionCorrecta(indexPregunta, indexOpcionCorrecta) {
-        if (MODO_VISUALIZACION) return;
-        cuestionarioData.preguntas[indexPregunta].opciones.forEach((o, idx) => { o.es_correcta_bool = (idx === indexOpcionCorrecta); });
-        onAnyChange(); renderQuestionsUI(false);
+
+        onAnyChange();
+        renderQuestionsUI(true);
     }
 
+    /**
+     * Actualiza un campo específico de una pregunta
+     * @param {number} index - Índice de la pregunta
+     * @param {string} campo - Nombre del campo a actualizar
+     * @param {*} valor - Nuevo valor
+     */
+    function actualizarPregunta(index, campo, valor) {
+        if (!MODO_VISUALIZACION) {
+            cuestionarioData.preguntas[index][campo] = valor;
+            onAnyChange();
+        }
+    }
+
+    /**
+     * Elimina una pregunta del cuestionario
+     * Solicita confirmación antes de eliminar
+     * @param {number} index - Índice de la pregunta a eliminar
+     */
+    async function eliminarPregunta(index) {
+        if (MODO_VISUALIZACION) return;
+
+        if (await mostrarConfirmacion("¿Seguro que desea quitar esta pregunta?")) {
+            cuestionarioData.preguntas.splice(index, 1);
+
+            // Ajustar índice actual si es necesario
+            if (currentIndex >= cuestionarioData.preguntas.length) {
+                currentIndex = Math.max(0, cuestionarioData.preguntas.length - 1);
+            }
+
+            onAnyChange();
+            renderQuestionsUI(true);
+        }
+    }
+
+    /**
+     * Convierte un archivo de imagen seleccionado y lo adjunta a la pregunta
+     * @param {HTMLInputElement} input - Input file que contiene la imagen
+     * @param {number} indexPregunta - Índice de la pregunta
+     */
+    function convertirImagen(input, indexPregunta) {
+        const file = input.files[0];
+        if (!file) return;
+        handleImageFile(file, indexPregunta);
+    }
+
+    /**
+     * Elimina la imagen adjunta de una pregunta
+     * Solicita confirmación antes de eliminar
+     * @param {number} indexPregunta - Índice de la pregunta
+     */
+    async function quitarImagen(indexPregunta) {
+        if (await mostrarConfirmacion("¿Está seguro de eliminar la imagen?")) {
+            cuestionarioData.preguntas[indexPregunta].adjunto = null;
+            onAnyChange();
+            renderQuestionsUI(false);
+        }
+    }
+
+    // ==========================================
+    // GESTIÓN DE OPCIONES DE RESPUESTA
+    // ==========================================
+
+    /**
+     * Agrega una nueva opción de respuesta a una pregunta
+     * Límite máximo de 6 opciones por pregunta
+     * @param {number} indexPregunta - Índice de la pregunta
+     */
+    async function agregarOpcion(indexPregunta) {
+        if (MODO_VISUALIZACION) return;
+
+        const opts = cuestionarioData.preguntas[indexPregunta].opciones;
+
+        // Validar límite de opciones
+        if (opts.length >= 6) {
+            return await mostrarAlerta("Límite de 6 opciones por pregunta alcanzado.");
+        }
+
+        // Crear nueva opción (sin id_opcion, se generará en el servidor)
+        // La primera opción se marca como correcta por defecto
+        opts.push({
+            opcion: `Nueva Opción ${opts.length + 1}`,
+            es_correcta_bool: opts.length === 0,
+            descripcion: null,
+            adjunto: null
+        });
+
+        onAnyChange();
+        renderQuestionsUI(false);
+    }
+
+    /**
+     * Actualiza un campo específico de una opción
+     * @param {number} indexPregunta - Índice de la pregunta
+     * @param {number} indexOpcion - Índice de la opción
+     * @param {string} campo - Nombre del campo a actualizar
+     * @param {*} valor - Nuevo valor
+     */
+    function actualizarOpcion(indexPregunta, indexOpcion, campo, valor) {
+        if (!MODO_VISUALIZACION) {
+            cuestionarioData.preguntas[indexPregunta].opciones[indexOpcion][campo] = valor;
+            onAnyChange();
+        }
+    }
+
+    /**
+     * Elimina una opción de respuesta
+     * Solicita confirmación antes de eliminar
+     * @param {number} indexPregunta - Índice de la pregunta
+     * @param {number} indexOpcion - Índice de la opción a eliminar
+     */
+    async function eliminarOpcion(indexPregunta, indexOpcion) {
+        if (MODO_VISUALIZACION) return;
+
+        if (await mostrarConfirmacion("¿Seguro que desea quitar esta opción?")) {
+            cuestionarioData.preguntas[indexPregunta].opciones.splice(indexOpcion, 1);
+            onAnyChange();
+            renderQuestionsUI(false);
+        }
+    }
+
+    /**
+     * Marca una opción como la respuesta correcta
+     * Desmarca automáticamente las demás opciones
+     * @param {number} indexPregunta - Índice de la pregunta
+     * @param {number} indexOpcionCorrecta - Índice de la opción correcta
+     */
+    function marcarOpcionCorrecta(indexPregunta, indexOpcionCorrecta) {
+        if (MODO_VISUALIZACION) return;
+
+        cuestionarioData.preguntas[indexPregunta].opciones.forEach((o, idx) => {
+            o.es_correcta_bool = (idx === indexOpcionCorrecta);
+        });
+
+        onAnyChange();
+        renderQuestionsUI(false);
+    }
+
+    // ==========================================
+    // VALIDACIÓN DE DATOS
+    // ==========================================
+
+    /**
+     * Valida que todos los datos del cuestionario sean correctos antes de guardar
+     * @returns {string|boolean} Mensaje de error o true si todo está correcto
+     */
     function validarDatos() {
-        if (!cuestionarioData.titulo?.trim()) return "El título del cuestionario no puede estar vacío.";
+        // Validar título
+        if (!cuestionarioData.titulo?.trim()) {
+            return "El título del cuestionario no puede estar vacío.";
+        }
+
+        // Validar cada pregunta
         for (let i = 0; i < cuestionarioData.preguntas.length; i++) {
             const p = cuestionarioData.preguntas[i];
-            if (!p.pregunta?.trim()) return `El texto de la pregunta #${i + 1} no puede estar vacío.`;
-            if (p.opciones.length < 2) return `La pregunta #${i + 1} debe tener al menos dos opciones.`;
-            if (!p.opciones.some(o => o.es_correcta_bool)) return `La pregunta #${i + 1} debe tener una opción marcada como correcta.`;
-            for (let j = 0; j < p.opciones.length; j++) { if (!p.opciones[j].opcion?.trim()) return `El texto de la opción #${j + 1} en la pregunta #${i + 1} no puede estar vacío.`; }
+
+            // Validar texto de pregunta
+            if (!p.pregunta?.trim()) {
+                return `El texto de la pregunta #${i + 1} no puede estar vacío.`;
+            }
+
+            // Validar mínimo de opciones
+            if (p.opciones.length < 2) {
+                return `La pregunta #${i + 1} debe tener al menos dos opciones.`;
+            }
+
+            // Validar que exista una opción correcta
+            if (!p.opciones.some(o => o.es_correcta_bool)) {
+                return `La pregunta #${i + 1} debe tener una opción marcada como correcta.`;
+            }
+
+            // Validar texto de cada opción
+            for (let j = 0; j < p.opciones.length; j++) {
+                if (!p.opciones[j].opcion?.trim()) {
+                    return `El texto de la opción #${j + 1} en la pregunta #${i + 1} no puede estar vacío.`;
+                }
+            }
         }
+
         return true;
     }
 
+    // ==========================================
+    // GUARDADO Y CANCELACIÓN
+    // ==========================================
+
+    /**
+     * Guarda todos los cambios del cuestionario en el servidor
+     * Valida datos antes de enviar y redirige al finalizar
+     */
     async function guardarTodo() {
-        if (MODO_VISUALIZACION) { await mostrarAlerta("No puedes guardar cambios en modo visualización."); return; }
-        const valid = validarDatos(); if (valid !== true) { await mostrarAlerta(valid); return; }
-        if (!hayCambios()) { await mostrarAlerta("No hay cambios para guardar."); return; }
-        if (!(await mostrarConfirmacion("¿Seguro que desea guardar los cambios?"))) return;
+        // Validar modo de visualización
+        if (MODO_VISUALIZACION) {
+            await mostrarAlerta("No puedes guardar cambios en modo visualización.");
+            return;
+        }
+
+        // Validar datos antes de guardar
+        const valid = validarDatos();
+        if (valid !== true) {
+            await mostrarAlerta(valid);
+            return;
+        }
+
+        // Verificar que haya cambios
+        if (!hayCambios()) {
+            await mostrarAlerta("No hay cambios para guardar.");
+            return;
+        }
+
+        // Confirmar con el usuario
+        if (!(await mostrarConfirmacion("¿Seguro que desea guardar los cambios?"))) {
+            return;
+        }
+
+        // Preparar datos para enviar (limpiar rutas de imágenes)
         const cleanedData = JSON.parse(JSON.stringify(cuestionarioData));
-        cleanedData.preguntas.forEach(p => { if (!p.adjunto) return; if (p.adjunto.startsWith('/static/uploads/')) p.adjunto = p.adjunto.replace('/static/uploads/', ''); else if (p.adjunto.startsWith('/static/')) p.adjunto = p.adjunto.replace('/static/', ''); });
+        cleanedData.preguntas.forEach(p => {
+            if (!p.adjunto) return;
+
+            // Limpiar prefijos de rutas estáticas
+            if (p.adjunto.startsWith('/static/uploads/')) {
+                p.adjunto = p.adjunto.replace('/static/uploads/', '');
+            } else if (p.adjunto.startsWith('/static/')) {
+                p.adjunto = p.adjunto.replace('/static/', '');
+            }
+        });
+
         try {
-            const response = await fetch('/api/cuestionarios/guardar-completo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleanedData) });
+            // Enviar datos al servidor
+            const response = await fetch('/api/cuestionarios/guardar-completo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cleanedData)
+            });
+
             const resultado = await response.json();
+
             if (response.ok) {
                 await mostrarAlerta('¡Cuestionario guardado con éxito!');
                 window.removeEventListener('beforeunload', beforeUnloadHandler);
-                // Recargar la página para obtener datos frescos con IDs actualizados
+
+                // Redirigir para obtener datos frescos con IDs actualizados
                 if (CUESTIONARIO_ID) {
                     window.location.href = `/cuestionarios/${CUESTIONARIO_ID}/editar`;
                 } else {
-                    // Si es nuevo, redirigir al ID devuelto por el servidor
+                    // Si es nuevo, usar el ID devuelto por el servidor
                     window.location.href = `/cuestionarios/${resultado.id_cuestionario}/editar`;
                 }
             } else {
@@ -1834,40 +2310,100 @@
         }
     }
 
+    /**
+     * Cancela la edición y descarta todos los cambios no guardados
+     * Redirige a la lista de cuestionarios
+     */
     async function cancelarTodo() {
-        if (MODO_VISUALIZACION) { window.location.href = '/cuestionarios'; return; }
+        if (MODO_VISUALIZACION) {
+            window.location.href = '/cuestionarios';
+            return;
+        }
+
+        // Confirmar si hay cambios pendientes
         if (hayCambios()) {
-            const ok = await mostrarConfirmacion("¿Seguro que desea cancelar? Perderá los cambios no guardados.");
+            const ok = await mostrarConfirmacion(
+                "¿Seguro que desea cancelar? Perderá los cambios no guardados."
+            );
             if (!ok) return;
         }
+
         window.removeEventListener('beforeunload', beforeUnloadHandler);
         window.location.href = `/cuestionarios`;
     }
-    const beforeUnloadHandler = e => { if (!MODO_VISUALIZACION && hayCambios()) { e.preventDefault(); e.returnValue = ''; } };
-    if (!MODO_VISUALIZACION) { window.addEventListener('beforeunload', beforeUnloadHandler); }
 
-    function updateCharCounter(inputEl, counterId) {
-        const el = document.getElementById(counterId); if (!el) return;
-        const max = parseInt(inputEl.getAttribute('maxlength'), 10); const len = inputEl.value.length;
-        el.textContent = `${len} / ${max}`; el.classList.remove('warning', 'limit');
-        if (len >= max) el.classList.add('limit'); else if (len >= max * 0.9) el.classList.add('warning');
+    /**
+     * Manejador para prevenir cierre accidental con cambios sin guardar
+     */
+    const beforeUnloadHandler = e => {
+        if (!MODO_VISUALIZACION && hayCambios()) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    };
+
+    // Activar prevención de cierre accidental (solo en modo edición)
+    if (!MODO_VISUALIZACION) {
+        window.addEventListener('beforeunload', beforeUnloadHandler);
     }
+
+    // ==========================================
+    // UTILIDADES DE INTERFAZ
+    // ==========================================
+
+    /**
+     * Actualiza el contador de caracteres de un input
+     * Cambia de color según se acerque al límite
+     * @param {HTMLInputElement} inputEl - Campo de entrada
+     * @param {string} counterId - ID del elemento contador
+     */
+    function updateCharCounter(inputEl, counterId) {
+        const el = document.getElementById(counterId);
+        if (!el) return;
+
+        const max = parseInt(inputEl.getAttribute('maxlength'), 10);
+        const len = inputEl.value.length;
+
+        // Actualizar texto
+        el.textContent = `${len} / ${max}`;
+
+        // Actualizar clases según porcentaje usado
+        el.classList.remove('warning', 'limit');
+        if (len >= max) {
+            el.classList.add('limit'); // Rojo: límite alcanzado
+        } else if (len >= max * 0.9) {
+            el.classList.add('warning'); // Amarillo: cerca del límite
+        }
+    }
+
+    /**
+     * Crea un popup modal personalizado con botones
+     * Maneja teclado (Enter/Escape) y devuelve una promesa
+     * @param {string} message - Mensaje a mostrar
+     * @param {Array} buttons - Configuración de botones
+     * @returns {Promise} Promesa que resuelve con el resultado del botón presionado
+     */
     function crearPopup(message, buttons) {
         return new Promise((resolve) => {
+            // Crear overlay
             const overlay = document.createElement('div');
             overlay.className = 'popup-overlay';
-            overlay.style.display = 'flex'; // Asegurar que se muestre
+            overlay.style.display = 'flex';
 
+            // Crear caja del popup
             const box = document.createElement('div');
             box.className = 'popup-box';
 
+            // Crear mensaje
             const p = document.createElement('p');
             p.style.whiteSpace = 'pre-wrap'; // Respetar saltos de línea
             p.textContent = message;
 
+            // Contenedor de botones
             const btns = document.createElement('div');
             btns.className = 'popup-buttons';
 
+            // Función para cerrar popup
             const closePopup = (result) => {
                 if (overlay.parentNode) {
                     document.body.removeChild(overlay);
@@ -1876,14 +2412,17 @@
                 resolve(result);
             };
 
+            // Crear botones
             buttons.forEach((b, index) => {
                 const bt = document.createElement('button');
                 bt.textContent = b.text;
                 bt.className = b.className;
                 bt.dataset.result = b.resolvesTo;
                 bt.onclick = () => closePopup(b.resolvesTo);
+
+                // Auto-focus en último botón (normalmente "Aceptar")
                 if (index === buttons.length - 1) {
-                    bt.focus(); // Auto-focus en último botón (normalmente "Aceptar")
+                    bt.focus();
                 }
                 btns.appendChild(bt);
             });
@@ -1892,7 +2431,7 @@
             const handlePopupKey = (e) => {
                 if (e.key === 'Escape') {
                     e.preventDefault();
-                    // Escape = Cancelar (primer botón) o cerrar
+                    // Escape = Cancelar (primer botón)
                     closePopup(buttons[0].resolvesTo);
                 } else if (e.key === 'Enter') {
                     e.preventDefault();
@@ -1903,22 +2442,51 @@
 
             document.addEventListener('keydown', handlePopupKey);
 
+            // Ensamblar popup
             box.appendChild(p);
             box.appendChild(btns);
             overlay.appendChild(box);
             document.body.appendChild(overlay);
         });
     }
-    function mostrarConfirmacion(msg) { return crearPopup(msg, [{ text: 'Cancelar', className: 'btn btn-secondary', resolvesTo: false }, { text: 'Aceptar', className: 'btn btn-success', resolvesTo: true }]); }
-    function mostrarAlerta(msg) { return crearPopup(msg, [{ text: 'Aceptar', className: 'btn btn-primary', resolvesTo: true }]); }
 
-    // ✅ Detectar sistema operativo para atajos multiplataforma
+    /**
+     * Muestra un popup de confirmación con botones Cancelar/Aceptar
+     * @param {string} msg - Mensaje de confirmación
+     * @returns {Promise<boolean>} true si acepta, false si cancela
+     */
+    function mostrarConfirmacion(msg) {
+        return crearPopup(msg, [
+            { text: 'Cancelar', className: 'btn btn-secondary', resolvesTo: false },
+            { text: 'Aceptar', className: 'btn btn-success', resolvesTo: true }
+        ]);
+    }
+
+    /**
+     * Muestra un popup de alerta con un solo botón Aceptar
+     * @param {string} msg - Mensaje de alerta
+     * @returns {Promise<boolean>} true cuando se cierra
+     */
+    function mostrarAlerta(msg) {
+        return crearPopup(msg, [
+            { text: 'Aceptar', className: 'btn btn-primary', resolvesTo: true }
+        ]);
+    }
+
+    // ==========================================
+    // SISTEMA DE ATAJOS DE TECLADO
+    // ==========================================
+
+    // Detectar sistema operativo para atajos multiplataforma
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
-    // ✅ Actualizar visualización de teclas según el sistema operativo
+    /**
+     * Actualiza la visualización de teclas según el sistema operativo
+     * Convierte Ctrl a ⌘ y Alt a ⌥ en macOS
+     */
     document.addEventListener('DOMContentLoaded', () => {
         if (isMac) {
-            // Actualizar otros atajos visuales en la interfaz
+            // Actualizar todos los elementos <kbd> existentes
             document.querySelectorAll('kbd').forEach(kbd => {
                 const text = kbd.textContent;
                 if (text.includes('Ctrl+')) {
@@ -1928,12 +2496,12 @@
                 }
             });
 
-            // Observer para actualizar dinámicamente los botones que se crean después
+            // Observer para actualizar elementos <kbd> creados dinámicamente
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
                     mutation.addedNodes.forEach((node) => {
-                        if (node.nodeType === 1) { // Es un elemento
-                            // Actualizar kbd dentro del nodo agregado
+                        if (node.nodeType === 1) { // Es un elemento HTML
+                            // Buscar elementos <kbd> dentro del nodo agregado
                             const kbds = node.querySelectorAll ? node.querySelectorAll('kbd') : [];
                             kbds.forEach(kbd => {
                                 const text = kbd.textContent;
@@ -1948,7 +2516,7 @@
                 });
             });
 
-            // Observar cambios en el body
+            // Observar cambios en todo el documento
             observer.observe(document.body, {
                 childList: true,
                 subtree: true
@@ -1956,7 +2524,11 @@
         }
     });
 
-    // ✅ Función helper para mostrar tooltips de atajos de teclado
+    /**
+     * Muestra un tooltip temporal con feedback de atajos de teclado
+     * Se auto-elimina después de 2 segundos
+     * @param {string} mensaje - Mensaje a mostrar en el tooltip
+     */
     function mostrarTooltipAtajo(mensaje) {
         const tooltip = document.createElement('div');
         tooltip.className = 'keyboard-tooltip';
@@ -1971,9 +2543,15 @@
         }, 2000);
     }
 
-    // ✅ SISTEMA CENTRALIZADO DE ATAJOS DE TECLADO
+    /**
+     * Configuración centralizada de todos los atajos de teclado
+     * Cada atajo define:
+     * - keys: Array de combinaciones de teclas (para compatibilidad multiplataforma)
+     * - description: Descripción visible para el usuario
+     * - action: Función a ejecutar, retorna true si tuvo éxito
+     */
     const keyboardShortcuts = {
-        // Atajos de acciones principales
+        // ========== ACCIONES PRINCIPALES ==========
         save: {
             keys: ['Ctrl+S', 'Meta+S'],
             description: 'Guardar cambios',
@@ -2047,7 +2625,8 @@
                 return true;
             }
         },
-        // Navegación entre vistas
+
+        // ========== NAVEGACIÓN ENTRE VISTAS ==========
         viewGeneral: {
             keys: ['Alt+a'],
             description: 'Vista General',
@@ -2106,6 +2685,7 @@
                 return true;
             }
         },
+        // ========== UTILIDADES ==========
         closeModal: {
             keys: ['Escape'],
             description: 'Cerrar modal',
@@ -2136,9 +2716,7 @@
                 return true;
             }
         },
-        // Utilidades
         help: {
-            //keys: ['?'],
             keys: ['Alt+P'],
             description: 'Mostrar ayuda de atajos',
             action: () => {
@@ -2148,7 +2726,10 @@
         }
     };
 
-    // ✅ Función para mostrar ayuda de atajos
+    /**
+     * Muestra un diálogo con todos los atajos de teclado disponibles
+     * Agrupados por categorías y adaptados al sistema operativo
+     */
     function mostrarAyudaAtajos() {
         const ctrlKey = isMac ? '⌘' : 'Ctrl';
         const altKey = isMac ? '⌥' : 'Alt';
@@ -2183,9 +2764,14 @@
         mostrarAlerta(helpText);
     }
 
-    // ✅ Manejador global de atajos de teclado
+    /**
+     * Manejador global de atajos de teclado
+     * Intercepta eventos de teclado y ejecuta la acción correspondiente
+     * Respeta el contexto (no interfiere al escribir en inputs, excepto atajos permitidos)
+     * @param {KeyboardEvent} e - Evento de teclado
+     */
     function handleKeyboardShortcut(e) {
-        // No procesar atajos si estamos escribiendo en un input/textarea
+        // Detectar si el usuario está escribiendo
         const activeElement = document.activeElement;
         const isTyping = activeElement && (
             activeElement.tagName === 'INPUT' ||
@@ -2193,27 +2779,27 @@
             activeElement.isContentEditable
         );
 
-        // Permitir solo algunos atajos mientras se escribe
+        // Atajos que SÍ funcionan mientras se escribe
         const allowedWhileTyping = ['save', 'cancel', 'closeModal', 'help', 'importQuestions'];
 
+        // Revisar cada atajo definido
         for (const [key, shortcut] of Object.entries(keyboardShortcuts)) {
-            // Verificar si el atajo coincide con la tecla presionada
+            // Verificar si alguna combinación del atajo coincide
             const matches = shortcut.keys.some(keyCombo => {
                 const parts = keyCombo.split('+');
 
-                // Casos especiales sin modificadores
+                // Casos especiales: teclas sin modificadores
                 if (keyCombo === 'Escape') return e.key === 'Escape';
-                //if (keyCombo === '?') return e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey;
                 if (keyCombo === 'P') return e.key === 'P' && !e.ctrlKey && !e.metaKey && !e.altKey;
                 if (keyCombo === 'Delete') return e.key === 'Delete' && !e.ctrlKey && !e.metaKey && !e.altKey;
 
-                // Atajos con modificadores
+                // Atajos con modificadores (Ctrl, Alt, Meta)
                 const needsCtrl = parts.includes('Ctrl');
                 const needsMeta = parts.includes('Meta');
                 const needsAlt = parts.includes('Alt');
                 const mainKey = parts[parts.length - 1];
 
-                // Para teclas de flecha, comparar directamente con e.key
+                // Teclas de flecha (comparar directamente)
                 if (mainKey.startsWith('Arrow')) {
                     return (
                         e.key === mainKey &&
@@ -2223,7 +2809,7 @@
                     );
                 }
 
-                // Para otras teclas, comparar en minúsculas
+                // Otras teclas (comparar en minúsculas)
                 return (
                     e.key.toLowerCase() === mainKey.toLowerCase() &&
                     (!needsCtrl || e.ctrlKey) &&
@@ -2233,11 +2819,12 @@
             });
 
             if (matches) {
-                // Si estamos escribiendo, solo permitir ciertos atajos
+                // Si está escribiendo, solo permitir atajos de la lista blanca
                 if (isTyping && !allowedWhileTyping.includes(key)) {
                     continue;
                 }
 
+                // Prevenir comportamiento por defecto y ejecutar acción
                 e.preventDefault();
                 const success = shortcut.action();
 
@@ -2249,49 +2836,102 @@
         }
     }
 
+    // ==========================================
+    // INICIALIZACIÓN AL CARGAR LA PÁGINA
+    // ==========================================
+
     document.addEventListener('DOMContentLoaded', () => {
+        // Guardar copia original para detectar cambios
         originalCuestionarioData = JSON.parse(JSON.stringify(cuestionarioData));
+
+        // Configurar contador de caracteres de descripción
         const descTextarea = document.getElementById('descripcion');
         descTextarea.addEventListener('input', () => updateCharCounter(descTextarea, 'descripcion-char-counter'));
+
+        // Validar rangos numéricos (puntos y tiempo) al escribir
         document.addEventListener('input', function (e) {
             if (e.target.classList.contains('inPuntos') || e.target.classList.contains('inTiempo')) {
-                const input = e.target, min = parseInt(input.min, 10) || 1, max = parseInt(input.max, 10) || 1000;
-                let valor = parseInt(input.value, 10); if (isNaN(valor)) return;
-                if (valor < min) input.value = min; else if (valor > max) input.value = max;
+                const input = e.target;
+                const min = parseInt(input.min, 10) || 1;
+                const max = parseInt(input.max, 10) || 1000;
+                let valor = parseInt(input.value, 10);
+
+                if (isNaN(valor)) return;
+
+                // Limitar al rango permitido
+                if (valor < min) input.value = min;
+                else if (valor > max) input.value = max;
             }
         });
+
+        // Event listeners para navegación entre tabs
         document.getElementById('tab-general').addEventListener('click', () => switchView('general'));
         document.getElementById('tab-preguntas').addEventListener('click', () => switchView('preguntas'));
-        const btnVolver = document.getElementById('btn-volver-general'); if (btnVolver) btnVolver.addEventListener('click', () => switchView('general'));
+
+        const btnVolver = document.getElementById('btn-volver-general');
+        if (btnVolver) {
+            btnVolver.addEventListener('click', () => switchView('general'));
+        }
+
+        // Configurar switch móvil (Lista/Editor)
         const sw = document.getElementById('qSwitch');
-        if (sw) { sw.addEventListener('click', e => { const b = e.target.closest('.sw'); if (!b) return; sw.querySelectorAll('.sw').forEach(x => x.classList.remove('active')); b.classList.add('active'); const mode = b.dataset.target; const lay = document.getElementById('qlayout'); lay.classList.toggle('show-sidebar', mode === 'sidebar'); lay.classList.toggle('show-editor', mode === 'editor'); }); }
+        if (sw) {
+            sw.addEventListener('click', e => {
+                const b = e.target.closest('.sw');
+                if (!b) return;
+
+                // Actualizar botón activo
+                sw.querySelectorAll('.sw').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+
+                // Cambiar vista
+                const mode = b.dataset.target;
+                const lay = document.getElementById('qlayout');
+                lay.classList.toggle('show-sidebar', mode === 'sidebar');
+                lay.classList.toggle('show-editor', mode === 'editor');
+            });
+        }
+
+        // Renderizar vista inicial
         renderGeneral();
         updateActionButtons();
         updateResponsiveMode();
+
+        // Actualizar al redimensionar ventana
         window.addEventListener('resize', updateResponsiveMode);
 
-        // ✅ ACTIVAR MANEJADOR GLOBAL DE ATAJOS DE TECLADO
+        // Activar manejador de atajos de teclado
         document.addEventListener('keydown', handleKeyboardShortcut);
 
-        // TEST EXCEL EN DOMContentLoaded
+        // ========== CONFIGURACIÓN MODAL DE IMPORTACIÓN ==========
         const btnAbrirModal = document.getElementById('btn-abrir-modal-importar');
-        const modalOverlay = document.getElementById('modal-importar-overlay'); // Declara la variable de nuevo para este scope
+        const modalOverlay = document.getElementById('modal-importar-overlay');
         const btnCancelarModal = document.getElementById('btn-cancelar-modal');
         const formImportar = document.getElementById('form-importar-preguntas');
 
+        // Asociar formulario de importación
         if (formImportar) {
             formImportar.addEventListener('submit', subirImportacion);
         }
 
-        if (btnAbrirModal) btnAbrirModal.addEventListener('click', abrirModalImportar);
+        // Botón para abrir modal
+        if (btnAbrirModal) {
+            btnAbrirModal.addEventListener('click', abrirModalImportar);
+        }
 
-        if (btnCancelarModal) btnCancelarModal.addEventListener('click', cerrarModalImportar);
+        // Botón para cancelar/cerrar modal
+        if (btnCancelarModal) {
+            btnCancelarModal.addEventListener('click', cerrarModalImportar);
+        }
 
-        if (modalOverlay) modalOverlay.addEventListener('click', (e) => {
-            if (e.target === modalOverlay) {
-                cerrarModalImportar();
-            }
-        });
+        // Cerrar modal al hacer clic fuera de él
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) {
+                    cerrarModalImportar();
+                }
+            });
+        }
     });
 </script>
 {% endblock %}
